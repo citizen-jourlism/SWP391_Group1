@@ -1,4 +1,4 @@
-import Homepage from './Homepage/Homepage.jsx'
+import Homepage from './routes/Homepage.jsx'
 
 function App() {
   return <Homepage />

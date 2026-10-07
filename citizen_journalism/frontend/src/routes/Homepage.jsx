@@ -1,4 +1,4 @@
-import './homepage.css'
+import '../assets/styles/homepage.css'
 
 const navLinks = ['Trang chủ', 'Gửi phản ánh', 'Gửi khiếu nại', 'Về chúng tôi', 'Liên hệ']
 
