@@ -2,13 +2,19 @@ package com.example.citizen_journalism.controller;
 
 import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.auth.EmailRequest;
+import com.example.citizen_journalism.dto.auth.LoginRequest;
+import com.example.citizen_journalism.dto.auth.LoginResponse;
 import com.example.citizen_journalism.dto.auth.OtpInfo;
 import com.example.citizen_journalism.dto.auth.RegisterRequest;
 import com.example.citizen_journalism.dto.auth.VerifyOtpRequest;
+import com.example.citizen_journalism.dto.user.UserSummary;
 import com.example.citizen_journalism.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   Controller chỉ lo nhận/trả HTTP. Toàn bộ logic nằm ở Service để dễ đọc, dễ test
  *   và dùng lại được (ví dụ: sau này admin tạo tài khoản cũng có thể gọi lại service).
  *
- * Các API ở đây là công khai (chưa cần đăng nhập) vì người dùng chưa có tài khoản.
+ * Các API ở đây là công khai (chưa cần đăng nhập), TRỪ /me (cần token). Xem SecurityConfig.PUBLIC_ENDPOINTS.
  */
 @RestController                 // Lớp này trả dữ liệu JSON (không trả trang HTML)
 @RequestMapping("/api/auth")    // Tiền tố chung cho mọi đường dẫn bên dưới
@@ -67,5 +73,25 @@ public class AuthController {
     @PostMapping("/resend-otp")
     public ApiResponse<OtpInfo> resendOtp(@Valid @RequestBody EmailRequest request) {
         return ApiResponse.ok("Đã gửi lại mã OTP.", authService.resendRegistrationOtp(request.email()));
+    }
+
+    /**
+     * Đăng nhập: POST /api/auth/login
+     * Body: { email, password, rememberMe }. Đúng thì trả về LoginResponse { accessToken, expiresAt, user }.
+     * Sai email/mật khẩu -> 401; chưa xác thực / bị khoá -> 403 kèm code; sai quá nhiều lần -> 429.
+     */
+    @PostMapping("/login")
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ApiResponse.ok("Đăng nhập thành công!", authService.login(request));
+    }
+
+    /**
+     * Ai đang đăng nhập: GET /api/auth/me  (BẮT BUỘC có token, xem SecurityConfig).
+     * @AuthenticationPrincipal Jwt jwt: Spring đưa sẵn token ĐÃ ĐƯỢC KIỂM TRA vào đây;
+     * jwt.getSubject() là mã người dùng (ví dụ CT0001) được ghi vào token lúc đăng nhập.
+     */
+    @GetMapping("/me")
+    public ApiResponse<UserSummary> me(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.ok("OK", authService.getCurrentUser(jwt.getSubject()));
     }
 }

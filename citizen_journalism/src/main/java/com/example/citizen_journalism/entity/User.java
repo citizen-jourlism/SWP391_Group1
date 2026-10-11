@@ -70,6 +70,22 @@ public class User {
     @Column(name = "reputation_score")
     private Integer reputationScore;
 
+    /**
+     * Số lần nhập SAI mật khẩu liên tiếp (chống dò mật khẩu). Đăng nhập đúng thì về 0.
+     * Xem AuthService.login(). columnDefinition "default 0" để các dòng cũ trong DB tự có giá trị 0.
+     */
+    @Column(name = "failed_login_attempts", nullable = false, columnDefinition = "int default 0")
+    @Builder.Default
+    private int failedLoginAttempts = 0;
+
+    /**
+     * Khoá TẠM THỜI tới thời điểm này do nhập sai mật khẩu quá nhiều lần (null = không bị khoá).
+     * Khác với status = LOCKED (khoá do vi phạm, chỉ admin/Ban biên tập mở được).
+     * Hết thời gian thì tự mở khi người dùng đăng nhập lại, không cần job chạy nền.
+     */
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

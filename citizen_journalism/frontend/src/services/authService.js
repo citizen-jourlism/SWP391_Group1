@@ -12,6 +12,8 @@ export const authService = {
   register: (payload) => api.post('/auth/register', payload),           // payload = { fullName, email, phone, password }
   verifyOtp: (email, otp) => api.post('/auth/verify-otp', { email, otp }),
   resendOtp: (email) => api.post('/auth/resend-otp', { email }),
+  login: (payload) => api.post('/auth/login', payload),                 // payload = { email, password, rememberMe }
+  me: () => api.get('/auth/me'),                                        // cần token (api.js tự gắn)
 }
 
 /**

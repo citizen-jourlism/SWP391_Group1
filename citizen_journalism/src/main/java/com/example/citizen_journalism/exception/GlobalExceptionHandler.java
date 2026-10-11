@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
     /** Lỗi nghiệp vụ mình tự ném (AppException) -> trả đúng mã HTTP và thông báo đã đặt. */
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleApp(AppException ex) {
-        return build(ex.getStatus(), ex.getMessage(), null);
+        return ResponseEntity.status(ex.getStatus()).body(ApiResponse.error(ex.getMessage(), ex.getCode(), null));
     }
 
     /**
@@ -73,6 +73,6 @@ public class GlobalExceptionHandler {
 
     /** Hàm phụ dùng chung để tạo phản hồi lỗi (tránh lặp code ở từng handler). */
     private ResponseEntity<ApiResponse<Void>> build(HttpStatus status, String message, Map<String, String> errors) {
-        return ResponseEntity.status(status).body(ApiResponse.error(message, errors));
+        return ResponseEntity.status(status).body(ApiResponse.error(message, null, errors));
     }
 }

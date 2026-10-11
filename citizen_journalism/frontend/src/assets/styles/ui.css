@@ -28,6 +28,27 @@
   }
 }
 
+/* Một hàng gồm 2 phần nằm 2 đầu, ví dụ "Ghi nhớ đăng nhập" ... "Quên mật khẩu?" */
+.form__inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Link chữ màu cam (không phải nút) */
+.text-link {
+  color: var(--orange-strong);
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
 /* ---------- Ô nhập liệu ---------- */
 .field {
   display: flex;
@@ -321,6 +342,17 @@
 .alert__title {
   display: block;
   margin-bottom: 2px;
+}
+
+/* Hàng nút hành động bên trong hộp thông báo (ví dụ "Xác thực email ngay") */
+.alert__actions {
+  margin-top: 10px;
+}
+
+.alert__actions .btn {
+  min-height: 38px;
+  padding: 0 16px;
+  font-size: 13.5px;
 }
 
 .alert code {

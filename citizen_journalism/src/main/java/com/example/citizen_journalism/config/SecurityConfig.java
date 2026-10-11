@@ -1,39 +1,87 @@
 package com.example.citizen_journalism.config;
 
+import com.example.citizen_journalism.security.RestAuthenticationHandler;
+import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Cấu hình bảo mật (Spring Security): ai được gọi API nào, mật khẩu được mã hoá ra sao.
+ * Cấu hình bảo mật (Spring Security): AI được gọi API NÀO.
  *
- * HIỆN TẠI: mọi đường dẫn đều cho phép truy cập (permitAll) vì chưa có chức năng Đăng nhập.
- * Ở chức năng Đăng nhập (JWT) tiếp theo, file này sẽ được siết lại:
- * API công khai (/api/auth/**) vẫn mở, còn API khác bắt buộc đăng nhập và đúng vai trò.
+ * NGUYÊN TẮC PHÂN QUYỀN (đọc từ trên xuống, luật nào khớp trước thì áp dụng):
+ *   1. PUBLIC_ENDPOINTS (đăng ký, OTP, đăng nhập)  -> ai cũng gọi được
+ *   2. /api/admin/**                               -> chỉ SYSTEM_ADMIN
+ *   3. /api/** còn lại                              -> phải đăng nhập (có token hợp lệ)
+ *   4. Mọi thứ khác (file tĩnh...)                  -> mở
+ * Thêm API mới cần phân quyền theo vai trò: thêm 1 dòng .requestMatchers(...).hasRole(...) TRƯỚC dòng số 3.
+ *
+ * Cách xác thực: JWT gửi trong header "Authorization: Bearer <token>" (xem JwtConfig.java).
+ * Không dùng session/cookie phía server (STATELESS): mỗi request tự mang token, backend không cần nhớ ai đang đăng nhập.
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    /** Các API công khai: người dùng CHƯA có token vẫn gọi được. */
+    private static final Set<String> PUBLIC_ENDPOINTS = Set.of(
+            "/api/auth/register",
+            "/api/auth/verify-otp",
+            "/api/auth/resend-otp",
+            "/api/auth/login");
+
+    private final RestAuthenticationHandler restAuthenticationHandler;
+    private final JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // Tắt CSRF: frontend React gọi API bằng JSON, không dùng form/cookie phiên kiểu truyền thống.
+            // Tắt CSRF: frontend gọi API bằng JSON + token trong header, không dùng cookie phiên nên không bị tấn công CSRF.
             .csrf(AbstractHttpConfigurer::disable)
+            // Không tạo session phía server: trạng thái đăng nhập nằm trong token.
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/index.html", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                .requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
+                .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
+                .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )
-            // Tắt trang đăng nhập mặc định và kiểu đăng nhập Basic của Spring: mình tự làm trang đăng nhập riêng.
+            // Bật chế độ "resource server": tự đọc + kiểm tra JWT ở mỗi request.
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .bearerTokenResolver(bearerTokenResolver())
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                .authenticationEntryPoint(restAuthenticationHandler) // token sai/hết hạn -> 401 JSON
+            )
+            .exceptionHandling(errors -> errors
+                .authenticationEntryPoint(restAuthenticationHandler) // chưa có token -> 401 JSON
+                .accessDeniedHandler(restAuthenticationHandler)      // sai vai trò -> 403 JSON
+            )
+            // Tắt trang đăng nhập mặc định và kiểu Basic của Spring: mình tự làm API đăng nhập riêng.
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable);
 
         return http.build();
+    }
+
+    /**
+     * Đọc token từ header Authorization, NHƯNG bỏ qua token ở các API công khai.
+     * TẠI SAO? Nếu trình duyệt còn giữ một token cũ đã hết hạn, mặc định Spring sẽ từ chối (401) ngay cả
+     * khi gọi API đăng nhập -> người dùng không đăng nhập lại được. Bỏ qua token ở các API công khai để tránh lỗi này.
+     */
+    private BearerTokenResolver bearerTokenResolver() {
+        DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
+        return request -> PUBLIC_ENDPOINTS.contains(request.getRequestURI()) ? null : defaultResolver.resolve(request);
     }
 
     /**

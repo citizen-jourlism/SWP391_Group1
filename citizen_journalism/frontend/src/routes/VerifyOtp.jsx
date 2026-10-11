@@ -102,7 +102,8 @@ function VerifyOtp() {
             tiến độ xử lý.
           </p>
           <div className="result__actions">
-            <Button to="/login" block>
+            {/* state={{ email }}: gửi kèm email sang trang Đăng nhập để điền sẵn, người dùng chỉ cần nhập mật khẩu */}
+            <Button to="/login" state={{ email: pending.email }} block>
               Đăng nhập ngay
             </Button>
             <Button to="/" variant="secondary" block>

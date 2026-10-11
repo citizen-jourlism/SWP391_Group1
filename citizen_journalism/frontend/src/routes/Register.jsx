@@ -1,10 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import AuthLayout from '../components/layout/AuthLayout'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import Checkbox from '../components/ui/Checkbox'
 import PasswordStrength from '../components/ui/PasswordStrength'
 import TextField from '../components/ui/TextField'
+import { useAuth } from '../hooks/useAuth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useForm } from '../hooks/useForm'
 import { createValidator, rules } from '../lib/validators'
@@ -54,6 +55,10 @@ function Register() {
   useDocumentTitle('Đăng ký tài khoản')
   const navigate = useNavigate() // Hàm chuyển trang của React Router
   const form = useForm(INITIAL_VALUES, validate)
+  const { user, status } = useAuth()
+
+  // Đã đăng nhập rồi thì không cần đăng ký nữa -> về trang chủ.
+  if (status === 'ready' && user) return <Navigate to="/" replace />
 
   // Chỉ chạy khi form đã hợp lệ (handleSubmit tự kiểm tra trước).
   // Không gửi confirmPassword và agreeTerms lên server: hai ô này chỉ dùng để kiểm tra ở giao diện.

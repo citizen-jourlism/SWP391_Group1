@@ -83,6 +83,21 @@ const PATHS = {
       <polygon points="22 2 15 22 11 13 2 9 22 2" />
     </>
   ),
+  logIn: (
+    <>
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      <polyline points="10 17 15 12 10 7" />
+      <line x1="15" y1="12" x2="3" y2="12" />
+    </>
+  ),
+  logOut: (
+    <>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </>
+  ),
+  chevronDown: <polyline points="6 9 12 15 18 9" />,
 }
 
 function Icon({ name, size = 18, strokeWidth = 2, className, ...rest }) {

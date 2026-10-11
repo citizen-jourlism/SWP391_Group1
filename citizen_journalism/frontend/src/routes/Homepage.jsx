@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom'
+import UserMenu from '../components/layout/UserMenu'
 import Logo from '../components/ui/Logo'
+import { useAuth } from '../hooks/useAuth'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import '../assets/styles/homepage.css'
 
 const navLinks = ['Trang chủ', 'Gửi phản ánh', 'Gửi khiếu nại', 'Về chúng tôi', 'Liên hệ']
@@ -41,6 +44,9 @@ const missions = [
 ]
 
 function Homepage() {
+	useDocumentTitle() // Không truyền tên -> tiêu đề tab chỉ là "Tin Nóng Dân Sinh" (tránh giữ tên của trang trước)
+	const { user, status } = useAuth() // Ai đang đăng nhập (xem context/AuthProvider.jsx)
+
 	return (
 		<div className="page-shell">
 			<header className="topbar">
@@ -50,9 +56,20 @@ function Homepage() {
 						<span>Tiếp nhận phản ánh &amp; giải quyết tin tức</span>
 					</div>
 					<div className="topbar-right">
-						{/* Link của React Router: chuyển trang không tải lại toàn bộ web */}
-						<Link className="register-link" to="/register">Đăng ký</Link>
-						<Link className="login-button" to="/login">Đăng nhập</Link>
+						{/*
+						  - Đang kiểm tra token lúc mở web (status 'loading'): chưa hiện gì, tránh nút "Đăng nhập" nháy lên rồi biến mất.
+						  - Đã đăng nhập: hiện menu tài khoản (tên + Đăng xuất).
+						  - Chưa đăng nhập: hiện 2 nút Đăng ký / Đăng nhập (Link của React Router: chuyển trang không tải lại web).
+						*/}
+						{status === 'ready' &&
+							(user ? (
+								<UserMenu />
+							) : (
+								<>
+									<Link className="register-link" to="/register">Đăng ký</Link>
+									<Link className="login-button" to="/login">Đăng nhập</Link>
+								</>
+							))}
 					</div>
 				</div>
 			</header>

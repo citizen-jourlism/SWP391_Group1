@@ -4,7 +4,7 @@ import Icon from '../components/ui/Icon'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 /**
- * Trang hiển thị khi đường dẫn không tồn tại hoặc chức năng chưa được xây dựng (ví dụ /login lúc này).
+ * Trang hiển thị khi đường dẫn không tồn tại hoặc chức năng chưa được xây dựng (ví dụ /forgot-password lúc này).
  * Được gắn với Route path="*" trong App.jsx. Dùng lại AuthLayout cho đồng bộ giao diện.
  */
 function NotFound() {
