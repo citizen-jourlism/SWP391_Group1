@@ -28,10 +28,15 @@ export const authService = {
 const PENDING_KEY = 'pendingVerification'
 
 export const pendingVerification = {
-  /** Lưu thông tin OtpInfo backend trả về: { email, expiresInSeconds, resendAfterSeconds }. */
-  save({ email, expiresInSeconds, resendAfterSeconds }) {
+  /** Lưu thông tin OtpInfo backend trả về: { email, expiresInSeconds, resendAfterSeconds, printedToConsole }. */
+  save({ email, expiresInSeconds, resendAfterSeconds, printedToConsole }) {
     const now = Date.now()
-    const value = { email, expiresAt: now + expiresInSeconds * 1000, resendAt: now + resendAfterSeconds * 1000 }
+    const value = {
+      email,
+      expiresAt: now + expiresInSeconds * 1000,
+      resendAt: now + resendAfterSeconds * 1000,
+      printedToConsole, // true = backend chưa gửi mail thật, mã nằm trong log backend
+    }
     try {
       sessionStorage.setItem(PENDING_KEY, JSON.stringify(value))
     } catch {

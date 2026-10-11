@@ -77,8 +77,9 @@ public class OtpService {
         // 4. Gửi mã GỐC qua email (chỉ người dùng biết mã gốc).
         mailService.send(user.getEmail(), subjectOf(purpose), buildEmail(user.getFullName(), code, purpose));
 
-        // 5. Trả thông tin thời gian để frontend hiện đồng hồ đếm ngược.
-        return new OtpInfo(user.getEmail(), ttlSeconds, resendCooldownSeconds);
+        // 5. Trả thông tin thời gian để frontend hiện đồng hồ đếm ngược,
+        //    kèm cờ cho biết mail có bị in ra console thay vì gửi thật không.
+        return new OtpInfo(user.getEmail(), ttlSeconds, resendCooldownSeconds, !mailService.isLiveDelivery());
     }
 
     /**

@@ -38,12 +38,20 @@ public class MailService {
     private String from;
 
     /**
+     * true nếu email đang được GỬI THẬT; false nếu chỉ in ra console (chế độ phát triển).
+     * OtpService dùng để báo cho frontend biết có nên hiện gợi ý "xem mã OTP trong log backend" hay không.
+     */
+    public boolean isLiveDelivery() {
+        return enabled && mailSenderProvider.getIfAvailable() != null;
+    }
+
+    /**
      * @param to      địa chỉ người nhận
      * @param subject tiêu đề
      * @param html    nội dung dạng HTML
      */
     public void send(String to, String subject, String html) {
-        JavaMailSender sender = enabled ? mailSenderProvider.getIfAvailable() : null;
+        JavaMailSender sender = isLiveDelivery() ? mailSenderProvider.getIfAvailable() : null;
 
         // Chế độ phát triển: in ra console. Bỏ thẻ HTML cho dễ đọc (regex "<[^>]+>" = mọi thẻ <...>).
         if (sender == null) {

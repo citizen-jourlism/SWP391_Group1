@@ -171,8 +171,9 @@ function VerifyOtp() {
           </button>
         </p>
 
-        {/* import.meta.env.DEV = true khi chạy "npm run dev"; bản build chính thức sẽ không hiện hộp này */}
-        {import.meta.env.DEV && (
+        {/* Chỉ hiện khi backend báo email KHÔNG được gửi thật (MAIL_ENABLED=false, xem MailService.java).
+            Khi đã cấu hình Gmail trong file .env thì hộp này tự ẩn. */}
+        {pending.printedToConsole && (
           <Alert type="info">
             Chế độ phát triển: email chưa gửi thật, mã OTP được in trong cửa sổ log của backend (dòng
             <code> [DEV MAIL]</code>).
