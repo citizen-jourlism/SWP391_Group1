@@ -1,20 +1,4 @@
-:root {
-  --bg-soft: #edeff3;
-  --panel: #ffffff;
-  --navy-900: #0d1f35;
-  --navy-800: #112844;
-  --navy-700: #163a5d;
-  --text: #172339;
-  --muted: #7a8190;
-  --orange: #ff6a2f;
-  --orange-strong: #ff4500;
-  --orange-light: #ffb15d;
-  --red: #d43328;
-  --blue: #1c6ac7;
-  --card-border: #dfe5ef;
-  --dark-panel: #091c2f;
-  --dark-panel-2: #0f2440;
-}
+/* Màu sắc (design tokens) được khai báo chung trong src/index.css */
 
 * {
   box-sizing: border-box;
@@ -89,9 +73,23 @@ button {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.24);
 }
 
+.register-link {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.register-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .login-button {
   background: linear-gradient(180deg, #ff9f53, #fd5d1d);
   color: #fff;
+  text-decoration: none;
   border-radius: 8px;
   padding: 6px 18px;
   font-weight: 700;

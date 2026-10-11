@@ -1,5 +1,40 @@
+/* ===== Design tokens dùng chung cho toàn bộ giao diện ===== */
 :root {
+  --bg-soft: #edeff3;
+  --panel: #ffffff;
+  --navy-900: #0d1f35;
+  --navy-800: #112844;
+  --navy-700: #163a5d;
+  --text: #172339;
+  --muted: #7a8190;
+  --orange: #ff6a2f;
+  --orange-strong: #ff4500;
+  --orange-light: #ffb15d;
+  --red: #d43328;
+  --blue: #1c6ac7;
+  --card-border: #dfe5ef;
+  --dark-panel: #091c2f;
+  --dark-panel-2: #0f2440;
+
+  --success: #16a34a;
+  --success-bg: #ecfdf3;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --info: #1c6ac7;
+  --info-bg: #eef5ff;
+  --warning: #b45309;
+  --warning-bg: #fff7ed;
+
+  --input-border: #cfd6e2;
+  --focus-ring: 0 0 0 4px rgba(255, 106, 47, 0.18);
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --shadow-card: 0 24px 60px rgba(13, 31, 53, 0.12);
+  --gradient-primary: linear-gradient(135deg, #ff9f53 0%, #ff4500 100%);
+
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,9 +54,25 @@ html {
 body {
   min-width: 320px;
   margin: 0;
+  background: var(--bg-soft);
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

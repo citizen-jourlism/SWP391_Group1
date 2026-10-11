@@ -89,14 +89,19 @@ public class User {
         }
     }
 
+    /** Mỗi vai trò có tiền tố 2 chữ cái dùng để sinh mã người dùng (ví dụ: CT0001). */
+    @Getter
+    @RequiredArgsConstructor
     public enum Role {
-        CITIZEN,
-        CONTRIBUTOR,
-        EXPERT,
-        EDITOR,
-        DEPUTY_EIC,
-        EIC,
-        SYSTEM_ADMIN
+        CITIZEN("CT"),
+        CONTRIBUTOR("CB"),
+        EXPERT("EX"),
+        EDITOR("ED"),
+        DEPUTY_EIC("DE"),
+        EIC("EC"),
+        SYSTEM_ADMIN("AD");
+
+        private final String idPrefix;
     }
 
     public enum Status {

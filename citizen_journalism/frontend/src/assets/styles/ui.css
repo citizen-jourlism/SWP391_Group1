@@ -1,0 +1,489 @@
+/* ===== Component dùng chung: form, nút, thông báo... ===== */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 560px) {
+  .form__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Ô nhập liệu ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-800);
+}
+
+.field__required {
+  color: var(--danger);
+  margin-left: 3px;
+}
+
+.field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field__icon {
+  position: absolute;
+  left: 14px;
+  color: var(--muted);
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.field__input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: #fbfcfe;
+  color: var(--text);
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.field__input.has-icon {
+  padding-left: 42px;
+}
+
+.field__input.has-action {
+  padding-right: 46px;
+}
+
+.field__input::placeholder {
+  color: #a3abb9;
+}
+
+.field__input:hover {
+  border-color: #b6c0d0;
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--orange);
+  background: #fff;
+  box-shadow: var(--focus-ring);
+}
+
+.field__control:focus-within .field__icon {
+  color: var(--orange);
+}
+
+.field--error .field__input {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.field--error .field__input:focus {
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.14);
+}
+
+.field--error .field__icon {
+  color: var(--danger);
+}
+
+.field__action {
+  position: absolute;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.field__action:hover {
+  color: var(--navy-800);
+  background: #eef1f6;
+}
+
+.field__action:focus-visible {
+  outline: 2px solid var(--orange);
+}
+
+.field__error,
+.field__hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.field__error {
+  color: var(--danger);
+  animation: fade-in 0.2s ease;
+}
+
+.field__hint {
+  color: var(--muted);
+}
+
+/* ---------- Checkbox ---------- */
+.checkbox__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.checkbox__label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.checkbox__label a {
+  color: var(--orange-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.checkbox__label a:hover {
+  text-decoration: underline;
+}
+
+.checkbox__box {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border: 1.5px solid var(--input-border);
+  border-radius: 6px;
+  background: #fff;
+  color: transparent;
+  transition: all 0.2s;
+}
+
+.checkbox__input:checked + .checkbox__label .checkbox__box {
+  background: var(--gradient-primary);
+  border-color: var(--orange-strong);
+  color: #fff;
+}
+
+.checkbox__input:focus-visible + .checkbox__label .checkbox__box {
+  box-shadow: var(--focus-ring);
+}
+
+.checkbox--error .checkbox__box {
+  border-color: var(--danger);
+}
+
+.checkbox .field__error {
+  margin-top: 6px;
+}
+
+/* ---------- Nút bấm ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s, filter 0.2s, background 0.2s;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn--primary {
+  background: var(--gradient-primary);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(255, 69, 0, 0.28);
+}
+
+.btn--primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(255, 69, 0, 0.34);
+}
+
+.btn--secondary {
+  background: #fff;
+  color: var(--navy-800);
+  border: 1.5px solid var(--card-border);
+}
+
+.btn--secondary:hover {
+  border-color: var(--navy-700);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--navy-800);
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.btn__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--orange-strong);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.link-button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.link-button:disabled {
+  color: var(--muted);
+  font-weight: 600;
+  cursor: default;
+}
+
+/* ---------- Thông báo ---------- */
+.alert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 13.5px;
+  line-height: 1.5;
+  animation: fade-in 0.25s ease;
+}
+
+.alert__icon {
+  flex: none;
+  margin-top: 1px;
+}
+
+.alert__title {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.alert code {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.alert--error {
+  color: #991b1b;
+  background: var(--danger-bg);
+  border-color: #fecaca;
+}
+
+.alert--success {
+  color: #166534;
+  background: var(--success-bg);
+  border-color: #bbf7d0;
+}
+
+.alert--info {
+  color: #1e4f8f;
+  background: var(--info-bg);
+  border-color: #cfe1fb;
+}
+
+.alert--warning {
+  color: var(--warning);
+  background: var(--warning-bg);
+  border-color: #fed7aa;
+}
+
+/* ---------- Độ mạnh mật khẩu ---------- */
+.strength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.strength__bars {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.strength__bars span {
+  height: 5px;
+  border-radius: 999px;
+  background: #e3e8f0;
+  transition: background 0.3s;
+}
+
+.strength__label {
+  min-width: 112px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.strength--weak .is-active { background: var(--danger); }
+.strength--weak .strength__label { color: var(--danger); }
+.strength--fair .is-active { background: #f59e0b; }
+.strength--fair .strength__label { color: #b45309; }
+.strength--good .is-active { background: #3b82f6; }
+.strength--good .strength__label { color: var(--blue); }
+.strength--strong .is-active { background: var(--success); }
+.strength--strong .strength__label { color: var(--success); }
+
+/* ---------- Ô nhập OTP ---------- */
+.otp {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.otp__cell {
+  width: 100%;
+  aspect-ratio: 1 / 1.15;
+  max-height: 64px;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: #fbfcfe;
+  color: var(--navy-900);
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  caret-color: var(--orange);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s, background 0.2s;
+}
+
+.otp__cell:focus {
+  outline: none;
+  border-color: var(--orange);
+  background: #fff;
+  box-shadow: var(--focus-ring);
+  transform: translateY(-2px);
+}
+
+.otp__cell.is-filled {
+  border-color: var(--navy-700);
+  background: #fff;
+}
+
+.otp__cell:disabled {
+  opacity: 0.6;
+}
+
+.otp--invalid .otp__cell {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.otp--invalid {
+  animation: shake 0.4s ease;
+}
+
+/* ---------- Màn hình kết quả (thành công / thông báo) ---------- */
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.result__icon {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  animation: pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.result__icon--success {
+  color: var(--success);
+  background: var(--success-bg);
+  box-shadow: 0 0 0 10px rgba(22, 163, 74, 0.07);
+}
+
+.result__icon--muted {
+  color: var(--navy-700);
+  background: #eef1f6;
+}
+
+.result__text {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.result__actions {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+/* ---------- Animation ---------- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes shake {
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}

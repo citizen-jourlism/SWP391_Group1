@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import '../assets/styles/homepage.css'
 
 const navLinks = ['Trang chủ', 'Gửi phản ánh', 'Gửi khiếu nại', 'Về chúng tôi', 'Liên hệ']
@@ -48,8 +49,8 @@ function Homepage() {
 						<span>Tiếp nhận phản ánh &amp; giải quyết tin tức</span>
 					</div>
 					<div className="topbar-right">
-						<span>Hệ thống</span>
-						<button className="login-button" type="button">Login</button>
+						<Link className="register-link" to="/register">Đăng ký</Link>
+						<Link className="login-button" to="/login">Đăng nhập</Link>
 					</div>
 				</div>
 			</header>

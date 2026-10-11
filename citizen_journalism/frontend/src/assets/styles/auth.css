@@ -1,0 +1,336 @@
+/* ===== Bố cục các trang tài khoản (AuthLayout) ===== */
+
+.auth {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.9fr) 1.1fr;
+  min-height: 100vh;
+  background: var(--bg-soft);
+}
+
+/* ---------- Panel giới thiệu bên trái ---------- */
+.auth__aside {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 40px 48px;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 85% 15%, rgba(255, 106, 47, 0.35), transparent 42%),
+    radial-gradient(circle at 10% 90%, rgba(28, 106, 199, 0.35), transparent 45%),
+    linear-gradient(160deg, var(--navy-900) 0%, var(--dark-panel) 55%, #1a1030 100%);
+}
+
+.auth__aside::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(180deg, transparent, #000 40%, transparent);
+  pointer-events: none;
+}
+
+.auth__aside > * {
+  position: relative;
+  z-index: 1;
+}
+
+.auth__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.auth__brand strong {
+  display: block;
+  font-size: 15px;
+  letter-spacing: 0.6px;
+}
+
+.auth__brand small {
+  display: block;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.auth__brand-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  font-weight: 800;
+  box-shadow: 0 10px 22px rgba(255, 92, 58, 0.35);
+}
+
+.auth__eyebrow {
+  display: inline-block;
+  margin-bottom: 16px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 177, 93, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 106, 47, 0.12);
+  color: var(--orange-light);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.auth__pitch h2 {
+  margin: 0 0 28px;
+  font-size: clamp(26px, 2.6vw, 36px);
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.auth__pitch h2 span {
+  background: linear-gradient(90deg, var(--orange-light), var(--orange));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.auth__highlights {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auth__highlights li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(4px);
+}
+
+.auth__highlights strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 14.5px;
+}
+
+.auth__highlights small {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.auth__highlight-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255, 106, 47, 0.16);
+  color: var(--orange-light);
+}
+
+.auth__aside-foot {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12.5px;
+}
+
+/* ---------- Khu vực form bên phải ---------- */
+.auth__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 24px 48px;
+}
+
+.auth__topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: min(480px, 100%);
+  margin-bottom: 20px;
+}
+
+.auth__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.auth__back:hover {
+  color: var(--navy-800);
+}
+
+.auth__brand--compact {
+  display: none;
+  color: var(--navy-900);
+}
+
+.auth__brand--compact .auth__brand-icon {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}
+
+.auth__card {
+  width: min(480px, 100%);
+  margin: auto 0;
+  padding: 36px 36px 28px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-card);
+  animation: card-in 0.4s ease;
+}
+
+.auth__badge {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fff1ea;
+  color: var(--orange-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.auth__header {
+  margin-bottom: 24px;
+}
+
+.auth__header h1 {
+  margin: 0 0 8px;
+  color: var(--navy-900);
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.auth__header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.auth__header p strong {
+  color: var(--navy-800);
+  word-break: break-all;
+}
+
+.auth__footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #eef1f6;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.auth__footer a {
+  color: var(--orange-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth__footer a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Riêng trang OTP ---------- */
+.otp-hero {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: -4px auto 4px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff1ea, #ffe1d2);
+  color: var(--orange-strong);
+}
+
+.otp-timer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.otp-timer strong {
+  color: var(--navy-800);
+  font-variant-numeric: tabular-nums;
+}
+
+.otp-timer.is-urgent,
+.otp-timer.is-urgent strong {
+  color: var(--danger);
+}
+
+.otp-resend {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .auth {
+    grid-template-columns: 1fr;
+  }
+
+  .auth__aside {
+    display: none;
+  }
+
+  .auth__brand--compact {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 520px) {
+  .auth__main {
+    padding: 16px 16px 32px;
+  }
+
+  .auth__card {
+    padding: 26px 20px 22px;
+    border-radius: var(--radius);
+  }
+
+  .auth__header h1 {
+    font-size: 22px;
+  }
+
+  .otp {
+    gap: 7px;
+  }
+
+  .otp__cell {
+    font-size: 22px;
+  }
+}
