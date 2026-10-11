@@ -1,4 +1,14 @@
-/* ===== Component dùng chung: form, nút, thông báo... ===== */
+/* ===== Component dùng chung: form, nút, thông báo... =====
+ * Style cho các component trong src/components/ui/ (TextField, Button, Alert, Checkbox, OtpInput...).
+ * File được nạp trong AuthLayout.jsx; các trang khác dùng component này thì cũng import file này.
+ *
+ * QUY ƯỚC ĐẶT TÊN CLASS (kiểu BEM) để không bị trùng tên giữa các phần:
+ *   .field            -> khối (block): cả ô nhập
+ *   .field__input     -> phần tử (element) bên trong khối, nối bằng 2 dấu gạch dưới "__"
+ *   .field--error     -> biến thể (modifier) của khối, nối bằng 2 dấu gạch ngang "--"
+ *   .is-filled/.is-active -> trạng thái tạm thời do JavaScript bật/tắt
+ * Màu sắc lấy từ biến var(--...) khai báo trong src/index.css.
+ */
 
 .form {
   display: flex;

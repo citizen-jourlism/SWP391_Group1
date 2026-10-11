@@ -49,6 +49,7 @@ function Homepage() {
 						<span>Tiếp nhận phản ánh &amp; giải quyết tin tức</span>
 					</div>
 					<div className="topbar-right">
+						{/* Link của React Router: chuyển trang không tải lại toàn bộ web */}
 						<Link className="register-link" to="/register">Đăng ký</Link>
 						<Link className="login-button" to="/login">Đăng nhập</Link>
 					</div>

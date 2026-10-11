@@ -1,4 +1,12 @@
-/** Bộ icon SVG nét mảnh (theo phong cách Feather), không cần cài thêm thư viện. */
+/**
+ * Bộ icon SVG nét mảnh (phong cách Feather Icons) dùng chung cho toàn bộ giao diện.
+ *
+ * TẠI SAO tự viết thay vì cài thư viện icon? Chỉ cần khoảng 20 icon, tự khai báo thì nhẹ hơn,
+ * không phải cài thêm gói npm. Muốn thêm icon mới: thêm 1 mục vào PATHS (copy phần <path> từ feathericons.com).
+ *
+ * CÁCH DÙNG: <Icon name="mail" size={18} />
+ * Màu icon tự lấy theo màu chữ của phần tử cha (stroke="currentColor"), nên đổi màu chỉ cần CSS `color`.
+ */
 const PATHS = {
   user: (
     <>
@@ -89,7 +97,7 @@ function Icon({ name, size = 18, strokeWidth = 2, className, ...rest }) {
       strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
-      aria-hidden="true"
+      aria-hidden="true" // Icon chỉ để trang trí, trình đọc màn hình (cho người khiếm thị) sẽ bỏ qua
       className={className}
       {...rest}
     >

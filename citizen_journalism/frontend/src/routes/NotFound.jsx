@@ -3,7 +3,10 @@ import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
-/** Trang hiển thị khi đường dẫn không tồn tại hoặc chức năng chưa được xây dựng. */
+/**
+ * Trang hiển thị khi đường dẫn không tồn tại hoặc chức năng chưa được xây dựng (ví dụ /login lúc này).
+ * Được gắn với Route path="*" trong App.jsx. Dùng lại AuthLayout cho đồng bộ giao diện.
+ */
 function NotFound() {
   useDocumentTitle('Không tìm thấy trang')
   return (

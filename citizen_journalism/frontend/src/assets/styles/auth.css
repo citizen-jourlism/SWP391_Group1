@@ -1,4 +1,8 @@
-/* ===== Bố cục các trang tài khoản (AuthLayout) ===== */
+/* ===== Bố cục các trang tài khoản (AuthLayout) =====
+ * Style cho components/layout/AuthLayout.jsx và phần riêng của trang OTP.
+ * Bố cục dùng CSS Grid 2 cột: panel giới thiệu (trái) + form (phải).
+ * Dưới 960px (tablet/điện thoại) chuyển thành 1 cột và ẩn panel trái (xem mục Responsive cuối file).
+ */
 
 .auth {
   display: grid;

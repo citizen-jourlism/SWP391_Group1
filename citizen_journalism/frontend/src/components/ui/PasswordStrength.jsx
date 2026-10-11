@@ -1,3 +1,4 @@
+// Nhãn và tông màu tương ứng với điểm 0–4 (tông màu được tô bằng CSS: .strength--weak/fair/good/strong).
 const LEVELS = [
   { label: 'Rất yếu', tone: 'weak' },
   { label: 'Yếu', tone: 'weak' },
@@ -6,7 +7,12 @@ const LEVELS = [
   { label: 'Mạnh', tone: 'strong' },
 ]
 
-/** Chấm điểm 0–4 dựa trên độ dài và sự đa dạng ký tự. */
+/**
+ * Chấm điểm mật khẩu 0–4, mỗi tiêu chí đạt được +1 điểm:
+ *   1. dài từ 8 ký tự   2. có cả chữ thường và chữ HOA
+ *   3. có chữ số        4. có ký tự đặc biệt (!@#...) hoặc dài từ 12 ký tự
+ * Chỉ để GỢI Ý cho người dùng; điều kiện BẮT BUỘC thật sự nằm ở validators (≥ 8 ký tự, có chữ và số).
+ */
 function scorePassword(password) {
   if (!password) return 0
   let score = 0
@@ -17,16 +23,22 @@ function scorePassword(password) {
   return score
 }
 
-/** Thanh đo độ mạnh mật khẩu hiển thị ngay dưới ô nhập. */
+/**
+ * Thanh 4 vạch đo độ mạnh mật khẩu, hiện ngay dưới ô mật khẩu ở trang Đăng ký
+ * (sau này dùng lại ở Đổi mật khẩu / Đặt lại mật khẩu).
+ * CÁCH DÙNG: <PasswordStrength password={form.values.password} />
+ */
 function PasswordStrength({ password }) {
-  if (!password) return null
+  if (!password) return null // Chưa gõ gì thì không hiện
   const score = scorePassword(password)
   const { label, tone } = LEVELS[score]
 
   return (
+    // aria-live="polite": trình đọc màn hình đọc lại nhãn khi độ mạnh thay đổi
     <div className={`strength strength--${tone}`} aria-live="polite">
       <div className="strength__bars">
         {[1, 2, 3, 4].map((step) => (
+          // Vạch thứ "step" sáng màu nếu điểm >= step
           <span key={step} className={step <= score ? 'is-active' : ''} />
         ))}
       </div>

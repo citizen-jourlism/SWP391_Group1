@@ -10,6 +10,18 @@ import { useForm } from '../hooks/useForm'
 import { createValidator, rules } from '../lib/validators'
 import { authService, pendingVerification } from '../services/authService'
 
+/*
+ * TRANG ĐĂNG KÝ TÀI KHOẢN — đường dẫn /register (khai báo trong App.jsx).
+ *
+ * LUỒNG:
+ *   1. Người dùng điền form -> useForm kiểm tra dữ liệu ngay trên trình duyệt (theo `validate` bên dưới).
+ *   2. Bấm "Đăng ký" -> gọi authService.register() -> backend POST /api/auth/register.
+ *   3. Thành công: backend gửi OTP và trả về { email, expiresInSeconds, resendAfterSeconds }.
+ *      Lưu vào sessionStorage (pendingVerification) rồi chuyển sang trang /verify-otp.
+ *   4. Thất bại (email trùng, dữ liệu sai...): useForm tự hiện lỗi ở đầu form và dưới từng ô.
+ */
+
+// Giá trị ban đầu của form. agreeTerms là boolean nên useForm hiểu đó là checkbox.
 const INITIAL_VALUES = {
   fullName: '',
   email: '',
@@ -19,6 +31,8 @@ const INITIAL_VALUES = {
   agreeTerms: false,
 }
 
+// Quy tắc kiểm tra từng ô, khớp với RegisterRequest.java ở backend.
+// Khai báo NGOÀI component để không bị tạo lại mỗi lần giao diện vẽ lại.
 const validate = createValidator({
   fullName: [rules.required('Vui lòng nhập họ và tên.'), rules.maxLength(100, 'Họ và tên tối đa 100 ký tự.')],
   email: [rules.required('Vui lòng nhập email.'), rules.email()],
@@ -38,12 +52,15 @@ const validate = createValidator({
 
 function Register() {
   useDocumentTitle('Đăng ký tài khoản')
-  const navigate = useNavigate()
+  const navigate = useNavigate() // Hàm chuyển trang của React Router
   const form = useForm(INITIAL_VALUES, validate)
 
+  // Chỉ chạy khi form đã hợp lệ (handleSubmit tự kiểm tra trước).
+  // Không gửi confirmPassword và agreeTerms lên server: hai ô này chỉ dùng để kiểm tra ở giao diện.
+  // Nếu register() lỗi thì handleSubmit tự bắt lỗi và hiện lên form, nên không cần try/catch ở đây.
   const onSubmit = form.handleSubmit(async ({ fullName, email, phone, password }) => {
     const response = await authService.register({ fullName, email, phone, password })
-    pendingVerification.save(response.data)
+    pendingVerification.save(response.data) // Lưu email + mốc hết hạn để trang OTP dùng
     navigate('/verify-otp')
   })
 
@@ -58,8 +75,12 @@ function Register() {
         </>
       }
     >
+      {/* noValidate: tắt kiểu báo lỗi mặc định (bong bóng) của trình duyệt, dùng kiểu báo lỗi riêng của mình */}
       <form className="form" onSubmit={onSubmit} noValidate>
+        {/* Lỗi chung từ server (ví dụ "Email này đã được đăng ký"); không có lỗi thì Alert tự ẩn */}
         <Alert type="error">{form.formError}</Alert>
+
+        {/* {...form.field('fullName')} = gắn sẵn value, onChange, onBlur, error cho ô này */}
 
         <TextField
           label="Họ và tên"
@@ -70,6 +91,7 @@ function Register() {
           {...form.field('fullName')}
         />
 
+        {/* form__row: 2 ô nằm cạnh nhau; trên điện thoại tự xếp thành 1 cột (xem ui.css) */}
         <div className="form__row">
           <TextField
             label="Email"
@@ -101,6 +123,7 @@ function Register() {
           required
           {...form.field('password')}
         >
+          {/* Thanh đo độ mạnh mật khẩu, nằm ngay dưới ô mật khẩu */}
           <PasswordStrength password={form.values.password} />
         </TextField>
 
@@ -123,6 +146,7 @@ function Register() {
           {...form.field('agreeTerms')}
         />
 
+        {/* Đang gửi thì nút hiện vòng xoay và bị khoá, chống bấm 2 lần */}
         <Button type="submit" block loading={form.submitting}>
           {form.submitting ? 'Đang tạo tài khoản...' : 'Đăng ký'}
         </Button>

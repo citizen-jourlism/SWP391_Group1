@@ -89,9 +89,13 @@ public class User {
         }
     }
 
-    /** Mỗi vai trò có tiền tố 2 chữ cái dùng để sinh mã người dùng (ví dụ: CT0001). */
-    @Getter
-    @RequiredArgsConstructor
+    /**
+     * Các vai trò trong hệ thống. Mỗi vai trò có tiền tố 2 chữ cái để sinh mã người dùng
+     * (xem util/UserIdGenerator), ví dụ: Người dân -> CT0001, Admin -> AD0001.
+     * Muốn đổi tiền tố thì chỉ cần sửa chuỗi trong ngoặc ở đây.
+     */
+    @Getter                     // Lombok tạo hàm getIdPrefix()
+    @RequiredArgsConstructor    // Lombok tạo constructor nhận idPrefix cho từng giá trị enum
     public enum Role {
         CITIZEN("CT"),
         CONTRIBUTOR("CB"),

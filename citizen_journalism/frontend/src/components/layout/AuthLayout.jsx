@@ -3,6 +3,7 @@ import Icon from '../ui/Icon'
 import '../../assets/styles/ui.css'
 import '../../assets/styles/auth.css'
 
+// Nội dung 3 thẻ giới thiệu ở panel bên trái. Muốn đổi chữ/icon thì sửa ở đây.
 const HIGHLIGHTS = [
   { icon: 'zap', title: 'Gửi tin nóng 24/7', text: 'Báo sự cố, tai nạn, vấn đề dân sinh bất cứ lúc nào.' },
   { icon: 'shield', title: 'Bảo mật danh tính', text: 'Cho phép gửi ẩn danh, thông tin được mã hoá an toàn.' },
@@ -10,12 +11,26 @@ const HIGHLIGHTS = [
 ]
 
 /**
- * Khung chung cho các trang tài khoản (Đăng ký, Xác thực OTP, Đăng nhập, Quên mật khẩu...):
- * bên trái là panel giới thiệu, bên phải là thẻ chứa form.
+ * KHUNG CHUNG (layout) cho các trang tài khoản: Đăng ký, Xác thực OTP, và sau này Đăng nhập, Quên mật khẩu.
+ * CSS: assets/styles/auth.css.
+ *
+ * BỐ CỤC:
+ *   ┌──────────────────────┬────────────────────────────┐
+ *   │ Panel giới thiệu     │  ← Về trang chủ            │
+ *   │ (logo, khẩu hiệu,    │  ┌──────────────────────┐  │
+ *   │  3 điểm nổi bật)     │  │ badge, title, subtitle│  │
+ *   │                      │  │ {children} = form     │  │
+ *   │                      │  │ footer                │  │
+ *   └──────────────────────┴──┴──────────────────────┴──┘
+ *   Màn hình hẹp (< 960px, điện thoại/tablet): ẩn panel trái, hiện logo nhỏ phía trên.
+ *
+ * TẠI SAO? Các trang tài khoản dùng chung một khung. Viết 1 lần, mỗi trang chỉ truyền phần riêng:
+ *   <AuthLayout title="Tạo tài khoản mới" subtitle="..." badge="..." footer={...}> form </AuthLayout>
  */
 function AuthLayout({ title, subtitle, badge, children, footer }) {
   return (
     <div className="auth">
+      {/* ===== Panel giới thiệu bên trái ===== */}
       <aside className="auth__aside">
         <Link to="/" className="auth__brand">
           <span className="auth__brand-icon">✦</span>
@@ -50,8 +65,10 @@ function AuthLayout({ title, subtitle, badge, children, footer }) {
         <p className="auth__aside-foot">Đường dây nóng 1900 6668 · Tiếp nhận 24/7</p>
       </aside>
 
+      {/* ===== Khu vực form bên phải ===== */}
       <main className="auth__main">
         <div className="auth__topline">
+          {/* Logo nhỏ (auth__brand--compact) chỉ hiện trên màn hình hẹp, khi panel trái bị ẩn */}
           <Link to="/" className="auth__back">
             <Icon name="arrowLeft" size={16} />
             Về trang chủ

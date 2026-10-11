@@ -1,4 +1,9 @@
-/* ===== Design tokens dùng chung cho toàn bộ giao diện ===== */
+/* ===== Design tokens dùng chung cho toàn bộ giao diện =====
+ * File CSS GỐC, được nạp đầu tiên trong main.jsx nên áp dụng cho mọi trang.
+ *
+ * "Design token" = biến CSS lưu màu, bo góc, đổ bóng... dùng bằng var(--ten-bien).
+ * TẠI SAO? Muốn đổi màu chủ đạo của cả web thì chỉ sửa 1 dòng ở đây, không phải tìm sửa ở hàng chục file.
+ */
 :root {
   --bg-soft: #edeff3;
   --panel: #ffffff;
@@ -68,6 +73,7 @@ a {
   color: inherit;
 }
 
+/* Người dùng bật "giảm chuyển động" trong hệ điều hành (ví dụ người dễ chóng mặt) thì tắt các hiệu ứng động. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
