@@ -73,6 +73,14 @@ a {
   color: inherit;
 }
 
+/* Logo dùng chung (components/ui/Logo.jsx). Bo góc theo tỉ lệ để khớp với góc bo trong file SVG. */
+.logo {
+  display: block;
+  flex: none;
+  border-radius: 22%;
+  box-shadow: 0 10px 22px rgba(255, 69, 0, 0.3);
+}
+
 /* Người dùng bật "giảm chuyển động" trong hệ điều hành (ví dụ người dễ chóng mặt) thì tắt các hiệu ứng động. */
 @media (prefers-reduced-motion: reduce) {
   *,

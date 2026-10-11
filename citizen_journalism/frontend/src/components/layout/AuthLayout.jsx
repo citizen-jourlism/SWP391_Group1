@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Icon from '../ui/Icon'
+import Logo from '../ui/Logo'
 import '../../assets/styles/ui.css'
 import '../../assets/styles/auth.css'
 
@@ -33,7 +34,7 @@ function AuthLayout({ title, subtitle, badge, children, footer }) {
       {/* ===== Panel giới thiệu bên trái ===== */}
       <aside className="auth__aside">
         <Link to="/" className="auth__brand">
-          <span className="auth__brand-icon">✦</span>
+          <Logo size={42} />
           <span>
             <strong>TIN NÓNG DÂN SINH</strong>
             <small>Tiếp nhận thông tin &amp; chăm sóc người dân</small>
@@ -74,7 +75,7 @@ function AuthLayout({ title, subtitle, badge, children, footer }) {
             Về trang chủ
           </Link>
           <Link to="/" className="auth__brand auth__brand--compact">
-            <span className="auth__brand-icon">✦</span>
+            <Logo size={32} />
             <strong>TIN NÓNG DÂN SINH</strong>
           </Link>
         </div>

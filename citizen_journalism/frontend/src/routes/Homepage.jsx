@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Logo from '../components/ui/Logo'
 import '../assets/styles/homepage.css'
 
 const navLinks = ['Trang chủ', 'Gửi phản ánh', 'Gửi khiếu nại', 'Về chúng tôi', 'Liên hệ']
@@ -58,7 +59,7 @@ function Homepage() {
 
 			<nav className="main-nav container" aria-label="Điều hướng chính">
 				<div className="brand-block">
-					<div className="brand-icon">✦</div>
+					<Logo size={42} />
 					<div className="brand-text">
 						<div className="brand-title">TIN NÓNG DÂN SINH</div>
 						<div className="brand-sub">Tiếp nhận thông tin &amp; chăm sóc người dân</div>

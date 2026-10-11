@@ -64,17 +64,6 @@
   color: rgba(255, 255, 255, 0.65);
 }
 
-.auth__brand-icon {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  font-weight: 800;
-  box-shadow: 0 10px 22px rgba(255, 92, 58, 0.35);
-}
-
 .auth__eyebrow {
   display: inline-block;
   margin-bottom: 16px;
@@ -185,12 +174,6 @@
 .auth__brand--compact {
   display: none;
   color: var(--navy-900);
-}
-
-.auth__brand--compact .auth__brand-icon {
-  width: 32px;
-  height: 32px;
-  font-size: 13px;
 }
 
 .auth__card {
