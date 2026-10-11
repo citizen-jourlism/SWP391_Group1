@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Bien bi mat (mat khau DB, Gmail...) - xem .env.example ###
+.env
