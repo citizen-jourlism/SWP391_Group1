@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { ROLE_LABELS } from '../../lib/roles'
+import { ROLE_LABELS, SUBMITTER_ROLES } from '../../lib/roles'
 import Avatar from '../ui/Avatar'
 import Icon from '../ui/Icon'
 import '../../assets/styles/user-menu.css'
@@ -12,6 +12,7 @@ import '../../assets/styles/user-menu.css'
  */
 const MENU_LINKS = [
   { to: '/admin', icon: 'activity', label: 'Trang quản trị', roles: ['SYSTEM_ADMIN'] },
+  { to: '/account/submissions', icon: 'fileText', label: 'Hồ sơ đã gửi', roles: SUBMITTER_ROLES },
   { to: '/account/profile', icon: 'user', label: 'Hồ sơ của tôi' },
   { to: '/account/change-password', icon: 'lock', label: 'Đổi mật khẩu' },
 ]

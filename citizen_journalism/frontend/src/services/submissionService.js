@@ -1,9 +1,19 @@
 import api from '../lib/api'
 
 /**
- * Các lời gọi API GỬI TIN / KHIẾU NẠI (backend: SubmissionController.java). Cần đăng nhập.
+ * Các lời gọi API GỬI TIN / KHIẾU NẠI và THEO DÕI HỒ SƠ
+ * (backend: SubmissionController.java - cần đăng nhập; TrackingController.java - công khai).
  */
 export const submissionService = {
+  /** Tra cứu bằng mã hồ sơ + PIN, không cần đăng nhập. POST để PIN không nằm trên đường dẫn. */
+  track: (trackingCode, pin) => api.post('/tracking', { trackingCode, pin }),
+
+  /** Danh sách "Hồ sơ đã gửi" của tôi: { items, page, size, totalItems, totalPages } */
+  listMine: (page, size = 10) => api.get('/submissions/mine', { params: { page, size } }),
+
+  /** Chi tiết 1 hồ sơ của tôi theo mã. encodeURIComponent: phòng mã có ký tự đặc biệt làm hỏng đường dẫn. */
+  getMine: (trackingCode) => api.get(`/submissions/mine/${encodeURIComponent(trackingCode)}`),
+
   /** Danh sách tỉnh/thành + giới hạn tệp: { provinces, maxFiles, maxFileSizeMb, maxTotalSizeMb, acceptedTypes } */
   getOptions: () => api.get('/submissions/options'),
 

@@ -680,13 +680,14 @@
   color: var(--navy-900);
 }
 
-.receipt__files {
+/* ---------- Danh sách tệp (components/submission/EvidenceList.jsx) - dùng chung biên nhận + theo dõi hồ sơ ---------- */
+.evidence-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.receipt__files li {
+.evidence-list li {
   display: flex;
   gap: 10px;
   align-items: flex-start;
@@ -694,34 +695,44 @@
   border-bottom: 1px solid #eef1f6;
 }
 
-.receipt__files li:last-child {
+.evidence-list li:last-child {
   border-bottom: 0;
 }
 
-.receipt__files li > svg {
+.evidence-list li > svg {
   flex: none;
   margin-top: 2px;
   color: var(--navy-700);
 }
 
-.receipt__files li > span {
+.evidence-list li > span {
   min-width: 0;
 }
 
-.receipt__files a {
+.evidence-list a {
   color: var(--navy-800);
   font-size: 14px;
   font-weight: 600;
   word-break: break-all;
 }
 
-.receipt__files small {
+.evidence-list small {
   display: block;
   font-size: 12px;
   color: var(--muted);
 }
 
-/* Các bước xử lý: chấm tròn nối với nhau bằng đường kẻ dọc */
+.evidence-list__empty {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+/* ---------- Các bước xử lý (components/submission/ProcessSteps.jsx) ----------
+ * Mặc định: danh sách DỌC, chấm tròn nối nhau bằng đường kẻ dọc.
+ * .steps--horizontal: hàng NGANG (trang theo dõi hồ sơ), đường kẻ nối ngang giữa các chấm.
+ * Trạng thái mỗi bước: .is-done (xanh, dấu tick) | .is-current (cam, đang ở đây) | .is-failed (đỏ, dấu X) | còn lại xám.
+ */
 .steps {
   margin: 0;
   padding: 0;
@@ -735,6 +746,11 @@
   padding-bottom: 16px;
 }
 
+.steps li:last-child {
+  padding-bottom: 0;
+}
+
+/* Đường nối tới bước sau */
 .steps li:not(:last-child)::before {
   content: '';
   position: absolute;
@@ -745,7 +761,13 @@
   background: #e4e9f1;
 }
 
+/* Đã xong bước này thì đường nối cũng xanh */
+.steps li.is-done:not(:last-child)::before {
+  background: var(--success);
+}
+
 .steps__dot {
+  position: relative; /* nằm trên đường nối */
   display: grid;
   flex: none;
   place-items: center;
@@ -765,16 +787,71 @@
   color: #fff;
 }
 
+.steps li.is-current .steps__dot {
+  border-color: var(--orange);
+  background: #fff7f2;
+  color: var(--orange-strong);
+  box-shadow: 0 0 0 4px rgba(255, 106, 47, 0.16);
+}
+
+.steps li.is-failed .steps__dot {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+}
+
 .steps strong {
   display: block;
   font-size: 14px;
   color: var(--navy-900);
 }
 
+.steps li.is-current strong {
+  color: var(--orange-strong);
+}
+
+.steps li.is-failed strong {
+  color: var(--danger);
+}
+
 .steps small {
   display: block;
   font-size: 12.5px;
   color: var(--muted);
+}
+
+/* Hàng ngang: mỗi bước 1 cột bằng nhau, chấm ở giữa, chữ căn giữa bên dưới */
+.steps--horizontal {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.steps--horizontal li {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 0;
+  text-align: center;
+}
+
+/* Đường nối ngang: từ mép phải chấm này tới mép trái chấm kế tiếp */
+.steps--horizontal li:not(:last-child)::before {
+  top: 12px;
+  bottom: auto;
+  left: calc(50% + 17px);
+  right: calc(-50% + 11px);
+  width: auto;
+  height: 2px;
+}
+
+.steps--horizontal strong {
+  font-size: 13px;
+}
+
+.steps--horizontal small {
+  font-size: 11.5px;
+  line-height: 1.4;
 }
 
 .receipt__actions {
@@ -791,6 +868,33 @@
 
   .submit-aside {
     position: static;
+  }
+}
+
+/* Điện thoại: thanh tiến trình ngang chuyển về dạng dọc cho dễ đọc */
+@media (max-width: 760px) {
+  .steps--horizontal {
+    display: block;
+  }
+
+  .steps--horizontal li {
+    flex-direction: row;
+    align-items: flex-start;
+    padding-bottom: 16px;
+    text-align: left;
+  }
+
+  .steps--horizontal li:last-child {
+    padding-bottom: 0;
+  }
+
+  .steps--horizontal li:not(:last-child)::before {
+    top: 28px;
+    bottom: 2px;
+    left: 12px;
+    right: auto;
+    width: 2px;
+    height: auto;
   }
 }
 

@@ -132,6 +132,18 @@ public class Submission extends BaseEntity {
     private String pinHash;
 
     /**
+     * CHỐNG DÒ MÃ PIN khi tra cứu (xem SubmissionTrackingService): đếm số lần nhập SAI PIN liên tiếp,
+     * sai quá số lần cho phép thì tạm khoá tra cứu hồ sơ này tới thời điểm pin_locked_until.
+     * columnDefinition "default 0": các dòng đã có trong DB tự nhận giá trị 0.
+     */
+    @Column(name = "pin_failed_attempts", nullable = false, columnDefinition = "int default 0")
+    @Builder.Default
+    private int pinFailedAttempts = 0;
+
+    @Column(name = "pin_locked_until")
+    private LocalDateTime pinLockedUntil;
+
+    /**
      * Loại phản ánh trên form (SRS: Tin nóng 24/7, Khiếu nại/Tố cáo, Phóng sự điều tra, Ý kiến chuyên gia).
      * Mỗi loại ứng với một quy trình xử lý (SubmissionType): tin nóng đi theo luồng Tin nóng,
      * các loại còn lại đi theo luồng tiếp nhận Khiếu nại (SRS 2.1.3: BTV kiểm tra giá trị báo chí...).

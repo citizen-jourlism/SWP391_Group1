@@ -20,7 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
  * Cấu hình bảo mật (Spring Security): AI được gọi API NÀO.
  *
  * NGUYÊN TẮC PHÂN QUYỀN (đọc từ trên xuống, luật nào khớp trước thì áp dụng):
- *   1. PUBLIC_ENDPOINTS (đăng ký, OTP, đăng nhập)  -> ai cũng gọi được
+ *   1. PUBLIC_ENDPOINTS (đăng ký, đăng nhập, tra cứu) -> ai cũng gọi được
  *   2. /api/admin/**                               -> chỉ SYSTEM_ADMIN
  *      /api/submissions/**                         -> CITIZEN, CONTRIBUTOR, EXPERT (gửi tin / khiếu nại)
  *   3. /api/** còn lại                              -> phải đăng nhập (có token hợp lệ)
@@ -42,7 +42,8 @@ public class SecurityConfig {
             "/api/auth/resend-otp",
             "/api/auth/login",
             "/api/auth/forgot-password",
-            "/api/auth/reset-password");
+            "/api/auth/reset-password",
+            "/api/tracking"); // Tra cứu hồ sơ bằng mã + PIN (TrackingController)
 
     private final RestAuthenticationHandler restAuthenticationHandler;
     private final JwtAuthenticationConverter jwtAuthenticationConverter;

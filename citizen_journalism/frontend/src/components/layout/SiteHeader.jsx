@@ -34,7 +34,7 @@ import '../../assets/styles/site-header.css'
 const NAV_ITEMS = [
   { to: '/', label: 'Trang chủ', icon: 'home', end: true },
   { to: '/submit', label: 'Gửi khiếu nại', icon: 'flag', roles: SUBMITTER_ROLES },
-  { to: '/#tra-cuu', label: 'Tra cứu hồ sơ', icon: 'search', hash: true },
+  { to: '/track', label: 'Tra cứu hồ sơ', icon: 'search' },
   { to: '/#gioi-thieu', label: 'Giới thiệu', icon: 'info', hash: true },
   { to: '/#lien-he', label: 'Liên hệ', icon: 'phone', hash: true },
 ]

@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import SiteHeader from '../components/layout/SiteHeader'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import '../assets/styles/homepage.css'
@@ -41,6 +42,15 @@ const missions = [
 
 function Homepage() {
 	useDocumentTitle() // Không truyền tên -> tiêu đề tab chỉ là "Tin Nóng Dân Sinh" (tránh giữ tên của trang trước)
+	const navigate = useNavigate()
+	const [trackingCode, setTrackingCode] = useState('')
+
+	/** Ô tra cứu nhanh: chuyển sang trang Tra cứu (/track) với mã đã điền sẵn, ở đó nhập tiếp mã PIN. */
+	const goToTracking = (event) => {
+		event.preventDefault()
+		const code = trackingCode.trim()
+		navigate(code ? `/track?code=${encodeURIComponent(code)}` : '/track')
+	}
 
 	return (
 		<div className="page-shell">
@@ -61,11 +71,18 @@ function Homepage() {
 						<Link className="primary-btn" to="/submit?type=hot-news">Bấm để gửi tin nóng</Link>
 						<Link className="secondary-btn" to="/submit">Gửi khiếu nại</Link>
 					</div>
-					{/* id="tra-cuu": mục "Tra cứu hồ sơ" trên thanh đầu trang cuộn tới đây */}
-					<div className="report-box" id="tra-cuu">
-						<input type="text" placeholder="Nhập mã hồ sơ hoặc số điện thoại" aria-label="Mã hồ sơ hoặc số điện thoại" />
-						<button type="button">Tra cứu</button>
-					</div>
+					{/* Ô tra cứu nhanh: dùng thẻ <form> để nhấn Enter cũng tra cứu được */}
+					<form className="report-box" onSubmit={goToTracking}>
+						<input
+							type="text"
+							value={trackingCode}
+							onChange={(event) => setTrackingCode(event.target.value)}
+							placeholder="Nhập mã hồ sơ, ví dụ KB-2026-0001"
+							aria-label="Mã hồ sơ"
+							maxLength={20}
+						/>
+						<button type="submit">Tra cứu</button>
+					</form>
 					<div className="hero-stats">
 						<div className="stat-item">
 							<div className="stat-icon">⚑</div>

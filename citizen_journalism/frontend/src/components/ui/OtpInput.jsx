@@ -13,9 +13,11 @@ import { useEffect, useRef } from 'react'
  * DỮ LIỆU: `value` là MỘT chuỗi các chữ số đã nhập liên tiếp (ví dụ "1234"), không phải 6 state riêng.
  * Ô thứ i hiển thị ký tự value[i]. Cách này giúp code đơn giản và không thể có "lỗ hổng" giữa các ô.
  *
- * Props: value, onChange(code), onComplete(code), length (mặc định 6), disabled, invalid (tô đỏ + rung).
+ * Props: value, onChange(code), onComplete(code), length (mặc định 6), disabled, invalid (tô đỏ + rung),
+ *        autoFocus (mặc định true; false khi phía trên còn ô khác cần nhập trước, ví dụ ô Mã hồ sơ ở trang Tra cứu).
+ * Dùng thêm ở routes/TrackSubmission.jsx để nhập mã PIN 6 số của hồ sơ.
  */
-function OtpInput({ value, onChange, onComplete, length = 6, disabled, invalid }) {
+function OtpInput({ value, onChange, onComplete, length = 6, disabled, invalid, autoFocus = true }) {
   // Giữ tham chiếu tới 6 thẻ <input> để chủ động di chuyển con trỏ (focus) giữa các ô.
   const inputs = useRef([])
 
@@ -24,8 +26,8 @@ function OtpInput({ value, onChange, onComplete, length = 6, disabled, invalid }
 
   // Khi ô trống và đang cho phép nhập (lần đầu vào trang, sau khi báo sai mã...) thì đặt con trỏ vào ô đầu.
   useEffect(() => {
-    if (!disabled && value === '') inputs.current[0]?.focus()
-  }, [disabled, value])
+    if (autoFocus && !disabled && value === '') inputs.current[0]?.focus()
+  }, [autoFocus, disabled, value])
 
   /** Cập nhật mã: chỉ giữ chữ số, cắt tối đa `length` ký tự; đủ ký tự thì gọi onComplete. */
   const commit = (next) => {

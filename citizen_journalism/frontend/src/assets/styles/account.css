@@ -33,6 +33,22 @@
   color: var(--muted);
 }
 
+/* Link "← Quay lại" phía trên tiêu đề (prop backLink của AccountLayout) */
+.account__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: var(--navy-700);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.account__back:hover {
+  color: var(--orange-strong);
+}
+
 .account__main > .alert {
   margin-bottom: 20px;
 }

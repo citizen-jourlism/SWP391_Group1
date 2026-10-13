@@ -9,6 +9,7 @@ import com.example.citizen_journalism.dto.submission.SubmissionReceipt;
 import com.example.citizen_journalism.entity.Evidence;
 import com.example.citizen_journalism.entity.Evidence.FileType;
 import com.example.citizen_journalism.entity.Submission;
+import com.example.citizen_journalism.entity.SubmissionEvent;
 import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.exception.AppException;
 import com.example.citizen_journalism.repository.EvidenceRepository;
@@ -62,6 +63,7 @@ public class SubmissionService {
     private final EvidenceRepository evidenceRepository;
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
+    private final SubmissionEventService submissionEventService;
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
@@ -114,6 +116,9 @@ public class SubmissionService {
         // Mã hồ sơ cần id (chỉ có sau khi lưu), ví dụ id 7 năm 2026 -> "KB-2026-0007".
         // Không cần save() lại: submission đang được JPA quản lý, tự ghi xuống DB khi kết thúc transaction.
         submission.setTrackingCode("KB-%d-%04d".formatted(submission.getCreatedAt().getYear(), submission.getId()));
+        // Bước 1 của nhật ký xử lý (người gửi xem được khi tra cứu)
+        submissionEventService.record(submission, Submission.SubmissionStatus.PENDING, SubmissionEvent.Actor.REPORTER,
+                "Gửi hồ sơ thành công, toà soạn đã tiếp nhận.", null);
 
         // ----- 3. Lưu tệp tư liệu -----
         List<String> storedUrls = new ArrayList<>();
@@ -203,7 +208,7 @@ public class SubmissionService {
         metadata.put("size", file.getSize());
         metadata.put("contentType", file.getContentType());
 
-        evidenceRepository.save(Evidence.builder()
+        Evidence evidence = evidenceRepository.save(Evidence.builder()
                 .submission(submission)
                 .uploadedBy(author)
                 .fileUrl(url)
@@ -211,7 +216,7 @@ public class SubmissionService {
                 .metadata(objectMapper.writeValueAsString(metadata))
                 .build());
 
-        return new EvidenceInfo(originalName, fileType, file.getSize(), url);
+        return EvidenceInfo.from(evidence, objectMapper); // Cùng cách đọc với màn hình chi tiết hồ sơ
     }
 
     /** Phân loại tệp theo phần đầu của Content-Type: "image/jpeg" -> IMAGE, "audio/mpeg" -> AUDIO... */

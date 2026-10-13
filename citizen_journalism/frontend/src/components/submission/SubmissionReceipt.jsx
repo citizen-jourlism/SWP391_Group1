@@ -2,8 +2,10 @@ import Alert from '../ui/Alert'
 import Button from '../ui/Button'
 import CopyButton from '../ui/CopyButton'
 import Icon from '../ui/Icon'
-import { formatDateTime, formatFileSize } from '../../lib/format'
-import { CATEGORY_BY_VALUE, FILE_TYPE_INFO } from '../../lib/submission'
+import EvidenceList from './EvidenceList'
+import ProcessSteps from './ProcessSteps'
+import { formatDateTime } from '../../lib/format'
+import { CATEGORY_BY_VALUE, SUBMISSION_STATUS } from '../../lib/submission'
 
 /**
  * MÀN HÌNH BIÊN NHẬN hiện ngay sau khi gửi tin / khiếu nại thành công (thay chỗ form trong routes/SubmitReport.jsx).
@@ -14,16 +16,8 @@ import { CATEGORY_BY_VALUE, FILE_TYPE_INFO } from '../../lib/submission'
  *   1. Mã hồ sơ + mã PIN (kèm nút sao chép). PIN chỉ hiện DUY NHẤT lần này (DB chỉ lưu bản băm) -> nhắc người dùng lưu lại.
  *   2. Email biên nhận đã gửi tới đâu (hoặc cảnh báo nếu gửi lỗi).
  *   3. Danh sách tư liệu đã nhận (bấm tên tệp để mở xem).
- *   4. Các bước xử lý tiếp theo của toà soạn (SRS 4.1.2: Tiếp nhận -> AI sàng lọc -> Biên tập viên -> Xác minh -> Lãnh đạo duyệt).
+ *   4. Các bước xử lý tiếp theo của toà soạn (ProcessSteps) + nút "Theo dõi hồ sơ".
  */
-
-const NEXT_STEPS = [
-  ['Tiếp nhận', 'Hồ sơ đã vào hệ thống.'],
-  ['Sàng lọc', 'Kiểm tra trùng lặp, tin rác.'],
-  ['Biên tập viên thẩm định', 'Đánh giá giá trị báo chí, có thể đề nghị bổ sung.'],
-  ['Xác minh thực địa', 'Cộng tác viên kiểm chứng tại hiện trường (nếu cần).'],
-  ['Lãnh đạo duyệt', 'Phó TBT / Tổng biên tập phê duyệt đăng tải.'],
-]
 
 function SubmissionReceipt({ receipt, onNew }) {
   const category = CATEGORY_BY_VALUE[receipt.category]
@@ -85,48 +79,25 @@ function SubmissionReceipt({ receipt, onNew }) {
         {/* ----- 3. Tư liệu đã nhận ----- */}
         <div className="receipt__panel">
           <h3>Tư liệu đã nhận ({receipt.evidences.length})</h3>
-          <ul className="receipt__files">
-            {receipt.evidences.map((evidence) => (
-              <li key={evidence.url}>
-                <Icon name={FILE_TYPE_INFO[evidence.fileType].icon} size={18} />
-                <span>
-                  <a href={evidence.url} target="_blank" rel="noreferrer">
-                    {evidence.fileName}
-                  </a>
-                  <small>
-                    {FILE_TYPE_INFO[evidence.fileType].label} · {formatFileSize(evidence.size)}
-                  </small>
-                </span>
-              </li>
-            ))}
-          </ul>
+          <EvidenceList evidences={receipt.evidences} />
         </div>
 
-        {/* ----- 4. Các bước tiếp theo ----- */}
+        {/* ----- 4. Các bước tiếp theo: giai đoạn hiện tại theo trạng thái vừa nhận (PENDING) ----- */}
         <div className="receipt__panel">
           <h3>Quy trình xử lý</h3>
-          <ol className="steps">
-            {NEXT_STEPS.map(([title, description], index) => (
-              <li key={title} className={index === 0 ? 'is-done' : ''}>
-                <span className="steps__dot">{index === 0 ? <Icon name="check" size={12} strokeWidth={3} /> : index + 1}</span>
-                <span>
-                  <strong>{title}</strong>
-                  <small>{description}</small>
-                </span>
-              </li>
-            ))}
-          </ol>
+          <ProcessSteps stage={SUBMISSION_STATUS[receipt.status]?.stage ?? 1} />
         </div>
       </div>
 
       <div className="receipt__actions">
-        <Button variant="secondary" to="/">
-          <Icon name="home" size={16} />
-          Về trang chủ
-        </Button>
-        <Button onClick={onNew}>
+        <Button variant="secondary" onClick={onNew}>
           <Icon name="plus" size={16} />
           Gửi phản ánh khác
+        </Button>
+        {/* Mở trang theo dõi của chính hồ sơ này (trong "Hồ sơ đã gửi", không cần nhập PIN) */}
+        <Button to={`/account/submissions/${receipt.trackingCode}`}>
+          <Icon name="activity" size={16} />
+          Theo dõi hồ sơ
         </Button>
       </div>
     </section>

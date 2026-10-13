@@ -7,10 +7,13 @@ import ChangePassword from './routes/ChangePassword.jsx'
 import ForgotPassword from './routes/ForgotPassword.jsx'
 import Homepage from './routes/Homepage.jsx'
 import Login from './routes/Login.jsx'
+import MySubmissionDetail from './routes/MySubmissionDetail.jsx'
+import MySubmissions from './routes/MySubmissions.jsx'
 import NotFound from './routes/NotFound.jsx'
 import Profile from './routes/Profile.jsx'
 import Register from './routes/Register.jsx'
 import SubmitReport from './routes/SubmitReport.jsx'
+import TrackSubmission from './routes/TrackSubmission.jsx'
 import VerifyOtp from './routes/VerifyOtp.jsx'
 import { SUBMITTER_ROLES } from './lib/roles.js'
 import AdminOverview from './routes/admin/AdminOverview.jsx'
@@ -37,6 +40,7 @@ function App() {
           <Route path="/register" element={<Register />} />               {/* Đăng ký tài khoản */}
           <Route path="/verify-otp" element={<VerifyOtp />} />            {/* Nhập mã OTP sau khi đăng ký */}
           <Route path="/forgot-password" element={<ForgotPassword />} />  {/* Quên mật khẩu */}
+          <Route path="/track" element={<TrackSubmission />} />          {/* Tra cứu hồ sơ bằng mã + PIN */}
 
           {/* ----- Trang cần đăng nhập ----- */}
           <Route
@@ -61,6 +65,23 @@ function App() {
             element={
               <ProtectedRoute roles={SUBMITTER_ROLES}>
                 <SubmitReport />
+              </ProtectedRoute>
+            }
+          />
+          {/* Hồ sơ đã gửi (danh sách) và theo dõi từng hồ sơ: chỉ người gửi xem được hồ sơ của mình */}
+          <Route
+            path="/account/submissions"
+            element={
+              <ProtectedRoute roles={SUBMITTER_ROLES}>
+                <MySubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account/submissions/:code"
+            element={
+              <ProtectedRoute roles={SUBMITTER_ROLES}>
+                <MySubmissionDetail />
               </ProtectedRoute>
             }
           />
