@@ -5,6 +5,7 @@ import { createValidator, newPasswordRules, rules } from '../../lib/validators'
 import { adminService } from '../../services/adminService'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
+import CopyButton from '../ui/CopyButton'
 import Icon from '../ui/Icon'
 import Modal from '../ui/Modal'
 import SelectField from '../ui/SelectField'
@@ -47,12 +48,10 @@ function generatePassword() {
 function CreateUserDialog({ open, onClose, onCreated }) {
   const form = useForm(INITIAL_VALUES, validate)
   const [created, setCreated] = useState(null) // { user, password } sau khi tạo thành công
-  const [copied, setCopied] = useState(false)
 
   const close = () => {
     form.reset(INITIAL_VALUES)
     setCreated(null)
-    setCopied(false)
     onClose()
   }
 
@@ -61,17 +60,6 @@ function CreateUserDialog({ open, onClose, onCreated }) {
     setCreated({ user: response.data, password: values.password })
     onCreated(response.data)
   })
-
-  /** Chép thông tin đăng nhập vào bộ nhớ tạm (clipboard) để dán gửi cho người dùng mới. */
-  const copyCredentials = async () => {
-    const text = `Tài khoản Tin Nóng Dân Sinh\nEmail: ${created.user.email}\nMật khẩu tạm: ${created.password}\nVui lòng đổi mật khẩu sau khi đăng nhập.`
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-    } catch {
-      setCopied(false) // Trình duyệt chặn clipboard: admin vẫn tự bôi đen và chép được
-    }
-  }
 
   return (
     <Modal open={open} title={created ? 'Đã tạo tài khoản' : 'Tạo tài khoản mới'} onClose={close}>
@@ -91,10 +79,11 @@ function CreateUserDialog({ open, onClose, onCreated }) {
           </dl>
           <p className="modal__text">Hãy gửi thông tin này cho người dùng và nhắc họ đổi mật khẩu sau khi đăng nhập.</p>
           <div className="modal__actions">
-            <Button variant="secondary" onClick={copyCredentials}>
-              <Icon name={copied ? 'check' : 'copy'} size={16} />
-              {copied ? 'Đã sao chép' : 'Sao chép thông tin'}
-            </Button>
+            {/* Chép thông tin đăng nhập vào clipboard để dán gửi cho người dùng mới */}
+            <CopyButton
+              label="Sao chép thông tin"
+              text={`Tài khoản Tin Nóng Dân Sinh\nEmail: ${created.user.email}\nMật khẩu tạm: ${created.password}\nVui lòng đổi mật khẩu sau khi đăng nhập.`}
+            />
             <Button onClick={close}>Xong</Button>
           </div>
         </div>

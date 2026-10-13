@@ -1,5 +1,6 @@
 package com.example.citizen_journalism.exception;
 
+import java.util.Map;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
@@ -24,14 +25,30 @@ public class AppException extends RuntimeException {
     /** Mã lỗi cho frontend xử lý riêng (xem ErrorCode). Có thể null. */
     private final String code;
 
+    /** Lỗi theo từng ô nhập { tênÔ: thôngBáo } (giống lỗi @Valid), để frontend hiện ngay dưới ô. Có thể null. */
+    private final Map<String, String> errors;
+
     public AppException(HttpStatus status, String message) {
         this(status, message, null);
     }
 
     public AppException(HttpStatus status, String message, String code) {
+        this(status, message, code, null);
+    }
+
+    private AppException(HttpStatus status, String message, String code, Map<String, String> errors) {
         super(message);
         this.status = status;
         this.code = code;
+        this.errors = errors;
+    }
+
+    /**
+     * 400 kèm lỗi theo từng ô. Dùng cho các quy tắc annotation không diễn tả được,
+     * ví dụ "Họ tên bắt buộc KHI KHÔNG gửi ẩn danh" (xem SubmissionService).
+     */
+    public static AppException invalidFields(Map<String, String> errors) {
+        return new AppException(HttpStatus.BAD_REQUEST, "Dữ liệu chưa hợp lệ, vui lòng kiểm tra lại.", null, errors);
     }
 
     // Các hàm tạo nhanh cho những mã lỗi hay dùng, giúp code service ngắn và dễ đọc.

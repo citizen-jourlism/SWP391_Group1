@@ -10,7 +10,9 @@ import Login from './routes/Login.jsx'
 import NotFound from './routes/NotFound.jsx'
 import Profile from './routes/Profile.jsx'
 import Register from './routes/Register.jsx'
+import SubmitReport from './routes/SubmitReport.jsx'
 import VerifyOtp from './routes/VerifyOtp.jsx'
+import { SUBMITTER_ROLES } from './lib/roles.js'
 import AdminOverview from './routes/admin/AdminOverview.jsx'
 import AdminUsers from './routes/admin/AdminUsers.jsx'
 
@@ -50,6 +52,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
+          {/* Gửi phản ánh / khiếu nại: chỉ người dân, cộng tác viên, chuyên gia. /submit?type=hot-news để chọn sẵn Tin nóng */}
+          <Route
+            path="/submit"
+            element={
+              <ProtectedRoute roles={SUBMITTER_ROLES}>
+                <SubmitReport />
               </ProtectedRoute>
             }
           />

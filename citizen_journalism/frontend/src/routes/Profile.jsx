@@ -10,6 +10,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useForm } from '../hooks/useForm'
 import { formatDate } from '../lib/format'
+import { toPayload } from '../lib/payload'
 import { ROLE_LABELS } from '../lib/roles'
 import { CITIZEN_ID_LENGTH, createValidator, rules, todayIso } from '../lib/validators'
 import { userService } from '../services/userService'
@@ -36,9 +37,7 @@ const toFormValues = (profile) => ({
   dateOfBirth: profile.dateOfBirth ?? '',
 })
 
-/** Ngược lại: ô trống gửi null để backend lưu NULL (không bắt lỗi định dạng với chuỗi rỗng). */
-const toPayload = (values) =>
-  Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value.trim() === '' ? null : value.trim()]))
+// Chiều ngược lại (form -> backend, ô trống gửi null) dùng toPayload trong lib/payload.js
 
 const validate = createValidator({
   fullName: [rules.required('Vui lòng nhập họ và tên.'), rules.maxLength(100, 'Họ và tên tối đa 100 ký tự.')],

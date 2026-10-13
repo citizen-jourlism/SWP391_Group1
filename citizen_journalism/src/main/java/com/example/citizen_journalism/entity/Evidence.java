@@ -26,10 +26,27 @@ public class Evidence extends BaseEntity {
     @Column(name = "file_url", nullable = false, length = 500)
     private String fileUrl;
 
+    /** Loại tệp, suy ra từ định dạng khi tải lên (xem SubmissionService). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "file_type", length = 20)
+    private FileType fileType;
+
+    /**
+     * Thông tin đi kèm tệp, dạng JSON: tên gốc, dung lượng, định dạng.
+     * Ví dụ: {"originalName":"hien-truong.jpg","size":204800,"contentType":"image/jpeg"}
+     */
     @Column(name = "metadata", columnDefinition = "JSON")
     private String metadata;
 
     @Column(name = "source_ref", length = 500)
     private String sourceRef;
+
+    /** Phân loại tệp theo SRS: ảnh, video, ghi âm, tài liệu. */
+    public enum FileType {
+        IMAGE,
+        VIDEO,
+        AUDIO,
+        DOCUMENT
+    }
 
 }

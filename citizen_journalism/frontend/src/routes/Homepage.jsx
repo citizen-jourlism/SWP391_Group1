@@ -1,11 +1,7 @@
 import { Link } from 'react-router-dom'
-import UserMenu from '../components/layout/UserMenu'
-import Logo from '../components/ui/Logo'
-import { useAuth } from '../hooks/useAuth'
+import SiteHeader from '../components/layout/SiteHeader'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import '../assets/styles/homepage.css'
-
-const navLinks = ['Trang chủ', 'Gửi phản ánh', 'Gửi khiếu nại', 'Về chúng tôi', 'Liên hệ']
 
 const scoreCards = [
 	{
@@ -45,47 +41,11 @@ const missions = [
 
 function Homepage() {
 	useDocumentTitle() // Không truyền tên -> tiêu đề tab chỉ là "Tin Nóng Dân Sinh" (tránh giữ tên của trang trước)
-	const { user, status } = useAuth() // Ai đang đăng nhập (xem context/AuthProvider.jsx)
 
 	return (
 		<div className="page-shell">
-			<header className="topbar">
-				<div className="topbar-inner container">
-					<div className="topbar-left">
-						<span className="dot red" />
-						<span>Tiếp nhận phản ánh &amp; giải quyết tin tức</span>
-					</div>
-					<div className="topbar-right">
-						{/*
-						  - Đang kiểm tra token lúc mở web (status 'loading'): chưa hiện gì, tránh nút "Đăng nhập" nháy lên rồi biến mất.
-						  - Đã đăng nhập: hiện menu tài khoản (tên + Đăng xuất).
-						  - Chưa đăng nhập: hiện 2 nút Đăng ký / Đăng nhập (Link của React Router: chuyển trang không tải lại web).
-						*/}
-						{status === 'ready' &&
-							(user ? (
-								<UserMenu />
-							) : (
-								<>
-									<Link className="register-link" to="/register">Đăng ký</Link>
-									<Link className="login-button" to="/login">Đăng nhập</Link>
-								</>
-							))}
-					</div>
-				</div>
-			</header>
-
-			<nav className="main-nav container" aria-label="Điều hướng chính">
-				<div className="brand-block">
-					<Logo size={42} />
-					<div className="brand-text">
-						<div className="brand-title">TIN NÓNG DÂN SINH</div>
-						<div className="brand-sub">Tiếp nhận thông tin &amp; chăm sóc người dân</div>
-					</div>
-				</div>
-				<div className="nav-links">
-					{navLinks.map((label) => <a href="#" key={label}>{label}</a>)}
-				</div>
-			</nav>
+			{/* Thanh đầu trang dùng chung: tự đổi nút theo trạng thái đăng nhập (xem components/layout/SiteHeader.jsx) */}
+			<SiteHeader />
 
 			<main className="container page-content">
 				<section className="hero-panel">
@@ -96,11 +56,13 @@ function Homepage() {
 						hải quan, hay lộ thông tin sai lệch, hãy đồng hành và gửi thông tin cho đội ngũ
 						kiểm định để giúp cộng đồng được biết và giải quyết kịp thời.
 					</p>
+					{/* Chưa đăng nhập thì /submit tự chuyển sang trang Đăng nhập, đăng nhập xong quay lại đúng form */}
 					<div className="hero-actions">
-						<button className="primary-btn" type="button">Bấm để gửi tin nóng</button>
-						<button className="secondary-btn" type="button">Tra cứu tin</button>
+						<Link className="primary-btn" to="/submit?type=hot-news">Bấm để gửi tin nóng</Link>
+						<Link className="secondary-btn" to="/submit">Gửi khiếu nại</Link>
 					</div>
-					<div className="report-box">
+					{/* id="tra-cuu": mục "Tra cứu hồ sơ" trên thanh đầu trang cuộn tới đây */}
+					<div className="report-box" id="tra-cuu">
 						<input type="text" placeholder="Nhập mã hồ sơ hoặc số điện thoại" aria-label="Mã hồ sơ hoặc số điện thoại" />
 						<button type="button">Tra cứu</button>
 					</div>
@@ -140,7 +102,7 @@ function Homepage() {
 					</div>
 				</section>
 
-				<section className="about-section">
+				<section className="about-section" id="gioi-thieu">
 					<div className="about-header">
 						<div className="about-tag">Giới thiệu</div>
 						<h2>GIỚI THIỆU VỀ TÒA SOẠN TIN NÓNG DÂN SINH</h2>
@@ -192,12 +154,12 @@ function Homepage() {
 					</div>
 					<div className="cta-strip">
 						<div className="cta-copy">CÂM KẾT &quot;4 KHÔNG” - 4 CỘT CỦA TÒA SOẠN TIN NÓNG DÂN SINH</div>
-						<button type="button">Gửi Phản Ánh</button>
+						<Link to="/submit">Gửi Phản Ánh</Link>
 					</div>
 				</section>
 			</main>
 
-			<footer className="site-footer">
+			<footer className="site-footer" id="lien-he">
 				<div className="container footer-top">
 					<div>Đường dây trợ giúp: 1900 6668</div>
 					<div>•</div>

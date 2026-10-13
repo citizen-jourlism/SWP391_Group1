@@ -22,6 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
  * NGUYÊN TẮC PHÂN QUYỀN (đọc từ trên xuống, luật nào khớp trước thì áp dụng):
  *   1. PUBLIC_ENDPOINTS (đăng ký, OTP, đăng nhập)  -> ai cũng gọi được
  *   2. /api/admin/**                               -> chỉ SYSTEM_ADMIN
+ *      /api/submissions/**                         -> CITIZEN, CONTRIBUTOR, EXPERT (gửi tin / khiếu nại)
  *   3. /api/** còn lại                              -> phải đăng nhập (có token hợp lệ)
  *   4. Mọi thứ khác (file tĩnh...)                  -> mở
  * Thêm API mới cần phân quyền theo vai trò: thêm 1 dòng .requestMatchers(...).hasRole(...) TRƯỚC dòng số 3.
@@ -56,6 +57,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
+                // Gửi tin / khiếu nại: người dân, cộng tác viên, chuyên gia (nhân sự toà soạn và admin thì không)
+                .requestMatchers("/api/submissions/**").hasAnyRole("CITIZEN", "CONTRIBUTOR", "EXPERT")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )

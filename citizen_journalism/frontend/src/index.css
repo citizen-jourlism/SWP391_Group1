@@ -98,6 +98,19 @@ a {
   box-shadow: 0 10px 22px rgba(255, 69, 0, 0.3);
 }
 
+/* Ẩn khỏi màn hình nhưng trình đọc màn hình vẫn đọc được (ví dụ tiêu đề nhóm ô chọn loại phản ánh) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Người dùng bật "giảm chuyển động" trong hệ điều hành (ví dụ người dễ chóng mặt) thì tắt các hiệu ứng động. */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -29,10 +29,10 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /** Lỗi nghiệp vụ mình tự ném (AppException) -> trả đúng mã HTTP và thông báo đã đặt. */
+    /** Lỗi nghiệp vụ mình tự ném (AppException) -> trả đúng mã HTTP, thông báo, mã lỗi và lỗi theo ô (nếu có). */
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleApp(AppException ex) {
-        return ResponseEntity.status(ex.getStatus()).body(ApiResponse.error(ex.getMessage(), ex.getCode(), null));
+        return ResponseEntity.status(ex.getStatus()).body(ApiResponse.error(ex.getMessage(), ex.getCode(), ex.getErrors()));
     }
 
     /**

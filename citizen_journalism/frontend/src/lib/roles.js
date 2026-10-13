@@ -42,6 +42,12 @@ export const ROLE_TONES = {
  */
 export const ASSIGNABLE_ROLES = Object.keys(ROLE_LABELS).filter((role) => role !== 'SYSTEM_ADMIN')
 
+/**
+ * Các vai trò được GỬI TIN / KHIẾU NẠI (trang /submit). Khớp luật "/api/submissions/**" trong backend SecurityConfig.
+ * Nhân sự toà soạn (Biên tập viên, Phó TBT, TBT) và admin là người XỬ LÝ nên không gửi.
+ */
+export const SUBMITTER_ROLES = ['CITIZEN', 'CONTRIBUTOR', 'EXPERT']
+
 /** Trạng thái tài khoản: tên hiển thị + màu nhãn. */
 export const STATUS_INFO = {
   ACTIVE: { label: 'Hoạt động', tone: 'green' },

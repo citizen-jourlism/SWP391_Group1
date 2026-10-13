@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Lưu file người dùng tải lên vào THƯ MỤC TRÊN MÁY (mặc định: citizen_journalism/uploads/).
- * Dùng chung cho: ảnh đại diện (đang dùng), tư liệu/bằng chứng khi gửi khiếu nại (sau này).
+ * Dùng chung cho: ảnh đại diện (UserService), tư liệu/bằng chứng khi gửi tin, khiếu nại (SubmissionService).
  *
  * File được truy cập lại qua đường dẫn web "/uploads/..." (xem config/WebConfig.java).
  * Thư mục uploads/ đã được .gitignore bỏ qua -> ảnh của người dùng không bị đẩy lên GitHub.
@@ -40,6 +40,18 @@ public class FileStorageService {
             "image/webp", "webp",
             "image/gif", "gif");
 
+    /**
+     * Các loại TƯ LIỆU / BẰNG CHỨNG cho phép khi gửi tin, khiếu nại (SRS 4.1.1: JPG, PNG, MP4, MP3, PDF).
+     * MP3 có 2 cách khai báo Content-Type tuỳ trình duyệt ("audio/mpeg" là chuẩn, "audio/mp3" là cách cũ).
+     */
+    public static final Map<String, String> EVIDENCE_TYPES = Map.of(
+            "image/jpeg", "jpg",
+            "image/png", "png",
+            "video/mp4", "mp4",
+            "audio/mpeg", "mp3",
+            "audio/mp3", "mp3",
+            "application/pdf", "pdf");
+
     private final Path root;
 
     public FileStorageService(@Value("${app.upload.dir:uploads}") String uploadDir) {
@@ -58,17 +70,7 @@ public class FileStorageService {
      */
     public String store(MultipartFile file, String folder, String namePrefix,
                         Map<String, String> allowedTypes, long maxBytes) {
-        if (file == null || file.isEmpty()) {
-            throw AppException.badRequest("Vui lòng chọn file.");
-        }
-        String extension = allowedTypes.get(file.getContentType());
-        if (extension == null) {
-            throw AppException.badRequest("Định dạng file không được hỗ trợ.");
-        }
-        if (file.getSize() > maxBytes) {
-            throw AppException.badRequest("File vượt quá dung lượng cho phép (tối đa " + (maxBytes / 1024 / 1024) + "MB).");
-        }
-
+        String extension = validate(file, allowedTypes, maxBytes);
         String fileName = namePrefix + "-" + UUID.randomUUID().toString().substring(0, 8) + "." + extension;
         Path directory = root.resolve(folder);
         try (InputStream input = file.getInputStream()) {
@@ -79,6 +81,26 @@ public class FileStorageService {
             throw AppException.badRequest("Không lưu được file, vui lòng thử lại.");
         }
         return URL_PREFIX + folder + "/" + fileName;
+    }
+
+    /**
+     * Kiểm tra một file (có nội dung, đúng loại, không quá dung lượng) mà CHƯA lưu. Trả về đuôi file chuẩn.
+     * store() tự gọi hàm này; gọi riêng khi cần kiểm tra TẤT CẢ file trước rồi mới lưu
+     * (ví dụ form khiếu nại nhiều tệp: tệp thứ 3 sai thì báo lỗi ngay, không để 2 tệp đầu bị lưu dở dang).
+     */
+    public String validate(MultipartFile file, Map<String, String> allowedTypes, long maxBytes) {
+        if (file == null || file.isEmpty()) {
+            throw AppException.badRequest("Vui lòng chọn file.");
+        }
+        String extension = allowedTypes.get(file.getContentType());
+        if (extension == null) {
+            throw AppException.badRequest("Định dạng file \"" + file.getOriginalFilename() + "\" không được hỗ trợ.");
+        }
+        if (file.getSize() > maxBytes) {
+            throw AppException.badRequest("File \"" + file.getOriginalFilename() + "\" vượt quá dung lượng cho phép (tối đa "
+                    + (maxBytes / 1024 / 1024) + "MB).");
+        }
+        return extension;
     }
 
     /** Xoá file theo đường dẫn web đã lưu trong DB (bỏ qua nếu null hoặc không nằm trong uploads). */

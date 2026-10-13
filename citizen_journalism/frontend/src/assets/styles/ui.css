@@ -212,6 +212,36 @@
   color: var(--muted);
 }
 
+/* Ô nhiều dòng (TextField multiline): bỏ chiều cao cố định, cho kéo giãn theo chiều dọc */
+.field__textarea {
+  height: auto;
+  min-height: 96px;
+  padding: 12px 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+/* Hàng dưới ô: lỗi/gợi ý bên trái, bộ đếm ký tự bên phải */
+.field__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.field__counter {
+  margin-left: auto; /* luôn nằm sát phải kể cả khi không có lỗi/gợi ý */
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums; /* các chữ số rộng bằng nhau -> bộ đếm không bị "nhảy" khi gõ */
+  color: var(--muted);
+}
+
+.field__counter.is-over {
+  color: var(--danger);
+  font-weight: 700;
+}
+
 /* Gợi ý đứng riêng một dòng (không gắn với ô nhập), ví dụ mô tả vai trò trong form tạo tài khoản */
 .field__hint--block {
   margin-top: -10px;
@@ -444,6 +474,14 @@
   min-height: 34px;
   padding: 0 12px;
   font-size: 13px;
+}
+
+/* Nút vuông chỉ có icon (ví dụ nút sao chép cạnh mã hồ sơ) */
+.btn--icon {
+  flex: none;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
 }
 
 .btn:focus-visible {

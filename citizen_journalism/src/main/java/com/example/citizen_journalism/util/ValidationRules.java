@@ -22,6 +22,13 @@ public final class ValidationRules {
     public static final String CITIZEN_ID_REGEX = "^\\d{12}$";
     public static final String CITIZEN_ID_MESSAGE = "Số CCCD gồm đúng 12 chữ số.";
 
+    /**
+     * Giấy tờ tuỳ thân trên form gửi tin / khiếu nại (SRS 4.1.1): CMND cũ 9 số HOẶC CCCD 12 số.
+     * Khác CITIZEN_ID_REGEX ở trên (hồ sơ tài khoản chỉ nhận CCCD 12 số).
+     */
+    public static final String PERSONAL_ID_REGEX = "^(\\d{9}|\\d{12})$";
+    public static final String PERSONAL_ID_MESSAGE = "CMND/CCCD gồm 9 hoặc 12 chữ số.";
+
     /** Mật khẩu phải có ít nhất 1 chữ cái VÀ 1 chữ số. (?=...) là "điều kiện nhìn trước" của regex. */
     public static final String PASSWORD_REGEX = "^(?=.*[A-Za-z])(?=.*\\d).+$";
     public static final String PASSWORD_MESSAGE = "Mật khẩu phải có ít nhất một chữ cái và một chữ số.";

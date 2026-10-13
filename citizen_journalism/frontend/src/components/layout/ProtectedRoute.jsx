@@ -22,7 +22,8 @@ function ProtectedRoute({ roles, children }) {
   const location = useLocation()
 
   if (status === 'loading') return null
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  // from gồm cả phần "?..." (ví dụ /submit?type=hot-news) để đăng nhập xong quay về đúng trang, đúng lựa chọn
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
   if (roles && !roles.includes(user.role)) return <NotFound />
   return children
 }
