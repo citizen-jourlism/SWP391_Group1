@@ -6,8 +6,12 @@ import Avatar from '../ui/Avatar'
 import Icon from '../ui/Icon'
 import '../../assets/styles/user-menu.css'
 
-/** Các mục điều hướng trong menu. Thêm trang mới (Tin đã gửi, Trang quản trị...) thì thêm 1 dòng ở đây. */
+/**
+ * Các mục điều hướng trong menu. Thêm trang mới (Tin đã gửi...) thì thêm 1 dòng ở đây.
+ * roles (không bắt buộc): chỉ hiện mục cho các vai trò này.
+ */
 const MENU_LINKS = [
+  { to: '/admin', icon: 'activity', label: 'Trang quản trị', roles: ['SYSTEM_ADMIN'] },
   { to: '/account/profile', icon: 'user', label: 'Hồ sơ của tôi' },
   { to: '/account/change-password', icon: 'lock', label: 'Đổi mật khẩu' },
 ]
@@ -77,7 +81,7 @@ function UserMenu() {
             </div>
           </div>
           <div className="user-menu__list">
-            {MENU_LINKS.map((item) => (
+            {MENU_LINKS.filter((item) => !item.roles || item.roles.includes(user.role)).map((item) => (
               <Link
                 key={item.to}
                 to={item.to}

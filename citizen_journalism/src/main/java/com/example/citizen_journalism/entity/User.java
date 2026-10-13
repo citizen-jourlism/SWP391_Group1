@@ -41,6 +41,13 @@ public class User {
     @Column(name = "phone", nullable = false, length = 20)
     private String phone;
 
+    /**
+     * Tên đăng nhập (không bắt buộc). Hiện chỉ tài khoản quản trị dùng (ví dụ "Admin", xem AdminAccountInitializer);
+     * người dùng thường đăng nhập bằng email. Đăng nhập: AuthService.login() nhận email HOẶC tên đăng nhập.
+     */
+    @Column(name = "username", unique = true, length = 50)
+    private String username;
+
     @NotBlank(message = "Password is required")
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;

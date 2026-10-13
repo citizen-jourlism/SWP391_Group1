@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import AdminLayout from './components/admin/AdminLayout.jsx'
 import ProtectedRoute from './components/layout/ProtectedRoute.jsx'
 import ScrollToTop from './components/layout/ScrollToTop.jsx'
 import { AuthProvider } from './context/AuthProvider.jsx'
@@ -10,6 +11,8 @@ import NotFound from './routes/NotFound.jsx'
 import Profile from './routes/Profile.jsx'
 import Register from './routes/Register.jsx'
 import VerifyOtp from './routes/VerifyOtp.jsx'
+import AdminOverview from './routes/admin/AdminOverview.jsx'
+import AdminUsers from './routes/admin/AdminUsers.jsx'
 
 /**
  * Component gốc của ứng dụng: khai báo BẢN ĐỒ ĐƯỜNG DẪN (routing).
@@ -50,6 +53,20 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* ----- Khu quản trị: chỉ SYSTEM_ADMIN. Route LỒNG NHAU: AdminLayout là khung chung,
+                   các trang con hiện vào chỗ <Outlet /> của khung. index = trang mặc định của /admin ----- */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute roles={['SYSTEM_ADMIN']}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<AdminOverview />} />           {/* /admin       : Tổng quan */}
+            <Route path="users" element={<AdminUsers />} />       {/* /admin/users : Quản lý tài khoản */}
+          </Route>
 
           {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link, hoặc trang chưa làm) */}
           <Route path="*" element={<NotFound />} />

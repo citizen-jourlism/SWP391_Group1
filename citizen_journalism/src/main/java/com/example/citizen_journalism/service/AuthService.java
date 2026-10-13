@@ -19,6 +19,7 @@ import com.example.citizen_journalism.security.JwtService;
 import com.example.citizen_journalism.util.UserIdGenerator;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,8 +42,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
-    /** Thông báo CHUNG khi sai email hoặc sai mật khẩu (SRS GB-04: không tiết lộ email có tồn tại hay không). */
-    private static final String INVALID_CREDENTIALS = "Email hoặc mật khẩu không đúng.";
+    /** Thông báo CHUNG khi sai tài khoản hoặc sai mật khẩu (SRS GB-04: không tiết lộ tài khoản có tồn tại hay không). */
+    private static final String INVALID_CREDENTIALS = "Tài khoản hoặc mật khẩu không đúng.";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -121,10 +122,10 @@ public class AuthService {
     }
 
     /**
-     * Đăng nhập: kiểm tra email + mật khẩu, đúng thì trả về token JWT.
+     * Đăng nhập: kiểm tra email (hoặc tên đăng nhập) + mật khẩu, đúng thì trả về token JWT.
      *
      * THỨ TỰ KIỂM TRA (có chủ đích):
-     *   1. Email không tồn tại            -> 401 thông báo chung (không cho biết email có tồn tại hay không)
+     *   1. Không tìm thấy tài khoản       -> 401 thông báo chung (không cho biết tài khoản có tồn tại hay không)
      *   2. Đang bị khoá tạm do sai nhiều  -> 429 "thử lại sau X phút"
      *   3. Sai mật khẩu                   -> tăng biến đếm, đủ số lần thì khoá tạm; 401 thông báo chung
      *   4. ĐÚNG mật khẩu rồi mới báo trạng thái tài khoản (chưa xác thực / bị khoá) -> 403 kèm mã lỗi.
@@ -135,7 +136,7 @@ public class AuthService {
      */
     @Transactional(noRollbackFor = AppException.class)
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(normalizeEmail(request.email()))
+        User user = findByIdentifier(request.identifier())
                 .orElseThrow(() -> AppException.unauthorized(INVALID_CREDENTIALS));
 
         LocalDateTime now = LocalDateTime.now();
@@ -237,6 +238,14 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
         user.setFailedLoginAttempts(0);
         user.setLockedUntil(null);
+    }
+
+    /** Có "@" -> tìm theo email; không có -> tìm theo tên đăng nhập (không phân biệt hoa thường). */
+    private Optional<User> findByIdentifier(String identifier) {
+        String value = identifier.trim();
+        return value.contains("@")
+                ? userRepository.findByEmail(normalizeEmail(value))
+                : userRepository.findByUsernameIgnoreCase(value);
     }
 
     /**

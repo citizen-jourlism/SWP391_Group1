@@ -9,6 +9,7 @@ import TextField from '../components/ui/TextField'
 import { useAuth } from '../hooks/useAuth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useForm } from '../hooks/useForm'
+import { formatDate } from '../lib/format'
 import { ROLE_LABELS } from '../lib/roles'
 import { CITIZEN_ID_LENGTH, createValidator, rules, todayIso } from '../lib/validators'
 import { userService } from '../services/userService'
@@ -47,8 +48,6 @@ const validate = createValidator({
   dateOfBirth: [rules.optional(rules.pastDate('Ngày sinh phải là một ngày trong quá khứ.'))],
 })
 
-/** "2026-10-13T15:39:39" -> "13/10/2026" */
-const formatDate = (value) => (value ? new Date(value).toLocaleDateString('vi-VN') : '')
 
 function Profile() {
   useDocumentTitle('Hồ sơ của tôi')
@@ -100,7 +99,7 @@ function Profile() {
       )}
 
       {/* Đang tải: hiện khung xám "skeleton" thay cho nội dung để người dùng biết trang đang tải */}
-      {!profile && !loadError && <div className="profile-skeleton" aria-busy="true" aria-label="Đang tải hồ sơ" />}
+      {!profile && !loadError && <div className="skeleton skeleton--page" aria-busy="true" aria-label="Đang tải hồ sơ" />}
 
       {profile && (
         <div className="profile-grid">

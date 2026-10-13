@@ -212,6 +212,111 @@
   color: var(--muted);
 }
 
+/* Gợi ý đứng riêng một dòng (không gắn với ô nhập), ví dụ mô tả vai trò trong form tạo tài khoản */
+.field__hint--block {
+  margin-top: -10px;
+}
+
+/* Nút chữ nhỏ ngay dưới ô nhập, ví dụ "Tạo mật khẩu ngẫu nhiên" */
+.field__inline-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-size: 13px;
+}
+
+/* ---------- Ô chọn (SelectField) ---------- */
+.field__select {
+  padding-right: 40px;
+  appearance: none; /* ẩn mũi tên mặc định của trình duyệt, dùng icon riêng cho đẹp và đồng bộ */
+  cursor: pointer;
+}
+
+.field__select-arrow {
+  position: absolute;
+  right: 14px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* ---------- Nhãn màu (Badge) ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge--neutral { background: #eef1f6; color: #475569; }
+.badge--green { background: var(--success-bg); color: #15803d; }
+.badge--blue { background: var(--info-bg); color: var(--blue); }
+.badge--orange { background: #fff1ea; color: var(--orange-strong); }
+.badge--red { background: var(--danger-bg); color: var(--danger); }
+.badge--purple { background: #f3efff; color: #7c3aed; }
+.badge--dark { background: var(--navy-900); color: #fff; }
+
+/* ---------- Phân trang (Pagination) ---------- */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.pagination strong {
+  color: var(--navy-900);
+}
+
+.pagination__buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pagination__buttons button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--navy-800);
+  cursor: pointer;
+}
+
+.pagination__buttons button:hover:not(:disabled) {
+  border-color: var(--navy-700);
+}
+
+.pagination__buttons button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pagination__next svg {
+  transform: rotate(180deg); /* dùng lại icon mũi tên trái, xoay thành mũi tên phải */
+}
+
+/* ---------- Khung xám nhấp nháy khi đang tải (skeleton) ---------- */
+.skeleton {
+  border-radius: 12px;
+  background: linear-gradient(90deg, #e6eaf0 25%, #f1f4f8 50%, #e6eaf0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+
+.skeleton--card { height: 112px; border-radius: 16px; }
+.skeleton--row { height: 36px; }
+.skeleton--page { height: 420px; border-radius: var(--radius-lg); }
+
 /* ---------- Checkbox ---------- */
 .checkbox__input {
   position: absolute;
@@ -317,6 +422,28 @@
 .btn--ghost {
   background: transparent;
   color: var(--navy-800);
+}
+
+.btn--ghost:hover {
+  background: #f1f4f8;
+}
+
+/* Nút cho hành động nguy hiểm (khoá tài khoản, xoá...) */
+.btn--danger {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.25);
+}
+
+.btn--danger:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+/* Nút nhỏ (ví dụ "Xem tất cả" ở góc khối nội dung) */
+.btn--sm {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
 }
 
 .btn:focus-visible {
@@ -434,6 +561,13 @@
 .modal__text strong {
   color: var(--navy-800);
   word-break: break-all;
+}
+
+/* Hàng nút cuối hộp thoại, căn phải */
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 /* ---------- Thông báo ---------- */
@@ -638,6 +772,10 @@
 @keyframes shake {
   20%, 60% { transform: translateX(-6px); }
   40%, 80% { transform: translateX(6px); }
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
 }
 
 @keyframes pop-in {

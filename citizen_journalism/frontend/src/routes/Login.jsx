@@ -16,12 +16,12 @@ import { authService, pendingVerification } from '../services/authService'
  * TRANG ĐĂNG NHẬP — đường dẫn /login (khai báo trong App.jsx).
  *
  * LUỒNG:
- *   1. Nhập email + mật khẩu (+ tuỳ chọn "Ghi nhớ đăng nhập") -> authService.login() -> POST /api/auth/login.
+ *   1. Nhập email (hoặc tên đăng nhập, ví dụ tài khoản quản trị "Admin") + mật khẩu (+ tuỳ chọn "Ghi nhớ đăng nhập") -> authService.login() -> POST /api/auth/login.
  *   2. Thành công: AuthProvider.login() lưu token + thông tin người dùng, rồi trang tự chuyển tới:
  *        - về trang người dùng định vào trước đó (nếu bị bắt đăng nhập giữa chừng, location.state.from)
  *        - nếu không thì về trang mặc định theo vai trò (lib/roles.js)
  *   3. Thất bại:
- *        - Sai email/mật khẩu, khoá tạm do sai nhiều lần -> useForm tự hiện thông báo ở đầu form.
+ *        - Sai tài khoản/mật khẩu, khoá tạm do sai nhiều lần -> useForm tự hiện thông báo ở đầu form.
  *        - Tài khoản chưa xác thực email (code ACCOUNT_NOT_VERIFIED) -> hiện thêm nút "Xác thực email ngay":
  *          gửi lại OTP rồi chuyển sang trang /verify-otp (dùng lại trang của chức năng Đăng ký).
  *
@@ -30,7 +30,8 @@ import { authService, pendingVerification } from '../services/authService'
  */
 
 const validate = createValidator({
-  email: [rules.required('Vui lòng nhập email.'), rules.email()],
+  // Không bắt định dạng email vì có thể nhập tên đăng nhập (backend tự phân biệt: có '@' là email)
+  identifier: [rules.required('Vui lòng nhập email hoặc tên đăng nhập.')],
   password: [rules.required('Vui lòng nhập mật khẩu.')],
 })
 
@@ -40,7 +41,7 @@ function Login() {
   const location = useLocation() // location.state: dữ liệu trang trước gửi kèm khi chuyển trang
   const { user, status, login } = useAuth()
 
-  const form = useForm({ email: location.state?.email ?? '', password: '', rememberMe: false }, validate)
+  const form = useForm({ identifier: location.state?.email ?? '', password: '', rememberMe: false }, validate)
   // Email của tài khoản chưa xác thực (khác rỗng thì hiện nút "Xác thực email ngay").
   const [unverifiedEmail, setUnverifiedEmail] = useState('')
   const [sendingOtp, setSendingOtp] = useState(false)
@@ -61,7 +62,7 @@ function Login() {
       const response = await authService.login(values)
       login(response.data, values.rememberMe) // Đặt user -> trang tự chuyển đi (xem đoạn if ở trên)
     } catch (error) {
-      if (error.code === 'ACCOUNT_NOT_VERIFIED') setUnverifiedEmail(values.email)
+      if (error.code === 'ACCOUNT_NOT_VERIFIED') setUnverifiedEmail(values.identifier.trim())
       throw error // Ném tiếp để useForm hiện thông báo lỗi lên form
     }
   })
@@ -107,14 +108,13 @@ function Login() {
         )}
 
         <TextField
-          label="Email"
-          icon="mail"
-          type="email"
+          label="Email hoặc tên đăng nhập"
+          icon="user"
           placeholder="email@domain.com"
-          autoComplete="email"
+          autoComplete="username"
           autoFocus={!location.state?.email} // Có email điền sẵn thì để con trỏ ở ô mật khẩu
           required
-          {...form.field('email')}
+          {...form.field('identifier')}
         />
 
         <TextField
@@ -131,8 +131,12 @@ function Login() {
         {/* Hàng "Ghi nhớ đăng nhập" + "Quên mật khẩu?" */}
         <div className="form__inline">
           <Checkbox label="Ghi nhớ đăng nhập" {...form.field('rememberMe')} />
-          {/* Mang theo email đã gõ sang trang Quên mật khẩu để điền sẵn */}
-          <Link to="/forgot-password" state={{ email: form.values.email }} className="text-link">
+          {/* Mang theo email đã gõ (nếu là email) sang trang Quên mật khẩu để điền sẵn */}
+          <Link
+            to="/forgot-password"
+            state={{ email: form.values.identifier.includes('@') ? form.values.identifier.trim() : '' }}
+            className="text-link"
+          >
             Quên mật khẩu?
           </Link>
         </div>
