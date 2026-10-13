@@ -5,7 +5,9 @@ import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import OtpInput from '../components/ui/OtpInput'
-import { formatSeconds, useCountdown } from '../hooks/useCountdown'
+import { DevMailNotice, OtpCountdown, OtpResendLink } from '../components/ui/OtpStatus'
+import ResultView from '../components/ui/ResultView'
+import { useCountdown } from '../hooks/useCountdown'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { authService, pendingVerification } from '../services/authService'
 
@@ -93,24 +95,22 @@ function VerifyOtp() {
   if (verified) {
     return (
       <AuthLayout title="Xác thực thành công!" subtitle="Tài khoản của bạn đã được kích hoạt và sẵn sàng sử dụng.">
-        <div className="result">
-          <div className="result__icon result__icon--success">
-            <Icon name="checkCircle" size={44} strokeWidth={1.8} />
-          </div>
-          <p className="result__text">
-            Chào mừng bạn đến với <strong>Tin Nóng Dân Sinh</strong>. Hãy đăng nhập để bắt đầu gửi tin và theo dõi
-            tiến độ xử lý.
-          </p>
-          <div className="result__actions">
-            {/* state={{ email }}: gửi kèm email sang trang Đăng nhập để điền sẵn, người dùng chỉ cần nhập mật khẩu */}
-            <Button to="/login" state={{ email: pending.email }} block>
-              Đăng nhập ngay
-            </Button>
-            <Button to="/" variant="secondary" block>
-              Về trang chủ
-            </Button>
-          </div>
-        </div>
+        <ResultView
+          text={
+            <>
+              Chào mừng bạn đến với <strong>Tin Nóng Dân Sinh</strong>. Hãy đăng nhập để bắt đầu gửi tin và theo dõi
+              tiến độ xử lý.
+            </>
+          }
+        >
+          {/* state={{ email }}: gửi kèm email sang trang Đăng nhập để điền sẵn, người dùng chỉ cần nhập mật khẩu */}
+          <Button to="/login" state={{ email: pending.email }} block>
+            Đăng nhập ngay
+          </Button>
+          <Button to="/" variant="secondary" block>
+            Về trang chủ
+          </Button>
+        </ResultView>
       </AuthLayout>
     )
   }
@@ -154,32 +154,16 @@ function VerifyOtp() {
           invalid={invalid}
         />
 
-        {/* Đồng hồ hết hạn; còn ≤ 30 giây thì chuyển chữ đỏ (class is-urgent) để nhắc người dùng */}
-        <p className={`otp-timer ${expiresIn <= 30 ? 'is-urgent' : ''}`}>
-          <Icon name="clock" size={15} />
-          {expired ? 'Mã đã hết hạn' : <>Mã hết hạn sau <strong>{formatSeconds(expiresIn)}</strong></>}
-        </p>
+        {/* Đồng hồ / nút gửi lại / gợi ý xem log: các component dùng chung trong components/ui/OtpStatus.jsx */}
+        <OtpCountdown secondsLeft={expiresIn} />
 
         <Button type="submit" block loading={verifying} disabled={code.length !== OTP_LENGTH || expired}>
           {verifying ? 'Đang xác thực...' : 'Xác nhận'}
         </Button>
 
-        {/* Nút gửi lại: bị khoá và hiện "Gửi lại sau Xs" cho tới khi hết thời gian chờ */}
-        <p className="otp-resend">
-          Chưa nhận được mã?{' '}
-          <button type="button" className="link-button" onClick={resend} disabled={resendIn > 0 || resending}>
-            {resending ? 'Đang gửi...' : resendIn > 0 ? `Gửi lại sau ${resendIn}s` : 'Gửi lại mã'}
-          </button>
-        </p>
+        <OtpResendLink secondsLeft={resendIn} sending={resending} onResend={resend} />
 
-        {/* Chỉ hiện khi backend báo email KHÔNG được gửi thật (MAIL_ENABLED=false, xem MailService.java).
-            Khi đã cấu hình Gmail trong file .env thì hộp này tự ẩn. */}
-        {pending.printedToConsole && (
-          <Alert type="info">
-            Chế độ phát triển: email chưa gửi thật, mã OTP được in trong cửa sổ log của backend (dòng
-            <code> [DEV MAIL]</code>).
-          </Alert>
-        )}
+        <DevMailNotice show={pending.printedToConsole} />
       </form>
     </AuthLayout>
   )

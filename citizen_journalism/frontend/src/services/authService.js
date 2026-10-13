@@ -14,6 +14,24 @@ export const authService = {
   resendOtp: (email) => api.post('/auth/resend-otp', { email }),
   login: (payload) => api.post('/auth/login', payload),                 // payload = { email, password, rememberMe }
   me: () => api.get('/auth/me'),                                        // cần token (api.js tự gắn)
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (payload) => api.post('/auth/reset-password', payload), // payload = { email, otp, newPassword }
+  changePassword: (payload) => api.put('/auth/change-password', payload), // cần token; payload = { currentPassword, newPassword }
+}
+
+/**
+ * Đổi OtpInfo backend trả về (đơn vị GIÂY: "còn 300 giây") thành các MỐC THỜI GIAN (milliseconds)
+ * để useCountdown() đếm ngược chính xác kể cả khi trang bị vẽ lại / tải lại.
+ * Dùng chung cho trang xác thực đăng ký và trang đặt lại mật khẩu.
+ */
+export function toOtpState({ email, expiresInSeconds, resendAfterSeconds, printedToConsole }) {
+  const now = Date.now()
+  return {
+    email,
+    expiresAt: now + expiresInSeconds * 1000,
+    resendAt: now + resendAfterSeconds * 1000,
+    printedToConsole, // true = backend chưa gửi mail thật, mã nằm trong log backend
+  }
 }
 
 /**
@@ -31,14 +49,8 @@ const PENDING_KEY = 'pendingVerification'
 
 export const pendingVerification = {
   /** Lưu thông tin OtpInfo backend trả về: { email, expiresInSeconds, resendAfterSeconds, printedToConsole }. */
-  save({ email, expiresInSeconds, resendAfterSeconds, printedToConsole }) {
-    const now = Date.now()
-    const value = {
-      email,
-      expiresAt: now + expiresInSeconds * 1000,
-      resendAt: now + resendAfterSeconds * 1000,
-      printedToConsole, // true = backend chưa gửi mail thật, mã nằm trong log backend
-    }
+  save(otpInfo) {
+    const value = toOtpState(otpInfo)
     try {
       sessionStorage.setItem(PENDING_KEY, JSON.stringify(value))
     } catch {

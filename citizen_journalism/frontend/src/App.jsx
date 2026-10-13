@@ -1,6 +1,9 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import ProtectedRoute from './components/layout/ProtectedRoute.jsx'
 import ScrollToTop from './components/layout/ScrollToTop.jsx'
 import { AuthProvider } from './context/AuthProvider.jsx'
+import ChangePassword from './routes/ChangePassword.jsx'
+import ForgotPassword from './routes/ForgotPassword.jsx'
 import Homepage from './routes/Homepage.jsx'
 import Login from './routes/Login.jsx'
 import NotFound from './routes/NotFound.jsx'
@@ -13,6 +16,7 @@ import VerifyOtp from './routes/VerifyOtp.jsx'
  *
  * - BrowserRouter (React Router): cho phép đổi trang mà không tải lại toàn bộ web.
  * - AuthProvider: cung cấp thông tin đăng nhập cho MỌI trang (dùng qua hook useAuth()).
+ * - ProtectedRoute: bọc các trang BẮT BUỘC đăng nhập (chưa đăng nhập -> chuyển sang /login).
  * Thêm trang mới: tạo file trong src/routes/ rồi thêm 1 dòng <Route> ở đây.
  */
 function App() {
@@ -21,11 +25,24 @@ function App() {
       <AuthProvider>
         <ScrollToTop />
         <Routes>
+          {/* ----- Trang công khai ----- */}
           <Route path="/" element={<Homepage />} />
-          <Route path="/login" element={<Login />} />           {/* Đăng nhập */}
-          <Route path="/register" element={<Register />} />     {/* Đăng ký tài khoản */}
-          <Route path="/verify-otp" element={<VerifyOtp />} />  {/* Nhập mã OTP sau khi đăng ký */}
-          {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link, hoặc trang chưa làm như /forgot-password) */}
+          <Route path="/login" element={<Login />} />                     {/* Đăng nhập */}
+          <Route path="/register" element={<Register />} />               {/* Đăng ký tài khoản */}
+          <Route path="/verify-otp" element={<VerifyOtp />} />            {/* Nhập mã OTP sau khi đăng ký */}
+          <Route path="/forgot-password" element={<ForgotPassword />} />  {/* Quên mật khẩu */}
+
+          {/* ----- Trang cần đăng nhập ----- */}
+          <Route
+            path="/account/change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link, hoặc trang chưa làm) */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>

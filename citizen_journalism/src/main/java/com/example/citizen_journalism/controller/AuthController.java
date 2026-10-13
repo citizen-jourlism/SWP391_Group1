@@ -1,11 +1,13 @@
 package com.example.citizen_journalism.controller;
 
 import com.example.citizen_journalism.dto.ApiResponse;
+import com.example.citizen_journalism.dto.auth.ChangePasswordRequest;
 import com.example.citizen_journalism.dto.auth.EmailRequest;
 import com.example.citizen_journalism.dto.auth.LoginRequest;
 import com.example.citizen_journalism.dto.auth.LoginResponse;
 import com.example.citizen_journalism.dto.auth.OtpInfo;
 import com.example.citizen_journalism.dto.auth.RegisterRequest;
+import com.example.citizen_journalism.dto.auth.ResetPasswordRequest;
 import com.example.citizen_journalism.dto.auth.VerifyOtpRequest;
 import com.example.citizen_journalism.dto.user.UserSummary;
 import com.example.citizen_journalism.service.AuthService;
@@ -16,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -35,7 +38,8 @@ import org.springframework.web.bind.annotation.RestController;
  *   Controller chỉ lo nhận/trả HTTP. Toàn bộ logic nằm ở Service để dễ đọc, dễ test
  *   và dùng lại được (ví dụ: sau này admin tạo tài khoản cũng có thể gọi lại service).
  *
- * Các API ở đây là công khai (chưa cần đăng nhập), TRỪ /me (cần token). Xem SecurityConfig.PUBLIC_ENDPOINTS.
+ * Các API ở đây là công khai (chưa cần đăng nhập), TRỪ /me và /change-password (cần token).
+ * Xem SecurityConfig.PUBLIC_ENDPOINTS.
  */
 @RestController                 // Lớp này trả dữ liệu JSON (không trả trang HTML)
 @RequestMapping("/api/auth")    // Tiền tố chung cho mọi đường dẫn bên dưới
@@ -93,5 +97,33 @@ public class AuthController {
     @GetMapping("/me")
     public ApiResponse<UserSummary> me(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.ok("OK", authService.getCurrentUser(jwt.getSubject()));
+    }
+
+    /**
+     * Quên mật khẩu - bước 1: POST /api/auth/forgot-password   Body: { email }
+     * Luôn trả cùng một câu (dù email có tồn tại hay không), xem AuthService.forgotPassword.
+     */
+    @PostMapping("/forgot-password")
+    public ApiResponse<OtpInfo> forgotPassword(@Valid @RequestBody EmailRequest request) {
+        return ApiResponse.ok("Nếu email đã đăng ký, mã OTP đặt lại mật khẩu đã được gửi tới email này.",
+                authService.forgotPassword(request.email()));
+    }
+
+    /** Quên mật khẩu - bước 2: POST /api/auth/reset-password   Body: { email, otp, newPassword } */
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ApiResponse.ok("Đặt lại mật khẩu thành công! Hãy đăng nhập bằng mật khẩu mới.");
+    }
+
+    /**
+     * Đổi mật khẩu (BẮT BUỘC đăng nhập): PUT /api/auth/change-password   Body: { currentPassword, newPassword }
+     * Dùng PUT vì đây là thao tác CẬP NHẬT dữ liệu đã có (mật khẩu của chính mình).
+     */
+    @PutMapping("/change-password")
+    public ApiResponse<Void> changePassword(@AuthenticationPrincipal Jwt jwt,
+                                            @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(jwt.getSubject(), request);
+        return ApiResponse.ok("Đổi mật khẩu thành công!");
     }
 }

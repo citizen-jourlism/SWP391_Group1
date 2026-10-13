@@ -17,7 +17,7 @@ import { authService, pendingVerification } from '../services/authService'
  *
  * LUỒNG:
  *   1. Nhập email + mật khẩu (+ tuỳ chọn "Ghi nhớ đăng nhập") -> authService.login() -> POST /api/auth/login.
- *   2. Thành công: AuthProvider.login() lưu token + thông tin người dùng, rồi chuyển trang:
+ *   2. Thành công: AuthProvider.login() lưu token + thông tin người dùng, rồi trang tự chuyển tới:
  *        - về trang người dùng định vào trước đó (nếu bị bắt đăng nhập giữa chừng, location.state.from)
  *        - nếu không thì về trang mặc định theo vai trò (lib/roles.js)
  *   3. Thất bại:
@@ -25,7 +25,7 @@ import { authService, pendingVerification } from '../services/authService'
  *        - Tài khoản chưa xác thực email (code ACCOUNT_NOT_VERIFIED) -> hiện thêm nút "Xác thực email ngay":
  *          gửi lại OTP rồi chuyển sang trang /verify-otp (dùng lại trang của chức năng Đăng ký).
  *
- * Đã đăng nhập rồi mà vào /login -> tự chuyển về trang chủ.
+ * Đã đăng nhập rồi mà vào /login -> cũng tự chuyển đi như bước 2.
  * Email có thể được điền sẵn khi đi từ trang "Xác thực thành công" (location.state.email).
  */
 
@@ -45,15 +45,21 @@ function Login() {
   const [unverifiedEmail, setUnverifiedEmail] = useState('')
   const [sendingOtp, setSendingOtp] = useState(false)
 
-  // Đã đăng nhập (và không phải vừa bấm đăng nhập xong) -> không cần ở trang này nữa.
-  if (status === 'ready' && user && !form.submitting) return <Navigate to="/" replace />
+  // Đã đăng nhập -> rời trang này, tới:
+  //   - trang người dùng định vào trước khi bị bắt đăng nhập (location.state.from, do ProtectedRoute gửi kèm)
+  //   - hoặc trang mặc định theo vai trò (lib/roles.js).
+  // Đoạn này xử lý CẢ 2 trường hợp: vào /login khi đã đăng nhập sẵn, VÀ ngay sau khi vừa đăng nhập thành công
+  // (login() đặt user -> trang vẽ lại -> tới đây). Không gọi navigate() riêng trong onSubmit, vì React Router v7
+  // chuyển trang ở mức ưu tiên thấp, có thể bị lần vẽ lại này "chen ngang" và chuyển sai trang.
+  if (status === 'ready' && user) {
+    return <Navigate to={location.state?.from ?? homePathFor(user.role)} replace />
+  }
 
   const onSubmit = form.handleSubmit(async (values) => {
     setUnverifiedEmail('')
     try {
       const response = await authService.login(values)
-      login(response.data, values.rememberMe)
-      navigate(location.state?.from ?? homePathFor(response.data.user.role), { replace: true })
+      login(response.data, values.rememberMe) // Đặt user -> trang tự chuyển đi (xem đoạn if ở trên)
     } catch (error) {
       if (error.code === 'ACCOUNT_NOT_VERIFIED') setUnverifiedEmail(values.email)
       throw error // Ném tiếp để useForm hiện thông báo lỗi lên form
@@ -125,8 +131,8 @@ function Login() {
         {/* Hàng "Ghi nhớ đăng nhập" + "Quên mật khẩu?" */}
         <div className="form__inline">
           <Checkbox label="Ghi nhớ đăng nhập" {...form.field('rememberMe')} />
-          {/* Trang Quên mật khẩu sẽ làm ở chức năng sau; hiện tại link dẫn tới trang "chưa sẵn sàng" */}
-          <Link to="/forgot-password" className="text-link">
+          {/* Mang theo email đã gõ sang trang Quên mật khẩu để điền sẵn */}
+          <Link to="/forgot-password" state={{ email: form.values.email }} className="text-link">
             Quên mật khẩu?
           </Link>
         </div>

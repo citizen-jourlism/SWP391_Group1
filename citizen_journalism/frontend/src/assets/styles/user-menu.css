@@ -131,6 +131,7 @@
   font-size: 14px;
   font-weight: 600;
   text-align: left;
+  text-decoration: none; /* mục dạng <Link> không bị gạch chân */
   cursor: pointer;
 }
 

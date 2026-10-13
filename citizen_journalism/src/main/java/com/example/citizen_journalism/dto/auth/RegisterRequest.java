@@ -1,5 +1,6 @@
 package com.example.citizen_journalism.dto.auth;
 
+import com.example.citizen_journalism.util.StrongPassword;
 import com.example.citizen_journalism.util.ValidationRules;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -34,9 +35,7 @@ public record RegisterRequest(
         @Pattern(regexp = ValidationRules.PHONE_REGEX, message = ValidationRules.PHONE_MESSAGE)
         String phone,
 
-        @NotBlank(message = "Vui lòng nhập mật khẩu.")
-        @Size(min = 8, max = 64, message = "Mật khẩu phải từ 8 đến 64 ký tự.")
-        @Pattern(regexp = ValidationRules.PASSWORD_REGEX, message = ValidationRules.PASSWORD_MESSAGE)
+        @StrongPassword // = không trống + 8–64 ký tự + có chữ và số (xem util/StrongPassword.java)
         String password
 ) {
 }

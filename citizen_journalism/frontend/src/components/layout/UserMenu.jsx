@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { ROLE_LABELS } from '../../lib/roles'
 import Icon from '../ui/Icon'
@@ -10,7 +10,7 @@ const initialOf = (fullName = '') => fullName.trim().split(/\s+/).pop()?.charAt(
 
 /**
  * Menu tài khoản trên thanh đầu trang khi ĐÃ ĐĂNG NHẬP: ảnh đại diện (chữ cái) + tên;
- * bấm vào thì xổ xuống thông tin tài khoản và nút Đăng xuất. CSS: assets/styles/user-menu.css.
+ * bấm vào thì xổ xuống thông tin tài khoản, "Đổi mật khẩu" và "Đăng xuất". CSS: assets/styles/user-menu.css.
  *
  * Đang dùng ở: routes/Homepage.jsx (thay cho 2 nút Đăng ký / Đăng nhập).
  * Sau này thêm mục mới (Hồ sơ của tôi, Trang quản trị...) thì thêm vào khối "user-menu__list".
@@ -77,6 +77,15 @@ function UserMenu() {
             </div>
           </div>
           <div className="user-menu__list">
+            <Link
+              to="/account/change-password"
+              className="user-menu__item"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
+              <Icon name="lock" size={16} />
+              Đổi mật khẩu
+            </Link>
             <button type="button" className="user-menu__item user-menu__item--danger" role="menuitem" onClick={handleLogout}>
               <Icon name="logOut" size={16} />
               Đăng xuất

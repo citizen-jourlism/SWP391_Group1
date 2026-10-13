@@ -3,12 +3,12 @@ import AuthLayout from '../components/layout/AuthLayout'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import Checkbox from '../components/ui/Checkbox'
-import PasswordStrength from '../components/ui/PasswordStrength'
+import NewPasswordFields from '../components/ui/NewPasswordFields'
 import TextField from '../components/ui/TextField'
 import { useAuth } from '../hooks/useAuth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useForm } from '../hooks/useForm'
-import { createValidator, rules } from '../lib/validators'
+import { confirmPasswordRules, createValidator, newPasswordRules, rules } from '../lib/validators'
 import { authService, pendingVerification } from '../services/authService'
 
 /*
@@ -38,16 +38,8 @@ const validate = createValidator({
   fullName: [rules.required('Vui lòng nhập họ và tên.'), rules.maxLength(100, 'Họ và tên tối đa 100 ký tự.')],
   email: [rules.required('Vui lòng nhập email.'), rules.email()],
   phone: [rules.required('Vui lòng nhập số điện thoại.'), rules.phone()],
-  password: [
-    rules.required('Vui lòng nhập mật khẩu.'),
-    rules.minLength(8, 'Mật khẩu phải có ít nhất 8 ký tự.'),
-    rules.maxLength(64, 'Mật khẩu tối đa 64 ký tự.'),
-    rules.password(),
-  ],
-  confirmPassword: [
-    rules.required('Vui lòng nhập lại mật khẩu.'),
-    rules.sameAs('password', 'Mật khẩu nhập lại không khớp.'),
-  ],
+  password: newPasswordRules,
+  confirmPassword: confirmPasswordRules('password'),
   agreeTerms: [rules.required('Bạn cần đồng ý với điều khoản để tiếp tục.')],
 })
 
@@ -119,28 +111,8 @@ function Register() {
           />
         </div>
 
-        <TextField
-          label="Mật khẩu"
-          icon="lock"
-          type="password"
-          placeholder="Tối thiểu 8 ký tự, gồm chữ và số"
-          autoComplete="new-password"
-          required
-          {...form.field('password')}
-        >
-          {/* Thanh đo độ mạnh mật khẩu, nằm ngay dưới ô mật khẩu */}
-          <PasswordStrength password={form.values.password} />
-        </TextField>
-
-        <TextField
-          label="Nhập lại mật khẩu"
-          icon="lock"
-          type="password"
-          placeholder="Nhập lại mật khẩu ở trên"
-          autoComplete="new-password"
-          required
-          {...form.field('confirmPassword')}
-        />
+        {/* Ô "Mật khẩu" (kèm thanh đo độ mạnh) + "Nhập lại mật khẩu" — component dùng chung */}
+        <NewPasswordFields form={form} />
 
         <Checkbox
           label={

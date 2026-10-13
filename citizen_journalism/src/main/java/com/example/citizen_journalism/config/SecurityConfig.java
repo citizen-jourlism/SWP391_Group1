@@ -39,7 +39,9 @@ public class SecurityConfig {
             "/api/auth/register",
             "/api/auth/verify-otp",
             "/api/auth/resend-otp",
-            "/api/auth/login");
+            "/api/auth/login",
+            "/api/auth/forgot-password",
+            "/api/auth/reset-password");
 
     private final RestAuthenticationHandler restAuthenticationHandler;
     private final JwtAuthenticationConverter jwtAuthenticationConverter;

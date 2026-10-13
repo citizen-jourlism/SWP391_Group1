@@ -27,7 +27,29 @@ export const rules = {
     value.trim().length <= max ? '' : message,
   // So sánh với một ô khác trong form, ví dụ "Nhập lại mật khẩu" phải giống "Mật khẩu".
   sameAs: (field, message) => (value, values) => (value === values[field] ? '' : message),
+  // Ngược lại với sameAs, ví dụ "Mật khẩu mới" phải KHÁC "Mật khẩu hiện tại".
+  differentFrom: (field, message) => (value, values) => (value && value === values[field] ? message : ''),
+  // Đúng n chữ số, ví dụ mã OTP 6 số.
+  digits: (n, message = `Phải gồm đúng ${n} chữ số.`) => (value) =>
+    new RegExp(`^\\d{${n}}$`).test(value) ? '' : message,
 }
+
+/**
+ * Bộ quy tắc cho một MẬT KHẨU MỚI (khớp với @StrongPassword ở backend).
+ * Dùng chung ở Đăng ký, Đặt lại mật khẩu, Đổi mật khẩu, nên chỉ cần sửa 1 chỗ khi đổi quy tắc.
+ */
+export const newPasswordRules = [
+  rules.required('Vui lòng nhập mật khẩu.'),
+  rules.minLength(8, 'Mật khẩu phải có ít nhất 8 ký tự.'),
+  rules.maxLength(64, 'Mật khẩu tối đa 64 ký tự.'),
+  rules.password(),
+]
+
+/** Quy tắc cho ô "Nhập lại mật khẩu": phải giống ô mật khẩu có tên `passwordField`. */
+export const confirmPasswordRules = (passwordField) => [
+  rules.required('Vui lòng nhập lại mật khẩu.'),
+  rules.sameAs(passwordField, 'Mật khẩu nhập lại không khớp.'),
+]
 
 /**
  * Biến một "schema" (danh sách rule cho từng ô) thành hàm validate(values) -> { tênÔ: thôngBáoLỗi }.

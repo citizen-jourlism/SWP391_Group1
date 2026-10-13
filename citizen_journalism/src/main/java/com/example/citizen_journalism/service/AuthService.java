@@ -1,9 +1,11 @@
 package com.example.citizen_journalism.service;
 
+import com.example.citizen_journalism.dto.auth.ChangePasswordRequest;
 import com.example.citizen_journalism.dto.auth.LoginRequest;
 import com.example.citizen_journalism.dto.auth.LoginResponse;
 import com.example.citizen_journalism.dto.auth.OtpInfo;
 import com.example.citizen_journalism.dto.auth.RegisterRequest;
+import com.example.citizen_journalism.dto.auth.ResetPasswordRequest;
 import com.example.citizen_journalism.dto.auth.VerifyOtpRequest;
 import com.example.citizen_journalism.dto.user.UserSummary;
 import com.example.citizen_journalism.entity.OtpToken;
@@ -32,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
  *   - UserIdGenerator  : sinh mã người dùng (CT0001...)
  *   - JwtService       : tạo token đăng nhập
  *
- * Sau này Quên mật khẩu, Đổi mật khẩu cũng sẽ được thêm vào đây.
+ * Các nhóm chức năng: ĐĂNG KÝ + OTP -> ĐĂNG NHẬP -> QUÊN / ĐỔI MẬT KHẨU (theo thứ tự trong file).
  */
 @Service
 @RequiredArgsConstructor
@@ -178,6 +180,66 @@ public class AuthService {
                 .filter(user -> user.getStatus() == User.Status.ACTIVE)
                 .map(UserSummary::from)
                 .orElseThrow(() -> AppException.unauthorized("Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại."));
+    }
+
+    // ======================= QUÊN MẬT KHẨU / ĐỔI MẬT KHẨU =======================
+
+    /**
+     * Quên mật khẩu - bước 1: gửi mã OTP (mục đích RESET_PASSWORD) tới email.
+     *
+     * CHỐNG DÒ EMAIL: chỉ thật sự gửi mã khi email thuộc một tài khoản ACTIVE. Các trường hợp còn lại
+     * (không tồn tại, chưa xác thực, bị khoá) vẫn trả về Y HỆT như đã gửi, để người lạ không thể
+     * nhập thử hàng loạt email để biết email nào đã đăng ký.
+     */
+    @Transactional
+    public OtpInfo forgotPassword(String email) {
+        String normalized = normalizeEmail(email);
+        return userRepository.findByEmail(normalized)
+                .filter(user -> user.getStatus() == User.Status.ACTIVE)
+                .map(user -> otpService.issue(user, OtpToken.Purpose.RESET_PASSWORD))
+                .orElseGet(() -> otpService.describe(normalized));
+    }
+
+    /**
+     * Quên mật khẩu - bước 2: kiểm tra OTP rồi đặt mật khẩu mới.
+     * Email không hợp lệ thì báo giống hệt "mã không còn hiệu lực" (cũng để chống dò email).
+     * noRollbackFor: giữ lại số lần nhập sai OTP khi ném lỗi (giống verifyRegistration).
+     */
+    @Transactional(noRollbackFor = AppException.class)
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByEmail(normalizeEmail(request.email()))
+                .filter(found -> found.getStatus() == User.Status.ACTIVE)
+                .orElseThrow(() -> AppException.badRequest("Mã OTP không còn hiệu lực. Vui lòng gửi lại mã mới."));
+        otpService.verify(user, OtpToken.Purpose.RESET_PASSWORD, request.otp());
+        applyNewPassword(user, request.newPassword());
+    }
+
+    /**
+     * Đổi mật khẩu khi ĐÃ đăng nhập (userId lấy từ token).
+     * Bắt buộc nhập đúng mật khẩu hiện tại, và mật khẩu mới phải khác mật khẩu cũ.
+     */
+    @Transactional
+    public void changePassword(String userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.unauthorized("Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại."));
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw AppException.badRequest("Mật khẩu hiện tại không đúng.");
+        }
+        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+            throw AppException.badRequest("Mật khẩu mới phải khác mật khẩu hiện tại.");
+        }
+        applyNewPassword(user, request.newPassword());
+    }
+
+    /**
+     * Lưu mật khẩu mới (dạng băm) và mở khoá tạm nếu có.
+     * Dùng chung cho đặt lại mật khẩu và đổi mật khẩu: người vừa chứng minh được mình là chủ tài khoản
+     * (qua OTP hoặc mật khẩu cũ) thì không cần chờ hết thời gian khoá do nhập sai trước đó.
+     */
+    private void applyNewPassword(User user, String rawPassword) {
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        user.setFailedLoginAttempts(0);
+        user.setLockedUntil(null);
     }
 
     /**
