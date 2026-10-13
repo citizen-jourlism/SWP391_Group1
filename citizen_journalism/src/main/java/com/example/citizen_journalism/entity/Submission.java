@@ -1,6 +1,9 @@
 package com.example.citizen_journalism.entity;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -145,18 +148,34 @@ public class Submission extends BaseEntity {
 
     /**
      * Loại phản ánh trên form (SRS: Tin nóng 24/7, Khiếu nại/Tố cáo, Phóng sự điều tra, Ý kiến chuyên gia).
-     * Mỗi loại ứng với một quy trình xử lý (SubmissionType): tin nóng đi theo luồng Tin nóng,
-     * các loại còn lại đi theo luồng tiếp nhận Khiếu nại (SRS 2.1.3: BTV kiểm tra giá trị báo chí...).
+     *
+     * submissionType: quy trình xử lý. Tin nóng đi theo luồng Tin nóng, các loại còn lại đi theo luồng
+     *                 tiếp nhận Khiếu nại (SRS 2.1.3: BTV kiểm tra giá trị báo chí...).
+     * allowedRoles  : vai trò được chọn loại này.
+     *   - Người dân (CITIZEN) chỉ gửi Tin nóng hoặc Khiếu nại / Tố cáo.
+     *   - Phóng sự điều tra: cộng tác viên, chuyên gia.  Ý kiến chuyên gia: chỉ chuyên gia.
+     * Muốn đổi quyền thì chỉ sửa ở đây: backend tự chặn (SubmissionService.validate) và frontend tự ẩn
+     * các loại không được phép (nhận danh sách qua GET /api/submissions/options).
      */
     @Getter
     @RequiredArgsConstructor
     public enum ReportCategory {
-        HOT_NEWS(SubmissionType.HOT_NEWS),
-        COMPLAINT(SubmissionType.COMPLAINT),
-        INVESTIGATION(SubmissionType.COMPLAINT),
-        EXPERT_OPINION(SubmissionType.COMPLAINT);
+        HOT_NEWS(SubmissionType.HOT_NEWS, Set.of(User.Role.CITIZEN, User.Role.CONTRIBUTOR, User.Role.EXPERT)),
+        COMPLAINT(SubmissionType.COMPLAINT, Set.of(User.Role.CITIZEN, User.Role.CONTRIBUTOR, User.Role.EXPERT)),
+        INVESTIGATION(SubmissionType.COMPLAINT, Set.of(User.Role.CONTRIBUTOR, User.Role.EXPERT)),
+        EXPERT_OPINION(SubmissionType.COMPLAINT, Set.of(User.Role.EXPERT));
 
         private final SubmissionType submissionType;
+        private final Set<User.Role> allowedRoles;
+
+        public boolean isAllowedFor(User.Role role) {
+            return allowedRoles.contains(role);
+        }
+
+        /** Các loại một vai trò được gửi, giữ đúng thứ tự khai báo ở trên. */
+        public static List<ReportCategory> allowedFor(User.Role role) {
+            return Arrays.stream(values()).filter(category -> category.isAllowedFor(role)).toList();
+        }
     }
 
     /** Mối quan hệ với sự việc: nạn nhân trực tiếp, nhân chứng, đại diện pháp lý, chuyên gia độc lập. */

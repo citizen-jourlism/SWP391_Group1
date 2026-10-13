@@ -92,7 +92,7 @@ function SubmissionReceipt({ receipt, onNew }) {
       <div className="receipt__actions">
         <Button variant="secondary" onClick={onNew}>
           <Icon name="plus" size={16} />
-          Gửi phản ánh khác
+          Gửi thông tin khác
         </Button>
         {/* Mở trang theo dõi của chính hồ sơ này (trong "Hồ sơ đã gửi", không cần nhập PIN) */}
         <Button to={`/account/submissions/${receipt.trackingCode}`}>

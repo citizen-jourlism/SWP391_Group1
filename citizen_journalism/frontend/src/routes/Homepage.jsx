@@ -66,10 +66,11 @@ function Homepage() {
 						hải quan, hay lộ thông tin sai lệch, hãy đồng hành và gửi thông tin cho đội ngũ
 						kiểm định để giúp cộng đồng được biết và giải quyết kịp thời.
 					</p>
-					{/* Chưa đăng nhập thì /submit tự chuyển sang trang Đăng nhập, đăng nhập xong quay lại đúng form */}
+					{/* Chưa đăng nhập thì /submit tự chuyển sang trang Đăng nhập, đăng nhập xong quay lại đúng form.
+					    Một nút gửi chung: chọn Tin nóng hay Khiếu nại... ngay trong form. */}
 					<div className="hero-actions">
-						<Link className="primary-btn" to="/submit?type=hot-news">Bấm để gửi tin nóng</Link>
-						<Link className="secondary-btn" to="/submit">Gửi khiếu nại</Link>
+						<Link className="primary-btn" to="/submit">Gửi thông tin</Link>
+						<Link className="secondary-btn" to="/track">Tra cứu hồ sơ</Link>
 					</div>
 					{/* Ô tra cứu nhanh: dùng thẻ <form> để nhấn Enter cũng tra cứu được */}
 					<form className="report-box" onSubmit={goToTracking}>
@@ -158,7 +159,7 @@ function Homepage() {
 					<div className="mission-head">
 						<div className="mission-badge">CƠ QUAN NGHIỆP VỤ</div>
 						<h2>CÁC BẢN CHUYỂN MÔN THỰC THUỘC TÒA SOẠN</h2>
-						<button className="mini-link" type="button">Làm việc lên tới 24/7</button>
+						<button className="mini-link" type="button">Làm việc 24/7</button>
 					</div>
 					<div className="mission-grid">
 						{missions.map(([icon, title, description]) => (
@@ -168,10 +169,6 @@ function Homepage() {
 								<p>{description}</p>
 							</div>
 						))}
-					</div>
-					<div className="cta-strip">
-						<div className="cta-copy">CÂM KẾT &quot;4 KHÔNG” - 4 CỘT CỦA TÒA SOẠN TIN NÓNG DÂN SINH</div>
-						<Link to="/submit">Gửi Phản Ánh</Link>
 					</div>
 				</section>
 			</main>

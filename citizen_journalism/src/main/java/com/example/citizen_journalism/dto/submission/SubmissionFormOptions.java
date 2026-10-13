@@ -1,5 +1,6 @@
 package com.example.citizen_journalism.dto.submission;
 
+import com.example.citizen_journalism.entity.Submission.ReportCategory;
 import java.util.List;
 
 /**
@@ -8,6 +9,7 @@ import java.util.List;
  * TẠI SAO lấy từ backend? Danh sách tỉnh và giới hạn tệp chỉ khai báo 1 lần ở backend (nơi kiểm tra thật),
  * frontend đọc về để hiển thị và kiểm tra trước -> không có chuyện 2 bên lệch nhau.
  *
+ * @param categories      các loại phản ánh NGƯỜI ĐANG ĐĂNG NHẬP được chọn (theo vai trò, xem ReportCategory.allowedRoles)
  * @param provinces       danh sách tỉnh/thành (util/VietnamProvinces)
  * @param maxFiles        số tệp tối đa mỗi lần gửi
  * @param maxFileSizeMb   dung lượng tối đa MỖI tệp (MB)
@@ -15,6 +17,7 @@ import java.util.List;
  * @param acceptedTypes   các Content-Type được nhận (gắn vào thuộc tính accept của ô chọn tệp)
  */
 public record SubmissionFormOptions(
+        List<ReportCategory> categories,
         List<String> provinces,
         int maxFiles,
         long maxFileSizeMb,

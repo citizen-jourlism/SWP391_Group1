@@ -15,12 +15,13 @@ import '../../assets/styles/site-header.css'
  *   ┌──────────────────────────────────────────────────────────────────────────────┐
  *   │ ● Đang trực 24/7 · Thứ Hai, 13/10/2026         ☎ 1900 6668 · ✉ email toà soạn │ <- dải thông tin (đỏ)
  *   ├──────────────────────────────────────────────────────────────────────────────┤
- *   │ [Logo] TIN NÓNG DÂN SINH   Trang chủ  Gửi khiếu nại  Tra cứu ...   [Nút] [TK]  │ <- thanh chính (navy, dính trên cùng)
+ *   │ [Logo] TIN NÓNG DÂN SINH   Trang chủ  Tra cứu hồ sơ ...      [Gửi thông tin] [TK] │ <- thanh chính (navy, dính trên cùng)
  *   └──────────────────────────────────────────────────────────────────────────────┘
  *
  * KHÁC NHAU TRƯỚC / SAU KHI ĐĂNG NHẬP (phần bên phải thanh chính):
  *   - Chưa đăng nhập : "Đăng nhập" + "Đăng ký" (nút cam).
- *   - Người dân / CTV / chuyên gia : nút cam "Gửi tin nóng" + menu tài khoản.
+ *   - Người dân / CTV / chuyên gia : nút cam "Gửi thông tin" (MỘT nút chung cho tin nóng, khiếu nại...;
+ *                                    chọn loại ngay trong form) + menu tài khoản.
  *   - Admin          : nút "Trang quản trị" + menu tài khoản.
  *   - Nhân sự toà soạn khác: chỉ menu tài khoản (chưa có bàn làm việc riêng).
  * Màn hình vừa (≤ 1360px): menu bỏ icon, menu tài khoản chỉ còn ảnh đại diện.
@@ -29,11 +30,10 @@ import '../../assets/styles/site-header.css'
 
 /**
  * Các mục điều hướng. hash = cuộn tới một khối của trang chủ (xem id trong Homepage.jsx + ScrollToTop.jsx).
- * roles (không bắt buộc): chỉ hiện với các vai trò này; khách chưa đăng nhập vẫn thấy (bấm vào sẽ được mời đăng nhập).
+ * Nút gửi thông tin KHÔNG nằm ở đây mà là nút cam bên phải (primaryAction) cho nổi bật.
  */
 const NAV_ITEMS = [
   { to: '/', label: 'Trang chủ', icon: 'home', end: true },
-  { to: '/submit', label: 'Gửi khiếu nại', icon: 'flag', roles: SUBMITTER_ROLES },
   { to: '/track', label: 'Tra cứu hồ sơ', icon: 'search' },
   { to: '/#gioi-thieu', label: 'Giới thiệu', icon: 'info', hash: true },
   { to: '/#lien-he', label: 'Liên hệ', icon: 'phone', hash: true },
@@ -66,7 +66,6 @@ function SiteHeader() {
     return () => document.removeEventListener('keydown', closeOnEscape)
   }, [menuOpen])
 
-  const navItems = NAV_ITEMS.filter((item) => !item.roles || !user || item.roles.includes(user.role))
   const ready = status === 'ready' // Đang kiểm tra token lúc mở web -> chưa vẽ nút, tránh nút "Đăng nhập" nháy lên rồi biến mất
 
   /** Nút hành động chính, đổi theo trạng thái đăng nhập / vai trò. Dùng cả ở thanh chính lẫn menu ☰. */
@@ -76,9 +75,9 @@ function SiteHeader() {
       Đăng ký
     </Link>
   ) : SUBMITTER_ROLES.includes(user.role) ? (
-    <Link to="/submit?type=hot-news" className="site-header__cta">
-      <Icon name="zap" size={16} />
-      Gửi tin nóng
+    <Link to="/submit" className="site-header__cta">
+      <Icon name="send" size={16} />
+      Gửi thông tin
     </Link>
   ) : user.role === 'SYSTEM_ADMIN' ? (
     <Link to="/admin" className="site-header__cta site-header__cta--dark">
@@ -124,7 +123,7 @@ function SiteHeader() {
 
           {/* Menu điều hướng: hàng ngang trên máy tính, xổ xuống khi bấm ☰ trên điện thoại */}
           <nav className={`site-header__nav ${menuOpen ? 'is-open' : ''}`} aria-label="Điều hướng chính">
-            {navItems.map((item) =>
+            {NAV_ITEMS.map((item) =>
               item.hash ? (
                 // Link tới 1 khối trong trang chủ: dùng Link thường (NavLink sẽ coi mọi "/#..." là đang ở trang chủ)
                 <Link key={item.to} to={item.to} className="site-header__link">

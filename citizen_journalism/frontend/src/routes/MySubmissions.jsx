@@ -52,7 +52,7 @@ function MySubmissions() {
         <p>{data && `Bạn có ${data.totalItems} hồ sơ`}</p>
         <Button to="/submit" className="btn--sm">
           <Icon name="plus" size={16} />
-          Gửi phản ánh mới
+          Gửi thông tin mới
         </Button>
       </div>
 
@@ -76,7 +76,7 @@ function MySubmissions() {
           <p>Khi phát hiện sự việc cần phản ánh, hãy gửi cho toà soạn. Tiến độ xử lý sẽ hiện ở đây.</p>
           <Button to="/submit">
             <Icon name="send" size={16} />
-            Gửi phản ánh đầu tiên
+            Gửi thông tin đầu tiên
           </Button>
         </div>
       )}

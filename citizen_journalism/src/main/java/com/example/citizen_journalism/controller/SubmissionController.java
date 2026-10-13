@@ -29,7 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * API GỬI TIN / KHIẾU NẠI của người dân. Chỉ CITIZEN, CONTRIBUTOR, EXPERT được gọi (luật trong SecurityConfig).
  *
- *   GET  /api/submissions/options -> danh sách tỉnh/thành + giới hạn tệp cho form
+ *   GET  /api/submissions/options -> loại phản ánh được phép (theo vai trò) + tỉnh/thành + giới hạn tệp cho form
  *   POST /api/submissions         -> gửi form (multipart/form-data, gồm 2 phần):
  *                                      - "data" : JSON các ô chữ (CreateSubmissionRequest)
  *                                      - "files": các tệp tư liệu (1..10 tệp)
@@ -48,8 +48,8 @@ public class SubmissionController {
     private final SubmissionTrackingService trackingService;
 
     @GetMapping("/options")
-    public ApiResponse<SubmissionFormOptions> getFormOptions() {
-        return ApiResponse.ok("OK", submissionService.getFormOptions());
+    public ApiResponse<SubmissionFormOptions> getFormOptions(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.ok("OK", submissionService.getFormOptions(jwt.getSubject()));
     }
 
     /**
@@ -63,7 +63,7 @@ public class SubmissionController {
     public ApiResponse<SubmissionReceipt> create(@AuthenticationPrincipal Jwt jwt,
                                                  @Valid @RequestPart("data") CreateSubmissionRequest request,
                                                  @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-        return ApiResponse.ok("Gửi phản ánh thành công!", submissionService.create(jwt.getSubject(), request, files));
+        return ApiResponse.ok("Gửi thông tin thành công!", submissionService.create(jwt.getSubject(), request, files));
     }
 
     /** @RequestParam(defaultValue): không truyền page/size thì lấy trang đầu, 10 dòng. */

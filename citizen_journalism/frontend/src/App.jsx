@@ -59,7 +59,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* Gửi phản ánh / khiếu nại: chỉ người dân, cộng tác viên, chuyên gia. /submit?type=hot-news để chọn sẵn Tin nóng */}
+          {/* Gửi thông tin (tin nóng, khiếu nại...): chỉ người dân, cộng tác viên, chuyên gia. Loại được chọn tuỳ vai trò */}
           <Route
             path="/submit"
             element={

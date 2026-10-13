@@ -9,7 +9,7 @@ import CategoryPicker from './CategoryPicker'
 import EvidenceUploader from './EvidenceUploader'
 import { useForm } from '../../hooks/useForm'
 import { toPayload } from '../../lib/payload'
-import { MB, RELATIONSHIPS } from '../../lib/submission'
+import { MB, RELATIONSHIPS, REPORT_CATEGORIES } from '../../lib/submission'
 import { createValidator, nowLocalIso, rules } from '../../lib/validators'
 import { submissionService } from '../../services/submissionService'
 
@@ -18,7 +18,8 @@ import { submissionService } from '../../services/submissionService'
  * CSS: assets/styles/submit.css.
  *
  * 4 PHẦN:
- *   1. Loại phản ánh   : Tin nóng 24/7 / Khiếu nại - Tố cáo / Phóng sự điều tra / Ý kiến chuyên gia (bắt buộc)
+ *   1. Loại phản ánh   : Tin nóng 24/7 / Khiếu nại - Tố cáo / Phóng sự điều tra / Ý kiến chuyên gia (bắt buộc).
+ *                        Chỉ hiện các loại vai trò của người dùng được gửi (options.categories, ví dụ người dân: 2 loại đầu).
  *   2. Nội dung sự việc : Tiêu đề (10–200), Tóm tắt (≤300), Nội dung chi tiết (50–5000),
  *                         Thời điểm xảy ra (không ở tương lai), Tỉnh/Thành phố, Địa chỉ (≤250)
  *   3. Tư liệu          : ít nhất 1 tệp JPG/PNG/MP4/MP3/PDF, ≤50MB/tệp (EvidenceUploader)
@@ -97,7 +98,10 @@ function ReportForm({ options, profile, initialCategory, onSubmitted }) {
   const validate = useMemo(() => buildValidator(options), [options])
   const form = useForm(
     {
-      category: initialCategory,
+      // Loại chọn sẵn (từ đường dẫn ?type=...) mà vai trò không được gửi thì chọn thẻ ĐẦU TIÊN đang hiển thị
+      category: options.categories.includes(initialCategory)
+        ? initialCategory
+        : REPORT_CATEGORIES.find((item) => options.categories.includes(item.value))?.value,
       title: '',
       summary: '',
       content: '',
@@ -137,7 +141,7 @@ function ReportForm({ options, profile, initialCategory, onSubmitted }) {
   }
 
   const submitLabel = !form.submitting
-    ? 'Gửi phản ánh'
+    ? 'Gửi thông tin'
     : progress < 100
       ? `Đang tải lên ${progress}%...`
       : 'Đang xử lý...'
@@ -149,7 +153,7 @@ function ReportForm({ options, profile, initialCategory, onSubmitted }) {
       {/* ----- 1. Loại phản ánh ----- */}
       <section className="form-card">
         <SectionHeader step={1} title="Loại phản ánh" description="Chọn loại phù hợp nhất để toà soạn chuyển đúng bộ phận." />
-        <CategoryPicker {...form.field('category')} />
+        <CategoryPicker allowed={options.categories} {...form.field('category')} />
       </section>
 
       {/* ----- 2. Nội dung sự việc ----- */}

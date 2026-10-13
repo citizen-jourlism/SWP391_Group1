@@ -7,15 +7,16 @@ import { REPORT_CATEGORIES } from '../../lib/submission'
  *
  * KỸ THUẬT: mỗi thẻ là một <label> bọc thẻ <input type="radio"> thật (ẩn đi bằng CSS).
  *   - Bấm vào bất kỳ đâu trên thẻ = chọn radio đó.
- *   - Dùng phím mũi tên để chuyển lựa chọn, trình đọc màn hình đọc đúng "1 trong 4" (vì cùng name).
+ *   - Dùng phím mũi tên để chuyển lựa chọn, trình đọc màn hình đọc đúng "1 trong N lựa chọn" (vì cùng name).
  *
- * Props: value, onChange (nhận sự kiện của input như ô nhập thường -> dùng thẳng form.field('category')), error, name.
+ * Props: value, onChange (nhận sự kiện của input như ô nhập thường -> dùng thẳng form.field('category')), error, name,
+ *        allowed = các loại người dùng ĐƯỢC chọn theo vai trò (backend gửi về, ví dụ người dân chỉ có HOT_NEWS, COMPLAINT).
  */
-function CategoryPicker({ name, value, onChange, error }) {
+function CategoryPicker({ name, value, onChange, error, allowed }) {
   return (
     <fieldset className="category-picker">
       <legend className="sr-only">Loại phản ánh</legend>
-      {REPORT_CATEGORIES.map((item) => (
+      {REPORT_CATEGORIES.filter((item) => allowed.includes(item.value)).map((item) => (
         <label key={item.value} className={`category-card ${value === item.value ? 'is-selected' : ''}`}>
           <input
             type="radio"

@@ -72,9 +72,12 @@ public class SubmissionService {
     @Value("${spring.servlet.multipart.max-request-size}")
     private DataSize maxRequestSize;
 
-    /** Tuỳ chọn cho form (danh sách tỉnh, giới hạn tệp). Xem SubmissionFormOptions. */
-    public SubmissionFormOptions getFormOptions() {
+    /** Tuỳ chọn cho form (loại phản ánh được phép theo vai trò, danh sách tỉnh, giới hạn tệp). Xem SubmissionFormOptions. */
+    @Transactional(readOnly = true)
+    public SubmissionFormOptions getFormOptions(String userId) {
+        User user = userRepository.getActiveById(userId);
         return new SubmissionFormOptions(
+                Submission.ReportCategory.allowedFor(user.getRole()),
                 VietnamProvinces.ALL,
                 MAX_FILES,
                 MAX_FILE_BYTES / 1024 / 1024,
@@ -88,7 +91,7 @@ public class SubmissionService {
         List<MultipartFile> evidenceFiles = files == null ? List.of() : files;
 
         // ----- 1. Kiểm tra -----
-        validate(request, evidenceFiles);
+        validate(author, request, evidenceFiles);
         boolean anonymous = request.anonymous();
 
         // ----- 2. Lưu hồ sơ -----
@@ -155,8 +158,13 @@ public class SubmissionService {
      * Gom MỌI lỗi theo từng ô rồi ném 1 lần (người dùng thấy hết lỗi cùng lúc, không phải sửa từng cái).
      * Tên khoá trong map trùng tên ô ở frontend để lỗi hiện đúng chỗ.
      */
-    private void validate(CreateSubmissionRequest request, List<MultipartFile> files) {
+    private void validate(User author, CreateSubmissionRequest request, List<MultipartFile> files) {
         Map<String, String> errors = new LinkedHashMap<>();
+
+        // Loại phản ánh phải đúng vai trò (ví dụ người dân chỉ gửi Tin nóng / Khiếu nại) - xem ReportCategory
+        if (!request.category().isAllowedFor(author.getRole())) {
+            errors.put("category", "Tài khoản của bạn không gửi được loại phản ánh này.");
+        }
 
         if (!VietnamProvinces.isValid(request.province())) {
             errors.put("province", "Tỉnh/thành phố không hợp lệ.");

@@ -13,9 +13,10 @@ import { userService } from '../services/userService'
 import '../assets/styles/submit.css'
 
 /*
- * TRANG GỬI PHẢN ÁNH / KHIẾU NẠI — đường dẫn /submit (khai báo trong App.jsx).
+ * TRANG GỬI THÔNG TIN (tin nóng, khiếu nại...) — đường dẫn /submit (khai báo trong App.jsx).
+ * Mở từ nút "Gửi thông tin" trên thanh đầu trang và ở trang chủ.
  * Chỉ người dân, cộng tác viên, chuyên gia (ProtectedRoute roles = SUBMITTER_ROLES trong lib/roles.js).
- * Có thể chọn sẵn loại qua đường dẫn: /submit?type=hot-news (nút "Gửi tin nóng"), mặc định là Khiếu nại.
+ * Có thể chọn sẵn loại qua đường dẫn: /submit?type=hot-news; mặc định là loại đầu tiên được phép (Khiếu nại).
  *
  * LUỒNG:
  *   1. Mở trang -> tải CÙNG LÚC: tuỳ chọn form (tỉnh/thành, giới hạn tệp) + hồ sơ tài khoản (để điền sẵn họ tên, SĐT...).
@@ -33,7 +34,7 @@ const TIPS = [
 ]
 
 function SubmitReport() {
-  useDocumentTitle('Gửi phản ánh')
+  useDocumentTitle('Gửi thông tin')
   const [searchParams] = useSearchParams()
   const [data, setData] = useState(null) // { options, profile }
   const [loadError, setLoadError] = useState('')
@@ -70,7 +71,7 @@ function SubmitReport() {
 
   return (
     <AccountLayout
-      title={receipt ? 'Gửi phản ánh thành công' : 'Gửi phản ánh, khiếu nại'}
+      title={receipt ? 'Gửi thông tin thành công' : 'Gửi thông tin tới toà soạn'}
       subtitle={
         receipt
           ? 'Lưu lại mã hồ sơ và mã PIN để theo dõi tiến độ xử lý.'
