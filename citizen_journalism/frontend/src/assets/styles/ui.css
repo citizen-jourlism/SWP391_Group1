@@ -37,6 +37,43 @@
   flex-wrap: wrap;
 }
 
+/* Hàng nút cuối form, căn phải (ví dụ "Huỷ thay đổi" + "Lưu thay đổi") */
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+@media (max-width: 560px) {
+  .form__actions {
+    flex-direction: column-reverse; /* điện thoại: nút chính lên trên, rộng hết khung */
+  }
+}
+
+/* Ô chỉ hiển thị (không gõ được), có nút hành động bên phải. Ví dụ ô Email ở trang Hồ sơ. */
+.readonly-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1.5px dashed var(--input-border);
+  border-radius: var(--radius-sm);
+  background: #f6f8fb;
+  color: var(--muted);
+}
+
+.readonly-field__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 15px;
+}
+
 /* Link chữ màu cam (không phải nút) */
 .text-link {
   color: var(--orange-strong);
@@ -319,6 +356,84 @@
   color: var(--muted);
   font-weight: 600;
   cursor: default;
+}
+
+/* Biến thể màu xám cho hành động phụ / nguy hiểm nhẹ (ví dụ "Xoá ảnh") */
+.link-button--muted {
+  color: var(--muted);
+}
+
+.link-button--muted:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+/* ---------- Hộp thoại (components/ui/Modal.jsx) ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(9, 28, 47, 0.55);
+  backdrop-filter: blur(3px);
+  animation: fade-in 0.15s ease;
+}
+
+.modal__dialog {
+  width: min(460px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+  animation: pop-in 0.25s ease;
+}
+
+.modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 0;
+}
+
+.modal__header h2 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 19px;
+}
+
+.modal__close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.modal__close:hover {
+  background: #f1f4f8;
+  color: var(--navy-800);
+}
+
+.modal__body {
+  padding: 16px 24px 24px;
+}
+
+.modal__text {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.modal__text strong {
+  color: var(--navy-800);
+  word-break: break-all;
 }
 
 /* ---------- Thông báo ---------- */

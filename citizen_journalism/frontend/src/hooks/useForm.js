@@ -20,6 +20,9 @@ import { useState } from 'react'
  * @param validate      hàm (values) => { tênÔ: lỗi }, thường tạo bằng createValidator() trong lib/validators.js
  */
 export function useForm(initialValues, validate) {
+  // "Mốc" để so sánh xem người dùng đã sửa gì chưa (isDirty) và để quay lại khi bấm Huỷ (reset).
+  // Ban đầu là initialValues; sau khi lưu thành công có thể đặt mốc mới bằng reset(giáTrịMới).
+  const [baseline, setBaseline] = useState(initialValues)
   const [values, setValues] = useState(initialValues)          // Giá trị hiện tại của các ô
   const [touched, setTouched] = useState({})                    // Ô nào người dùng đã "chạm" (rời khỏi)
   const [serverErrors, setServerErrors] = useState({})          // Lỗi theo ô do backend trả về
@@ -40,7 +43,7 @@ export function useForm(initialValues, validate) {
 
   /** Trả về bộ props gắn thẳng vào ô nhập: value (hoặc checked), onChange, onBlur, error. */
   const field = (name) => {
-    const isCheckbox = typeof initialValues[name] === 'boolean'
+    const isCheckbox = typeof baseline[name] === 'boolean'
     return {
       name,
       [isCheckbox ? 'checked' : 'value']: values[name],
@@ -58,7 +61,7 @@ export function useForm(initialValues, validate) {
    */
   const handleSubmit = (onValid) => async (event) => {
     event?.preventDefault()
-    setTouched(Object.fromEntries(Object.keys(initialValues).map((key) => [key, true])))
+    setTouched(Object.fromEntries(Object.keys(baseline).map((key) => [key, true])))
     if (Object.keys(clientErrors).length > 0) return
 
     setSubmitting(true)
@@ -74,5 +77,21 @@ export function useForm(initialValues, validate) {
     }
   }
 
-  return { values, setValue, field, errorOf, handleSubmit, submitting, formError, setFormError }
+  /**
+   * Đưa form về trạng thái "sạch": xoá mọi lỗi và dấu đã chạm.
+   *   - reset()          : quay lại giá trị mốc (dùng cho nút "Huỷ thay đổi")
+   *   - reset(newValues) : đặt giá trị mốc MỚI (dùng sau khi lưu thành công)
+   */
+  const reset = (newValues = baseline) => {
+    setBaseline(newValues)
+    setValues(newValues)
+    setTouched({})
+    setServerErrors({})
+    setFormError('')
+  }
+
+  /** true nếu người dùng đã sửa khác so với mốc (để bật/tắt nút Lưu, Huỷ). So sánh nông từng ô. */
+  const isDirty = Object.keys(baseline).some((key) => values[key] !== baseline[key])
+
+  return { values, setValue, field, errorOf, handleSubmit, submitting, formError, setFormError, reset, isDirty }
 }

@@ -34,3 +34,6 @@ build/
 
 ### Bien bi mat (mat khau DB, Gmail...) - xem .env.example ###
 .env
+
+### File nguoi dung tai len (anh dai dien, bang chung...) ###
+uploads/

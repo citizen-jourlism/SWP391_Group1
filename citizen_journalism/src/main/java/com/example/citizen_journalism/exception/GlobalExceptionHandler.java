@@ -12,6 +12,7 @@ import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * "Lưới an toàn" bắt MỌI lỗi xảy ra trong controller/service và trả về cùng định dạng ApiResponse.
@@ -46,6 +47,16 @@ public class GlobalExceptionHandler {
             errors.putIfAbsent(error.getField(), error.getDefaultMessage());
         }
         return build(HttpStatus.BAD_REQUEST, "Dữ liệu chưa hợp lệ, vui lòng kiểm tra lại.", errors);
+    }
+
+    /**
+     * File tải lên vượt giới hạn chung của server (spring.servlet.multipart.max-file-size trong application.properties).
+     * Lỗi này xảy ra TRƯỚC khi vào service, nên phải bắt riêng ở đây. Giới hạn chi tiết theo từng loại file
+     * (ví dụ avatar 2MB) do FileStorageService kiểm tra.
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTooLarge(MaxUploadSizeExceededException ex) {
+        return build(HttpStatus.CONTENT_TOO_LARGE, "File tải lên quá lớn.", null);
     }
 
     /** Body gửi lên không phải JSON hợp lệ (ví dụ thiếu dấu ngoặc). */

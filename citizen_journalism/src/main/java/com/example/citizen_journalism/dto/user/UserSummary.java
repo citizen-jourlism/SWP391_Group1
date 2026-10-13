@@ -17,7 +17,8 @@ public record UserSummary(
         String email,
         String phone,
         User.Role role,
-        Integer reputationScore
+        Integer reputationScore,
+        String avatarUrl  // Để menu tài khoản hiện ảnh đại diện (null = hiện chữ cái đầu tên)
 ) {
 
     /** Chuyển entity -> DTO. Viết 1 chỗ để mọi nơi dùng chung. */
@@ -28,6 +29,7 @@ public record UserSummary(
                 user.getEmail(),
                 user.getPhone(),
                 user.getRole(),
-                user.getReputationScore());
+                user.getReputationScore(),
+                user.getAvatarUrl());
     }
 }

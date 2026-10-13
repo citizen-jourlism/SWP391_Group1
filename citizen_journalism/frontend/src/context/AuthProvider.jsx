@@ -13,6 +13,7 @@ import { AuthContext } from './authContext'
  *   - status : 'loading' (đang kiểm tra token lúc mở web) | 'ready' (đã biết đăng nhập hay chưa)
  *   - login(loginData, remember): lưu token + user sau khi gọi API đăng nhập thành công
  *   - logout(): xoá token + user
+ *   - updateUser(changes): sửa một phần thông tin user (sau khi cập nhật hồ sơ)
  *
  * KHI MỞ / TẢI LẠI WEB: nếu trình duyệt còn token -> gọi GET /api/auth/me để
  *   (1) kiểm tra token còn hạn không, (2) lấy thông tin MỚI NHẤT của người dùng (có thể đã bị khoá).
@@ -36,6 +37,14 @@ export function AuthProvider({ children }) {
     setUser(loggedInUser)
   }, [])
 
+  /**
+   * Cập nhật một phần thông tin người dùng đang lưu (ví dụ sau khi sửa hồ sơ / đổi ảnh đại diện),
+   * để menu tài khoản đổi theo ngay mà không cần tải lại trang. Ví dụ: updateUser({ fullName, avatarUrl })
+   */
+  const updateUser = useCallback((changes) => {
+    setUser((current) => (current ? { ...current, ...changes } : current))
+  }, [])
+
   useEffect(() => {
     // Mọi API trả 401 khi đang có token (token hết hạn) -> tự đăng xuất (xem lib/api.js).
     setUnauthorizedHandler(logout)
@@ -49,7 +58,10 @@ export function AuthProvider({ children }) {
   }, [logout])
 
   // useMemo: chỉ tạo object mới khi dữ liệu thật sự đổi -> các component dùng useAuth() không bị vẽ lại thừa.
-  const value = useMemo(() => ({ user, status, login, logout }), [user, status, login, logout])
+  const value = useMemo(
+    () => ({ user, status, login, logout, updateUser }),
+    [user, status, login, logout, updateUser],
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

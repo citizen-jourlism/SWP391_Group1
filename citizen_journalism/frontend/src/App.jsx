@@ -7,6 +7,7 @@ import ForgotPassword from './routes/ForgotPassword.jsx'
 import Homepage from './routes/Homepage.jsx'
 import Login from './routes/Login.jsx'
 import NotFound from './routes/NotFound.jsx'
+import Profile from './routes/Profile.jsx'
 import Register from './routes/Register.jsx'
 import VerifyOtp from './routes/VerifyOtp.jsx'
 
@@ -33,6 +34,14 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />  {/* Quên mật khẩu */}
 
           {/* ----- Trang cần đăng nhập ----- */}
+          <Route
+            path="/account/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/account/change-password"
             element={

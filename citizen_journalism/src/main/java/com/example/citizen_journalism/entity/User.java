@@ -1,5 +1,6 @@
 package com.example.citizen_journalism.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -67,8 +68,30 @@ public class User {
     @Builder.Default
     private UpgradeStatus upgradeStatus = UpgradeStatus.NONE;
 
+    /** Điểm uy tín. Tài khoản mới mặc định DEFAULT_REPUTATION_SCORE (xem initializeDefaults). Người dùng chỉ được xem. */
     @Column(name = "reputation_score")
     private Integer reputationScore;
+
+    /** Điểm thưởng tích luỹ (đổi quà sau này). Mặc định 0, người dùng chỉ được xem. */
+    @Column(name = "reward_points", nullable = false, columnDefinition = "int default 0")
+    @Builder.Default
+    private int rewardPoints = 0;
+
+    // ----- Thông tin hồ sơ cá nhân (trang Hồ sơ, xem UserService) -----
+
+    /** Số căn cước công dân. Không bắt buộc; nếu có thì không được trùng với người khác. */
+    @Column(name = "citizen_id", unique = true, length = 20)
+    private String citizenId;
+
+    @Column(name = "address", length = 255)
+    private String address;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    /** Đường dẫn ảnh đại diện, ví dụ "/uploads/avatars/CT0001-a1b2c3.png" (file nằm trong thư mục uploads của project). */
+    @Column(name = "avatar_url", length = 255)
+    private String avatarUrl;
 
     /**
      * Số lần nhập SAI mật khẩu liên tiếp (chống dò mật khẩu). Đăng nhập đúng thì về 0.
@@ -94,14 +117,14 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    /** Điểm uy tín mặc định của mọi tài khoản mới. */
+    public static final int DEFAULT_REPUTATION_SCORE = 100;
+
+    /** Chạy tự động ngay TRƯỚC khi lưu tài khoản mới vào DB lần đầu (@PrePersist): gán giá trị mặc định. */
     @PrePersist
     private void initializeDefaults() {
-        if (reputationScore == null && role != null) {
-            reputationScore = switch (role) {
-                case CITIZEN -> 50;
-                case CONTRIBUTOR -> 100;
-                default -> null;
-            };
+        if (reputationScore == null) {
+            reputationScore = DEFAULT_REPUTATION_SCORE;
         }
     }
 

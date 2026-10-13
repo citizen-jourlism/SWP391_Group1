@@ -50,10 +50,18 @@ public class OtpService {
     private int maxAttempts;
 
     /**
-     * Sinh mã mới và gửi qua email.
+     * Sinh mã mới và gửi tới email HIỆN TẠI của người dùng (đăng ký, quên mật khẩu).
      * Mã cũ KHÔNG cần xoá: hệ thống luôn chỉ kiểm tra mã MỚI NHẤT, nên mã cũ tự vô hiệu.
      */
     public OtpInfo issue(User user, OtpToken.Purpose purpose) {
+        return issue(user, purpose, user.getEmail(), null);
+    }
+
+    /**
+     * Bản đầy đủ: gửi mã tới địa chỉ `recipient` (có thể KHÁC email hiện tại) và lưu kèm `payload`.
+     * Dùng cho đổi email: gửi mã tới email MỚI, payload = email mới (xem UserService).
+     */
+    public OtpInfo issue(User user, OtpToken.Purpose purpose, String recipient, String payload) {
         // 1. Chặn gửi liên tục: nếu mã gần nhất được tạo chưa đủ thời gian chờ -> báo lỗi 429.
         latest(user, purpose).ifPresent(token -> {
             long waited = Duration.between(token.getCreatedAt(), LocalDateTime.now()).getSeconds();
@@ -72,13 +80,14 @@ public class OtpService {
                 .purpose(purpose)
                 .codeHash(passwordEncoder.encode(code))
                 .expiresAt(LocalDateTime.now().plusSeconds(ttlSeconds))
+                .payload(payload)
                 .build());
 
         // 4. Gửi mã GỐC qua email (chỉ người dùng biết mã gốc).
-        mailService.send(user.getEmail(), subjectOf(purpose), buildEmail(user.getFullName(), code, purpose));
+        mailService.send(recipient, subjectOf(purpose), buildEmail(user.getFullName(), code, purpose));
 
         // 5. Trả thông tin thời gian để frontend hiện đồng hồ đếm ngược.
-        return describe(user.getEmail());
+        return describe(recipient);
     }
 
     /**
@@ -92,12 +101,13 @@ public class OtpService {
     }
 
     /**
-     * Kiểm tra mã người dùng nhập. Đúng -> đánh dấu đã dùng. Sai/hết hạn -> ném AppException.
+     * Kiểm tra mã người dùng nhập. Đúng -> đánh dấu đã dùng và trả về token (để đọc payload nếu cần).
+     * Sai/hết hạn -> ném AppException.
      *
      * LƯU Ý: method gọi tới hàm này phải dùng @Transactional(noRollbackFor = AppException.class),
      * nếu không thì số lần nhập sai (tăng ở bước 4) sẽ bị huỷ khi ném lỗi.
      */
-    public void verify(User user, OtpToken.Purpose purpose, String code) {
+    public OtpToken verify(User user, OtpToken.Purpose purpose, String code) {
         // 1. Lấy mã mới nhất CHƯA dùng. Không có -> phải gửi lại mã.
         OtpToken token = latest(user, purpose)
                 .filter(t -> !t.isUsed())
@@ -122,10 +132,10 @@ public class OtpService {
         }
         // 5. Đúng -> đánh dấu đã dùng, để mã này không dùng lại được lần thứ hai.
         token.setUsed(true);
-        otpTokenRepository.save(token);
+        return otpTokenRepository.save(token);
     }
 
-    /** Mã OTP mới nhất của user cho một mục đích (REGISTER / RESET_PASSWORD). */
+    /** Mã OTP mới nhất của user cho một mục đích (REGISTER / RESET_PASSWORD / CHANGE_EMAIL). */
     private Optional<OtpToken> latest(User user, OtpToken.Purpose purpose) {
         return otpTokenRepository.findTopByUserAndPurposeOrderByCreatedAtDescIdDesc(user, purpose);
     }
@@ -135,6 +145,7 @@ public class OtpService {
         return switch (purpose) {
             case REGISTER -> "[Tin Nóng Dân Sinh] Mã xác thực tài khoản";
             case RESET_PASSWORD -> "[Tin Nóng Dân Sinh] Mã đặt lại mật khẩu";
+            case CHANGE_EMAIL -> "[Tin Nóng Dân Sinh] Mã xác nhận email mới";
         };
     }
 
@@ -144,7 +155,11 @@ public class OtpService {
      * (ví dụ thẻ <a> lừa đảo) thì sẽ bị biến thành chữ thường, không chạy được trong email.
      */
     private String buildEmail(String fullName, String code, OtpToken.Purpose purpose) {
-        String action = purpose == OtpToken.Purpose.REGISTER ? "xác thực tài khoản" : "đặt lại mật khẩu";
+        String action = switch (purpose) {
+            case REGISTER -> "xác thực tài khoản";
+            case RESET_PASSWORD -> "đặt lại mật khẩu";
+            case CHANGE_EMAIL -> "xác nhận đổi sang email này";
+        };
         return """
                 <div style="font-family:Segoe UI,Arial,sans-serif;max-width:480px;margin:auto;padding:24px;
                             border:1px solid #dfe5ef;border-radius:12px;color:#172339">

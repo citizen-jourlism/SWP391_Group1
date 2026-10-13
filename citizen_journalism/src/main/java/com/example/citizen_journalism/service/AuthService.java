@@ -1,5 +1,7 @@
 package com.example.citizen_journalism.service;
 
+import static com.example.citizen_journalism.util.TextUtils.normalizeEmail;
+
 import com.example.citizen_journalism.dto.auth.ChangePasswordRequest;
 import com.example.citizen_journalism.dto.auth.LoginRequest;
 import com.example.citizen_journalism.dto.auth.LoginResponse;
@@ -17,7 +19,6 @@ import com.example.citizen_journalism.security.JwtService;
 import com.example.citizen_journalism.util.UserIdGenerator;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -176,10 +177,7 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public UserSummary getCurrentUser(String userId) {
-        return userRepository.findById(userId)
-                .filter(user -> user.getStatus() == User.Status.ACTIVE)
-                .map(UserSummary::from)
-                .orElseThrow(() -> AppException.unauthorized("Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại."));
+        return UserSummary.from(userRepository.getActiveById(userId));
     }
 
     // ======================= QUÊN MẬT KHẨU / ĐỔI MẬT KHẨU =======================
@@ -220,8 +218,7 @@ public class AuthService {
      */
     @Transactional
     public void changePassword(String userId, ChangePasswordRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> AppException.unauthorized("Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại."));
+        User user = userRepository.getActiveById(userId);
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
             throw AppException.badRequest("Mật khẩu hiện tại không đúng.");
         }
@@ -265,13 +262,5 @@ public class AuthService {
             throw AppException.badRequest("Tài khoản này đã được xác thực. Vui lòng đăng nhập.");
         }
         return user;
-    }
-
-    /**
-     * Chuẩn hoá email: bỏ khoảng trắng, chuyển chữ thường.
-     * Tại sao? "An@Gmail.com" và "an@gmail.com" là cùng một hộp thư -> tránh tạo 2 tài khoản trùng.
-     */
-    private String normalizeEmail(String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

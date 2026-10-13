@@ -1,6 +1,7 @@
 package com.example.citizen_journalism.repository;
 
 import com.example.citizen_journalism.entity.User;
+import com.example.citizen_journalism.exception.AppException;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,6 +22,23 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     /** Tìm người dùng theo email (email là duy nhất). */
     Optional<User> findByEmail(String email);
+
+    /** Email đã thuộc về một tài khoản nào chưa (kiểm tra trước khi đổi email). */
+    boolean existsByEmail(String email);
+
+    /** Số CCCD đã được NGƯỜI KHÁC (khác id) dùng chưa. -> WHERE citizen_id = ? AND id <> ? */
+    boolean existsByCitizenIdAndIdNot(String citizenId, String id);
+
+    /**
+     * Lấy người dùng ĐANG HOẠT ĐỘNG theo mã (lấy từ token đăng nhập). Không có / bị khoá -> lỗi 401.
+     * "default method": interface cũng viết được hàm có thân. Dùng chung cho AuthService và UserService,
+     * tránh lặp lại cùng một đoạn kiểm tra ở nhiều nơi.
+     */
+    default User getActiveById(String id) {
+        return findById(id)
+                .filter(user -> user.getStatus() == User.Status.ACTIVE)
+                .orElseThrow(() -> AppException.unauthorized("Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại."));
+    }
 
     /**
      * Mã lớn nhất hiện có theo tiền tố, ví dụ prefix "CT" -> "CT0042". Dùng để sinh mã tiếp theo (CT0043).

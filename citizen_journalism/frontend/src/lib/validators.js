@@ -13,6 +13,16 @@
  */
 const isBlank = (value) => (typeof value === 'string' ? value.trim() === '' : !value) // Checkbox: false = "trống"
 
+/**
+ * Ngày hôm nay dạng "YYYY-MM-DD" theo GIỜ MÁY người dùng (giờ Việt Nam).
+ * Không dùng toISOString() vì nó tính theo giờ UTC -> trước 7h sáng sẽ ra ngày hôm qua.
+ * Dùng cho rule pastDate và thuộc tính max của ô chọn ngày.
+ */
+export const todayIso = () => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
 export const rules = {
   required: (message = 'Trường này là bắt buộc.') => (value) => (isBlank(value) ? message : ''),
   email: (message = 'Email không đúng định dạng.') => (value) =>
@@ -32,7 +42,14 @@ export const rules = {
   // Đúng n chữ số, ví dụ mã OTP 6 số.
   digits: (n, message = `Phải gồm đúng ${n} chữ số.`) => (value) =>
     new RegExp(`^\\d{${n}}$`).test(value) ? '' : message,
+  // Ngày (dạng "YYYY-MM-DD" của ô type="date") phải trước hôm nay.
+  pastDate: (message = 'Ngày phải ở trong quá khứ.') => (value) => (value < todayIso() ? '' : message),
+  // Bọc một rule để chỉ kiểm tra KHI CÓ NHẬP (ô không bắt buộc). Ví dụ: rules.optional(rules.digits(12))
+  optional: (rule) => (value, values) => (isBlank(value) ? '' : rule(value, values)),
 }
+
+/** Số chữ số của căn cước công dân (khớp CITIZEN_ID_REGEX ở backend util/ValidationRules.java). */
+export const CITIZEN_ID_LENGTH = 12
 
 /**
  * Bộ quy tắc cho một MẬT KHẨU MỚI (khớp với @StrongPassword ở backend).

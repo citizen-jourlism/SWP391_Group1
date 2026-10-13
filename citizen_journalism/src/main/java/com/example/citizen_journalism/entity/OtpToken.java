@@ -31,7 +31,7 @@ public class OtpToken extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    /** Mục đích của mã: REGISTER hoặc RESET_PASSWORD. Lưu dạng chữ (STRING) cho dễ đọc trong DB. */
+    /** Mục đích của mã (xem enum Purpose bên dưới). Lưu dạng chữ (STRING) cho dễ đọc trong DB. */
     @Enumerated(EnumType.STRING)
     @Column(name = "purpose", nullable = false, length = 30)
     private Purpose purpose;
@@ -54,6 +54,13 @@ public class OtpToken extends BaseEntity {
     @Builder.Default
     private boolean used = false;
 
+    /**
+     * Dữ liệu đi kèm mã (có thể null). Ví dụ với CHANGE_EMAIL: lưu EMAIL MỚI đang chờ xác nhận,
+     * nhập đúng mã thì mới đổi sang email này (xem UserService.verifyEmailChange).
+     */
+    @Column(name = "payload", length = 255)
+    private String payload;
+
     /** true nếu thời điểm hiện tại đã vượt quá expiresAt. */
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiresAt);
@@ -61,7 +68,8 @@ public class OtpToken extends BaseEntity {
 
     /** Các mục đích sử dụng OTP. Thêm mục đích mới chỉ cần thêm 1 dòng ở đây. */
     public enum Purpose {
-        REGISTER,
-        RESET_PASSWORD
+        REGISTER,       // xác thực tài khoản khi đăng ký
+        RESET_PASSWORD, // quên mật khẩu
+        CHANGE_EMAIL    // đổi email ở trang Hồ sơ (mã gửi tới EMAIL MỚI)
     }
 }
