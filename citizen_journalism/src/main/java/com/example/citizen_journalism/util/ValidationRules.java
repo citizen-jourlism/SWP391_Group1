@@ -33,6 +33,13 @@ public final class ValidationRules {
     public static final String PASSWORD_REGEX = "^(?=.*[A-Za-z])(?=.*\\d).+$";
     public static final String PASSWORD_MESSAGE = "Mật khẩu phải có ít nhất một chữ cái và một chữ số.";
 
+    /**
+     * Tên đăng nhập (không bắt buộc, dành cho tài khoản nội bộ như "Admin", "testeditor"): 3–30 ký tự,
+     * chỉ gồm chữ không dấu, số và dấu . _ -  (KHÔNG có "@" để AuthService.login phân biệt được với email).
+     */
+    public static final String USERNAME_REGEX = "^[A-Za-z0-9._-]{3,30}$";
+    public static final String USERNAME_MESSAGE = "Tên đăng nhập gồm 3–30 ký tự: chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang.";
+
     // Constructor private: lớp chỉ chứa hằng số, không cho tạo đối tượng.
     private ValidationRules() {
     }

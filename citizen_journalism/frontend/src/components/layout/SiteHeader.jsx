@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { formatToday } from '../../lib/format'
 import { SUBMITTER_ROLES } from '../../lib/roles'
 import Icon from '../ui/Icon'
 import Logo from '../ui/Logo'
@@ -22,7 +23,7 @@ import '../../assets/styles/site-header.css'
  *   - Chưa đăng nhập : "Đăng nhập" + "Đăng ký" (nút cam).
  *   - Người dân / CTV / chuyên gia : nút cam "Gửi thông tin" (MỘT nút chung cho tin nóng, khiếu nại...;
  *                                    chọn loại ngay trong form) + menu tài khoản.
- *   - Admin          : nút "Trang quản trị" + menu tài khoản.
+ *   - Admin / Biên tập viên : nút tới khu làm việc riêng ("Trang quản trị" / "Bàn biên tập") + menu tài khoản.
  *   - Nhân sự toà soạn khác: chỉ menu tài khoản (chưa có bàn làm việc riêng).
  * Màn hình vừa (≤ 1360px): menu bỏ icon, menu tài khoản chỉ còn ảnh đại diện.
  * Màn hình hẹp (≤ 1100px): menu điều hướng thu vào nút ☰, bấm để xổ xuống.
@@ -39,10 +40,10 @@ const NAV_ITEMS = [
   { to: '/#lien-he', label: 'Liên hệ', icon: 'phone', hash: true },
 ]
 
-/** "Thứ Hai, 13/10/2026" — ngày hiện tại theo kiểu Việt Nam, viết hoa chữ đầu. */
-const todayLabel = () => {
-  const text = new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
-  return text.charAt(0).toUpperCase() + text.slice(1)
+/** Khu làm việc riêng của nhân sự nội bộ: hiện thành nút tối bên phải thanh chính. */
+const STAFF_HOMES = {
+  SYSTEM_ADMIN: { to: '/admin', label: 'Trang quản trị' },
+  EDITOR: { to: '/editor', label: 'Bàn biên tập' },
 }
 
 function SiteHeader() {
@@ -79,10 +80,10 @@ function SiteHeader() {
       <Icon name="send" size={16} />
       Gửi thông tin
     </Link>
-  ) : user.role === 'SYSTEM_ADMIN' ? (
-    <Link to="/admin" className="site-header__cta site-header__cta--dark">
+  ) : STAFF_HOMES[user.role] ? (
+    <Link to={STAFF_HOMES[user.role].to} className="site-header__cta site-header__cta--dark">
       <Icon name="activity" size={16} />
-      Trang quản trị
+      {STAFF_HOMES[user.role].label}
     </Link>
   ) : null
 
@@ -95,7 +96,7 @@ function SiteHeader() {
             <span className="site-header__pulse" aria-hidden="true" />
             Đang trực tiếp nhận 24/7
             <span className="site-header__sep" aria-hidden="true">·</span>
-            <span className="site-header__date">{todayLabel()}</span>
+            <span className="site-header__date">{formatToday()}</span>
           </span>
           <span className="site-header__contacts">
             <a href="tel:19006668">

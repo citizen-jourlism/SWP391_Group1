@@ -14,6 +14,7 @@ import jakarta.validation.constraints.Size;
  * Tài khoản tạo xong dùng được ngay (ACTIVE), không cần OTP. Admin đặt mật khẩu ban đầu và báo cho người đó;
  * người đó nên tự đổi mật khẩu sau khi đăng nhập lần đầu.
  * Không được chọn vai trò SYSTEM_ADMIN (AdminService kiểm tra).
+ * username: KHÔNG bắt buộc. Có thì người đó đăng nhập được bằng tên này thay cho email (ví dụ "testeditor").
  */
 public record CreateUserRequest(
         @NotBlank(message = "Vui lòng nhập họ và tên.")
@@ -28,6 +29,10 @@ public record CreateUserRequest(
         @NotBlank(message = "Vui lòng nhập số điện thoại.")
         @Pattern(regexp = ValidationRules.PHONE_REGEX, message = ValidationRules.PHONE_MESSAGE)
         String phone,
+
+        // @Pattern bỏ qua null -> để trống (frontend gửi null) là hợp lệ
+        @Pattern(regexp = ValidationRules.USERNAME_REGEX, message = ValidationRules.USERNAME_MESSAGE)
+        String username,
 
         @NotNull(message = "Vui lòng chọn vai trò.")
         User.Role role,

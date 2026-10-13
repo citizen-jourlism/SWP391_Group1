@@ -2,6 +2,12 @@
  * Các hàm định dạng hiển thị dùng chung (ngày tháng...). Theo kiểu Việt Nam (vi-VN).
  */
 
+/** Ngày hôm nay kiểu "Thứ Hai, 13/10/2026" (viết hoa chữ đầu). Dùng ở thanh đầu trang và bàn Biên tập viên. */
+export const formatToday = () => {
+  const text = new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
 /** "2026-10-13T15:39:39" -> "13/10/2026" */
 export const formatDate = (value) => (value ? new Date(value).toLocaleDateString('vi-VN') : '')
 

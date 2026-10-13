@@ -119,6 +119,16 @@ public class SubmissionTrackingService {
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy hồ sơ."));
     }
 
+    // ============================ 3. NHÂN SỰ TOÀ SOẠN XEM ============================
+
+    /** Chi tiết 1 hồ sơ bất kỳ theo mã, cho Biên tập viên (EditorService). Quyền đã kiểm tra ở SecurityConfig. */
+    @Transactional(readOnly = true)
+    public SubmissionDetail getForStaff(String trackingCode) {
+        return submissionRepository.findByTrackingCode(trackingCode.trim().toUpperCase(Locale.ROOT))
+                .map(this::toDetail)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy hồ sơ."));
+    }
+
     // ================================ HÀM PHỤ ================================
 
     /** Gom hồ sơ + tệp tư liệu + nhật ký thành SubmissionDetail (không kèm thông tin liên hệ người gửi). */

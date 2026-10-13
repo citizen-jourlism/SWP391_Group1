@@ -28,6 +28,20 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     /** Các hồ sơ của 1 người gửi, có phân trang (thứ tự sắp xếp truyền qua Pageable). */
     Page<Submission> findByAuthorId(String authorId, Pageable pageable);
 
+    long countByAuthorId(String authorId);
+
+    long countByTypeAndStatus(Submission.SubmissionType type, Submission.SubmissionStatus status);
+
+    /**
+     * Hàng đợi của toà soạn (EditorService): lọc theo trạng thái / loại phản ánh, tham số null = không lọc.
+     * ":status is null or ..." là cách viết điều kiện "không bắt buộc" trong JPQL.
+     */
+    @Query("select s from Submission s where (:status is null or s.status = :status) "
+            + "and (:category is null or s.reportCategory = :category)")
+    Page<Submission> searchForStaff(@Param("status") Submission.SubmissionStatus status,
+                                    @Param("category") Submission.ReportCategory category,
+                                    Pageable pageable);
+
     /**
      * Cập nhật bộ đếm nhập sai PIN (xem SubmissionTrackingService.track).
      * TẠI SAO viết câu UPDATE riêng thay vì setPinFailedAttempts()? Câu UPDATE trực tiếp KHÔNG làm đổi

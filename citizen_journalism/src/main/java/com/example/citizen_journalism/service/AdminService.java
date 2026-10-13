@@ -91,12 +91,18 @@ public class AdminService {
         if (userRepository.existsByEmail(email)) {
             throw AppException.conflict("Email này đã được sử dụng bởi một tài khoản khác.");
         }
+        String username = blankToNull(request.username());
+        // IgnoreCase: "TestEditor" và "testeditor" coi là trùng (đăng nhập cũng không phân biệt hoa thường)
+        if (username != null && userRepository.findByUsernameIgnoreCase(username).isPresent()) {
+            throw AppException.conflict("Tên đăng nhập này đã có người dùng.");
+        }
         User user = User.builder()
                 .id(userIdGenerator.next(request.role())) // Ví dụ Biên tập viên -> ED0001
                 .role(request.role())
                 .status(User.Status.ACTIVE)
                 .isVerified(true)
                 .email(email)
+                .username(username)
                 .fullName(request.fullName().trim())
                 .phone(request.phone().trim())
                 .passwordHash(passwordEncoder.encode(request.password()))

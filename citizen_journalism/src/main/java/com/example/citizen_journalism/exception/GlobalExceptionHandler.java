@@ -12,6 +12,7 @@ import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
@@ -57,6 +58,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleTooLarge(MaxUploadSizeExceededException ex) {
         return build(HttpStatus.CONTENT_TOO_LARGE, "File tải lên quá lớn.", null);
+    }
+
+    /**
+     * Tham số trên đường dẫn sai kiểu, ví dụ ?status=ABC trong khi chỉ nhận PENDING, REJECTED...
+     * (không bắt riêng thì sẽ rơi xuống handleUnexpected và thành lỗi 500).
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return build(HttpStatus.BAD_REQUEST, "Tham số '" + ex.getName() + "' không hợp lệ.", null);
     }
 
     /** Body gửi lên không phải JSON hợp lệ (ví dụ thiếu dấu ngoặc). */

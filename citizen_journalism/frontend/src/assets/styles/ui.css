@@ -270,6 +270,52 @@
   pointer-events: none;
 }
 
+/* ---------- Chọn nhiều dạng chip (ChipSelect) ---------- */
+.chip-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--input-border);
+  border-radius: 999px;
+  background: #fbfcfe;
+  color: var(--navy-800);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: #b6c0d0;
+}
+
+.chip.is-selected {
+  border-color: var(--orange);
+  background: #fff1ea;
+  color: var(--orange-strong);
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.field--error .chip:not(.is-selected) {
+  border-color: #f3b4b4;
+}
+
 /* ---------- Nhãn màu (Badge) ---------- */
 .badge {
   display: inline-flex;

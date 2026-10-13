@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useForm } from '../../hooks/useForm'
 import { ASSIGNABLE_ROLES, ROLE_DESCRIPTIONS, ROLE_LABELS } from '../../lib/roles'
 import { createValidator, newPasswordRules, rules } from '../../lib/validators'
+import { toPayload } from '../../lib/payload'
 import { adminService } from '../../services/adminService'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
@@ -11,11 +12,17 @@ import Modal from '../ui/Modal'
 import SelectField from '../ui/SelectField'
 import TextField from '../ui/TextField'
 
-const INITIAL_VALUES = { fullName: '', email: '', phone: '', role: 'EDITOR', password: '' }
+const INITIAL_VALUES = { fullName: '', email: '', username: '', phone: '', role: 'EDITOR', password: '' }
 
 const validate = createValidator({
   fullName: [rules.required('Vui lòng nhập họ và tên.'), rules.maxLength(100, 'Họ và tên tối đa 100 ký tự.')],
   email: [rules.required('Vui lòng nhập email.'), rules.email()],
+  // Không bắt buộc; khớp ValidationRules.USERNAME_REGEX ở backend (không có '@' để không nhầm với email khi đăng nhập)
+  username: [
+    rules.optional(
+      rules.pattern(/^[A-Za-z0-9._-]{3,30}$/, 'Tên đăng nhập gồm 3–30 ký tự: chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang.'),
+    ),
+  ],
   phone: [rules.required('Vui lòng nhập số điện thoại.'), rules.phone()],
   role: [rules.required('Vui lòng chọn vai trò.')],
   password: newPasswordRules,
@@ -56,7 +63,7 @@ function CreateUserDialog({ open, onClose, onCreated }) {
   }
 
   const onSubmit = form.handleSubmit(async (values) => {
-    const response = await adminService.createUser(values)
+    const response = await adminService.createUser(toPayload(values)) // Tên đăng nhập để trống -> gửi null
     setCreated({ user: response.data, password: values.password })
     onCreated(response.data)
   })
@@ -72,6 +79,12 @@ function CreateUserDialog({ open, onClose, onCreated }) {
           <dl className="credential-box">
             <dt>Email đăng nhập</dt>
             <dd>{created.user.email}</dd>
+            {created.user.username && (
+              <>
+                <dt>Tên đăng nhập</dt>
+                <dd>{created.user.username}</dd>
+              </>
+            )}
             <dt>Mật khẩu tạm</dt>
             <dd>
               <code>{created.password}</code>
@@ -82,7 +95,7 @@ function CreateUserDialog({ open, onClose, onCreated }) {
             {/* Chép thông tin đăng nhập vào clipboard để dán gửi cho người dùng mới */}
             <CopyButton
               label="Sao chép thông tin"
-              text={`Tài khoản Tin Nóng Dân Sinh\nEmail: ${created.user.email}\nMật khẩu tạm: ${created.password}\nVui lòng đổi mật khẩu sau khi đăng nhập.`}
+              text={`Tài khoản Tin Nóng Dân Sinh\nEmail: ${created.user.email}${created.user.username ? `\nTên đăng nhập: ${created.user.username}` : ''}\nMật khẩu tạm: ${created.password}\nVui lòng đổi mật khẩu sau khi đăng nhập.`}
             />
             <Button onClick={close}>Xong</Button>
           </div>
@@ -93,6 +106,14 @@ function CreateUserDialog({ open, onClose, onCreated }) {
           <Alert type="error">{form.formError}</Alert>
           <TextField label="Họ và tên" icon="user" autoFocus required {...form.field('fullName')} />
           <TextField label="Email" icon="mail" type="email" autoComplete="off" required {...form.field('email')} />
+          <TextField
+            label="Tên đăng nhập"
+            icon="user"
+            autoComplete="off"
+            placeholder="Không bắt buộc, ví dụ: btv.nguyenvana"
+            hint="Có tên đăng nhập thì người dùng đăng nhập được bằng tên này hoặc email."
+            {...form.field('username')}
+          />
           <TextField label="Số điện thoại" icon="phone" type="tel" inputMode="numeric" required {...form.field('phone')} />
           <SelectField label="Vai trò" options={ROLE_OPTIONS} required {...form.field('role')} />
           <p className="field__hint field__hint--block">{ROLE_DESCRIPTIONS[form.values.role]}</p>

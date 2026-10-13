@@ -1,0 +1,594 @@
+/* ===== BÀN LÀM VIỆC BIÊN TẬP VIÊN (components/editor/EditorLayout.jsx + routes/editor/...) =====
+ * Bố cục dùng chung với khu admin (admin.css: .admin__*, .admin-panel, .data-table, .stat-card...).
+ * File này chỉ:
+ *   1. Đổi khung sang giao diện SÁNG kiểu "toà soạn" (.admin--editor): menu trắng, mục đang chọn nền cam nhạt.
+ *   2. Thêm các khối riêng của bàn biên tập (desk-*, review-*, applicant, planned).
+ * Màu lấy từ design tokens trong src/index.css.
+ */
+
+/* ---------- 1. Giao diện sáng cho khung ---------- */
+.admin--editor {
+  --admin-sidebar-width: 264px; /* rộng hơn admin một chút vì menu nhiều mục hơn */
+  --admin-sidebar: #ffffff;
+  --admin-sidebar-2: #fbfcfe;
+  --admin-sidebar-text: #52607a;
+  --admin-bg: #f4f6fb;
+}
+
+.admin--editor .admin__sidebar {
+  border-right: 1px solid var(--admin-line);
+}
+
+.admin--editor .admin__brand {
+  color: var(--navy-900);
+}
+
+.admin--editor .admin__brand small {
+  background: var(--navy-900);
+  color: #fff;
+}
+
+.admin--editor .admin__nav-label {
+  color: #9aa3b5;
+}
+
+.admin--editor .admin__nav-item:hover {
+  background: #f2f4f8;
+  color: var(--navy-900);
+}
+
+.admin--editor .admin__nav-item.active {
+  background: #fff3ec;
+  color: var(--orange-strong);
+}
+
+.admin--editor .admin__nav-item.active svg {
+  color: var(--orange-strong);
+}
+
+.admin--editor .admin__soon {
+  background: #eef1f6;
+  color: #7a8599;
+}
+
+.admin--editor .admin__sidebar-footer {
+  border-top-color: var(--admin-line);
+}
+
+.admin--editor .admin__nav-item--danger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* Ngày + trạng thái "Đang trực" trên thanh tiêu đề */
+.desk-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 8px;
+  font-size: 13px;
+}
+
+.desk-status__date {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.desk-status__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--success-bg);
+  color: #15803d;
+  font-weight: 700;
+}
+
+.desk-status__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+}
+
+/* ---------- 2. Trang Tổng quan ---------- */
+.desk-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 26px 28px;
+  border-radius: 18px;
+  /* Nền navy + vệt cam mờ ở góc phải: tạo điểm nhấn mà vẫn trang nhã */
+  background:
+    radial-gradient(circle at 92% 20%, rgba(255, 106, 47, 0.35), transparent 42%),
+    linear-gradient(135deg, var(--navy-900) 0%, #15325a 100%);
+  color: #fff;
+}
+
+.desk-hero__eyebrow {
+  color: var(--orange-light);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.desk-hero h2 {
+  margin: 2px 0 8px;
+  font-size: 26px;
+}
+
+.desk-hero p {
+  max-width: 560px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.6;
+}
+
+.desk-hero p b {
+  color: #fff;
+}
+
+.desk-hero__actions {
+  display: flex;
+  flex: none;
+  gap: 10px;
+}
+
+/* Nút phụ trên nền tối */
+.desk-hero .desk-hero__ghost {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.desk-hero .desk-hero__ghost:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Danh sách ngắn (hồ sơ mới, đơn mới) */
+.desk-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.desk-list__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.desk-list__item:hover {
+  background: #f5f7fb;
+}
+
+.desk-list__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.desk-list__main strong {
+  display: block;
+  overflow: hidden;
+  color: var(--navy-900);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desk-list__main small,
+.desk-list__item time {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.desk-list__item time {
+  flex: none;
+}
+
+.desk-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 18px;
+  border-radius: 12px;
+  background: #f7f9fc;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.desk-empty svg {
+  color: var(--success);
+}
+
+/* Lối tắt tới các chức năng sắp có */
+.desk-shortcuts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.desk-shortcuts a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px dashed var(--input-border);
+  border-radius: 12px;
+  color: var(--navy-800);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.desk-shortcuts a:hover {
+  border-color: var(--orange);
+  background: #fff8f4;
+}
+
+/* ---------- Bảng (hàng đợi, đơn CTV) ---------- */
+.desk-toolbar {
+  display: grid;
+  grid-template-columns: 220px 220px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.desk-toolbar__count {
+  justify-self: end;
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+/* Ô đầu của bảng hàng đợi: icon loại + tiêu đề + dòng phụ */
+.desk-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.desk-cell .category-card__icon {
+  width: 34px;
+  height: 34px;
+}
+
+.desk-cell strong {
+  display: block;
+  max-width: 320px;
+  overflow: hidden;
+  color: var(--navy-900);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desk-cell small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.data-table td:first-child:has(.desk-cell) {
+  max-width: 380px;
+}
+
+/* Link "Mở / Xét duyệt" cuối dòng */
+.desk-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--orange-strong);
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.desk-open svg {
+  transform: rotate(-90deg);
+}
+
+/* Thẻ lọc dạng "segmented control" */
+.desk-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 4px;
+  border-radius: 12px;
+  background: #eef1f6;
+}
+
+.desk-tabs button {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--navy-700);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.desk-tabs button.is-active {
+  background: #fff;
+  color: var(--navy-900);
+  box-shadow: 0 2px 6px rgba(13, 31, 53, 0.1);
+}
+
+.desk-tabs button:focus-visible {
+  outline: 2px solid var(--orange);
+}
+
+/* ---------- Trang chi tiết ---------- */
+.desk-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.desk-back {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  color: var(--navy-700);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.desk-back:hover {
+  color: var(--orange-strong);
+}
+
+/* Thanh thao tác (đang khoá) phía trên chi tiết hồ sơ */
+.desk-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.desk-actions strong {
+  display: block;
+  color: var(--navy-900);
+}
+
+.desk-actions small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.desk-actions__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Xét đơn CTV: hồ sơ người nộp | nội dung + xét duyệt */
+.review-grid {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.applicant {
+  position: sticky;
+  top: 96px; /* dính dưới thanh tiêu đề khi cuộn */
+}
+
+.applicant__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.applicant__head h2 {
+  margin: 6px 0 0;
+  color: var(--navy-900);
+  font-size: 18px;
+}
+
+.applicant__id {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.applicant__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.applicant__stats div {
+  padding: 10px 6px;
+  border-radius: 12px;
+  background: #f5f7fb;
+  text-align: center;
+}
+
+.applicant__stats strong {
+  display: block;
+  color: var(--navy-900);
+  font-size: 20px;
+}
+
+.applicant__stats span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.applicant__facts {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.applicant__facts dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.applicant__facts dd {
+  margin: 2px 0 0;
+  color: var(--navy-900);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.review-box {
+  border-color: #ffd9c6;
+  background: linear-gradient(180deg, #fff 0%, #fffaf7 100%);
+}
+
+.review-box__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ---------- Trang "Sắp có" ---------- */
+.planned {
+  gap: 22px;
+  padding: 28px;
+}
+
+.planned__head {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.planned__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: var(--gradient-primary);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(255, 69, 0, 0.25);
+}
+
+.planned__badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eef1f6;
+  color: var(--navy-700);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.planned__head h2 {
+  margin: 8px 0 6px;
+  color: var(--navy-900);
+  font-size: 22px;
+}
+
+.planned__head p {
+  max-width: 640px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.planned__body h3 {
+  margin: 0 0 10px;
+  color: var(--navy-900);
+  font-size: 15px;
+}
+
+.planned__features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planned__features li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--admin-line);
+  border-radius: 12px;
+  background: #fbfcfe;
+  color: var(--navy-800);
+  font-size: 14px;
+}
+
+.planned__features svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--success);
+}
+
+.planned__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--admin-line);
+}
+
+/* ---------- Màn hình hẹp ---------- */
+@media (max-width: 1100px) {
+  .review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .applicant {
+    position: static;
+  }
+
+  .desk-status__date {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .desk-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .desk-toolbar,
+  .planned__features,
+  .desk-shortcuts {
+    grid-template-columns: 1fr;
+  }
+
+  .desk-toolbar__count {
+    justify-self: start;
+  }
+
+  .desk-status {
+    display: none;
+  }
+
+  .review-box__actions {
+    flex-direction: column-reverse;
+  }
+}

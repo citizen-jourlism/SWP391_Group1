@@ -1,0 +1,359 @@
+/* ===== Đăng ký / theo dõi đơn Cộng tác viên (components/contributor/...) =====
+ * Dùng ở trang Hồ sơ (ContributorSection) và trang xét đơn của Biên tập viên (ApplicationSummary).
+ * Thẻ trắng ngoài cùng dùng .account-card (account.css); thanh tiến trình dùng .steps (submit.css).
+ * Màu lấy từ design tokens trong src/index.css.
+ */
+
+/* ---------- Khung mục "Cộng tác viên" ---------- */
+.contributor {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.contributor__header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.contributor__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--gradient-primary);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(255, 69, 0, 0.25);
+}
+
+.contributor__header h2 {
+  margin: 2px 0 4px;
+  color: var(--navy-900);
+  font-size: 19px;
+}
+
+.contributor__header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.contributor__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.contributor__intro h3 {
+  margin: 4px 0 0;
+  color: var(--navy-900);
+  font-size: 15px;
+}
+
+/* Quyền lợi khi làm CTV */
+.contributor__benefits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contributor__benefits li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f7f9fc;
+  color: var(--navy-800);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.contributor__benefits svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--orange-strong);
+}
+
+/* Đã là CTV */
+.contributor__done {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.contributor__done strong {
+  display: block;
+  color: #15803d;
+}
+
+.contributor__done small {
+  color: var(--navy-800);
+  font-size: 13px;
+}
+
+/* Lịch sử đơn cũ (khối thu gọn <details>) */
+.contributor__history {
+  border-top: 1px solid #eef1f6;
+  padding-top: 14px;
+  font-size: 14px;
+}
+
+.contributor__history summary {
+  color: var(--navy-700);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.contributor__history ul {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contributor__history li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: var(--navy-800);
+}
+
+/* ---------- Danh sách điều kiện ---------- */
+.eligibility {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eligibility li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14px;
+}
+
+.eligibility__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+}
+
+.eligibility li.is-passed .eligibility__icon {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.eligibility li.is-failed .eligibility__icon {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.eligibility strong {
+  display: block;
+  color: var(--navy-900);
+  font-weight: 600;
+}
+
+.eligibility li.is-failed strong {
+  color: var(--navy-800);
+}
+
+.eligibility small {
+  color: var(--danger);
+  font-size: 12.5px;
+}
+
+/* ---------- Theo dõi đơn (ApplicationTracker) ---------- */
+.app-tracker {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  background: #fcfdff;
+}
+
+.app-tracker__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.app-tracker__meta {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.app-tracker__hint {
+  margin: 4px 0 0;
+  color: var(--navy-900);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.app-tracker__note-time {
+  color: var(--muted);
+}
+
+.app-tracker__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---------- Nội dung đơn (ApplicationSummary) ---------- */
+.app-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.app-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.app-facts__wide {
+  grid-column: 1 / -1;
+}
+
+.app-facts dt {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.app-facts dd {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 14px;
+}
+
+.app-facts__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.app-facts__text {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f5f7fb;
+  line-height: 1.65;
+  white-space: pre-line; /* giữ xuống dòng */
+  overflow-wrap: anywhere;
+}
+
+/* Nhãn nhỏ (lĩnh vực) */
+.tag {
+  display: inline-flex;
+  white-space: nowrap; /* "Đời sống" không bị gãy thành 2 dòng trong bảng hẹp */
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff1ea;
+  color: var(--orange-strong);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.app-summary__title {
+  margin: 6px 0 0;
+  color: var(--navy-800);
+  font-size: 14px;
+}
+
+/* Danh sách giấy tờ (bấm "Xem" để mở tệp riêng tư) */
+.doc-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doc-list li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.doc-list__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #eef1f6;
+  color: var(--navy-700);
+}
+
+.doc-list__meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-list__meta strong {
+  display: block;
+  overflow: hidden;
+  color: var(--navy-900);
+  font-size: 13.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-list__meta small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.doc-list .link-button {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+/* ---------- Màn hình hẹp ---------- */
+@media (max-width: 760px) {
+  .contributor__benefits,
+  .app-facts,
+  .doc-list {
+    grid-template-columns: 1fr;
+  }
+
+  .app-tracker {
+    padding: 14px;
+  }
+}

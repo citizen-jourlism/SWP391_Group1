@@ -1,7 +1,9 @@
-/* ===== KHU QUẢN TRỊ (components/admin/AdminLayout.jsx và các trang /admin/...) =====
- * Cố ý dùng phong cách KHÁC trang người dùng: thanh menu dọc tông tối bên trái, nền nội dung xám xanh nhạt,
+/* ===== BÀN LÀM VIỆC NỘI BỘ (components/layout/ConsoleLayout.jsx) + các trang /admin/... =====
+ * Dùng chung cho khu Quản trị (theme "admin": menu tối) và bàn Biên tập viên (theme "editor": menu sáng,
+ * phần ghi đè màu nằm trong editor.css). Tên class "admin__*" giữ nguyên từ bản đầu.
+ * Cố ý dùng phong cách KHÁC trang người dùng: thanh menu dọc bên trái, nền nội dung xám xanh nhạt,
  * thanh tiêu đề trắng. Màu nhấn vẫn là cam của thương hiệu để đồng bộ logo.
- * Biến màu riêng của khu admin khai báo ngay dưới (--admin-*), còn lại dùng design tokens trong src/index.css.
+ * Biến màu riêng khai báo ngay dưới (--admin-*), còn lại dùng design tokens trong src/index.css.
  */
 
 .admin {
@@ -65,6 +67,34 @@
   flex-direction: column;
   gap: 4px;
   flex: 1;
+  overflow-y: auto; /* nhiều mục thì cuộn trong menu */
+}
+
+/* Một nhóm mục trong menu (ví dụ "Tiếp nhận", "Cộng đồng"), các nhóm cách nhau 1 khoảng */
+.admin__nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin__nav-group + .admin__nav-group {
+  margin-top: 14px;
+}
+
+/* Chữ của mục chiếm phần còn lại, đẩy nhãn "Sắp có" sang phải */
+.admin__nav-text {
+  flex: 1;
+}
+
+/* Nhãn "Sắp có" cho chức năng chưa làm */
+.admin__soon {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--admin-sidebar-text);
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .admin__nav-label {

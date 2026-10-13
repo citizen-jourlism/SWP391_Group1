@@ -23,8 +23,10 @@ import org.springframework.security.web.SecurityFilterChain;
  *   1. PUBLIC_ENDPOINTS (đăng ký, đăng nhập, tra cứu) -> ai cũng gọi được
  *   2. /api/admin/**                               -> chỉ SYSTEM_ADMIN
  *      /api/submissions/**                         -> CITIZEN, CONTRIBUTOR, EXPERT (gửi tin / khiếu nại)
+ *      /api/contributor-applications/**            -> CITIZEN, CONTRIBUTOR (đơn đăng ký Cộng tác viên)
+ *      /api/editor/**                              -> chỉ EDITOR (bàn làm việc Biên tập viên)
  *   3. /api/** còn lại                              -> phải đăng nhập (có token hợp lệ)
- *   4. Mọi thứ khác (file tĩnh...)                  -> mở
+ *   4. Mọi thứ khác (file tĩnh...)                  -> mở, TRỪ /uploads/applications/** (giấy tờ tuỳ thân) bị chặn
  * Thêm API mới cần phân quyền theo vai trò: thêm 1 dòng .requestMatchers(...).hasRole(...) TRƯỚC dòng số 3.
  *
  * Cách xác thực: JWT gửi trong header "Authorization: Bearer <token>" (xem JwtConfig.java).
@@ -60,7 +62,13 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
                 // Gửi tin / khiếu nại: người dân, cộng tác viên, chuyên gia (nhân sự toà soạn và admin thì không)
                 .requestMatchers("/api/submissions/**").hasAnyRole("CITIZEN", "CONTRIBUTOR", "EXPERT")
+                // Đăng ký / theo dõi đơn Cộng tác viên: người dân (nộp đơn) và CTV (xem lại đơn cũ)
+                .requestMatchers("/api/contributor-applications/**").hasAnyRole("CITIZEN", "CONTRIBUTOR")
+                // Bàn làm việc Biên tập viên
+                .requestMatchers("/api/editor/**").hasRole("EDITOR")
                 .requestMatchers("/api/**").authenticated()
+                // Giấy tờ tuỳ thân của đơn CTV: KHÔNG cho xem trực tiếp qua /uploads, chỉ xem qua API có kiểm tra quyền
+                .requestMatchers("/uploads/applications/**").denyAll()
                 .anyRequest().permitAll()
             )
             // Bật chế độ "resource server": tự đọc + kiểm tra JWT ở mỗi request.

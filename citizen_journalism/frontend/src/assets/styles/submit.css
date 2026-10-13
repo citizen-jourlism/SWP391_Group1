@@ -823,7 +823,7 @@
 /* Hàng ngang: mỗi bước 1 cột bằng nhau, chấm ở giữa, chữ căn giữa bên dưới */
 .steps--horizontal {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--steps, 6), minmax(0, 1fr)); /* --steps do ProcessSteps đặt */
   gap: 6px;
 }
 

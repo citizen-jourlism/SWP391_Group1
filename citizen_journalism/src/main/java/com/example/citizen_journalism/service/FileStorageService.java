@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -50,6 +52,12 @@ public class FileStorageService {
             "video/mp4", "mp4",
             "audio/mpeg", "mp3",
             "audio/mp3", "mp3",
+            "application/pdf", "pdf");
+
+    /** Giấy tờ tuỳ thân / chứng chỉ (đơn đăng ký CTV): ảnh hoặc PDF. */
+    public static final Map<String, String> DOCUMENT_TYPES = Map.of(
+            "image/jpeg", "jpg",
+            "image/png", "png",
             "application/pdf", "pdf");
 
     private final Path root;
@@ -105,18 +113,39 @@ public class FileStorageService {
 
     /** Xoá file theo đường dẫn web đã lưu trong DB (bỏ qua nếu null hoặc không nằm trong uploads). */
     public void delete(String url) {
-        if (url == null || !url.startsWith(URL_PREFIX)) {
+        Path target = toPath(url);
+        if (target == null) {
             return;
-        }
-        Path target = root.resolve(url.substring(URL_PREFIX.length())).normalize();
-        if (!target.startsWith(root)) {
-            return; // Chặn đường dẫn kiểu "../" trỏ ra ngoài thư mục uploads
         }
         try {
             Files.deleteIfExists(target);
         } catch (IOException ex) {
             log.warn("Cannot delete file {}", target, ex); // Xoá file cũ thất bại không ảnh hưởng người dùng
         }
+    }
+
+    /**
+     * Mở file đã lưu để TRẢ VỀ QUA API (dùng cho file riêng tư như giấy tờ tuỳ thân của đơn đăng ký CTV,
+     * vốn bị chặn truy cập trực tiếp qua /uploads/... trong SecurityConfig). Không tìm thấy -> 404.
+     */
+    public Resource load(String url) {
+        Path target = toPath(url);
+        if (target == null || !Files.isRegularFile(target)) {
+            throw AppException.notFound("Không tìm thấy tệp.");
+        }
+        return new FileSystemResource(target);
+    }
+
+    /**
+     * Đổi đường dẫn web ("/uploads/x/y.png") thành đường dẫn trên ổ đĩa.
+     * Trả về null nếu không hợp lệ, kể cả khi cố dùng "../" để trỏ ra ngoài thư mục uploads.
+     */
+    private Path toPath(String url) {
+        if (url == null || !url.startsWith(URL_PREFIX)) {
+            return null;
+        }
+        Path target = root.resolve(url.substring(URL_PREFIX.length())).normalize();
+        return target.startsWith(root) ? target : null;
     }
 
     /** Thư mục gốc (dùng trong WebConfig để phục vụ file qua đường dẫn /uploads/**). */

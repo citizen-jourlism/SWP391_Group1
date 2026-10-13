@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import AccountLayout from '../components/layout/AccountLayout'
 import AvatarUploader from '../components/profile/AvatarUploader'
 import ChangeEmailDialog from '../components/profile/ChangeEmailDialog'
+import ContributorSection from '../components/contributor/ContributorSection'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
@@ -23,6 +24,7 @@ import { userService } from '../services/userService'
  *   - Trái (thẻ tóm tắt): ảnh đại diện (AvatarUploader), tên, vai trò, ngày tham gia,
  *     ĐIỂM UY TÍN và ĐIỂM THƯỞNG (chỉ xem), nút Đổi mật khẩu.
  *   - Phải (ProfileForm): sửa họ tên, SĐT, CCCD, ngày sinh, địa chỉ; email đổi qua hộp thoại xác nhận OTP.
+ *     Bên dưới (chỉ người dân / CTV): mục "Cộng tác viên" = đăng ký + theo dõi đơn CTV (ContributorSection).
  *
  * DỮ LIỆU: tải bằng GET /api/users/me khi mở trang. Sau mỗi lần lưu, backend trả về hồ sơ mới
  * -> cập nhật state `profile` + gọi updateUser() để menu tài khoản (tên, ảnh) đổi theo ngay.
@@ -38,6 +40,9 @@ const toFormValues = (profile) => ({
 })
 
 // Chiều ngược lại (form -> backend, ô trống gửi null) dùng toPayload trong lib/payload.js
+
+/** Vai trò thấy mục "Cộng tác viên": người dân (đăng ký) và CTV (xem lại). */
+const CONTRIBUTOR_SECTION_ROLES = ['CITIZEN', 'CONTRIBUTOR']
 
 const validate = createValidator({
   fullName: [rules.required('Vui lòng nhập họ và tên.'), rules.maxLength(100, 'Họ và tên tối đa 100 ký tự.')],
@@ -131,24 +136,33 @@ function Profile() {
             </Button>
           </aside>
 
-          {/* ===== Cột phải: form thông tin ===== */}
-          <section className="account-card">
-            <header className="account-card__header">
-              <h2>Thông tin cá nhân</h2>
-              <p>Thông tin này giúp toà soạn liên hệ và xác minh khi xử lý tin bạn gửi.</p>
-            </header>
+          {/* ===== Cột phải: form thông tin + mục Cộng tác viên ===== */}
+          <div className="profile-main">
+            <section className="account-card">
+              <header className="account-card__header">
+                <h2>Thông tin cá nhân</h2>
+                <p>Thông tin này giúp toà soạn liên hệ và xác minh khi xử lý tin bạn gửi.</p>
+              </header>
 
-            <Alert type="success">{notice}</Alert>
+              <Alert type="success">{notice}</Alert>
 
-            {/* key={profile.id}: tạo lại form khi đổi sang người dùng khác (useForm chỉ đọc giá trị ban đầu 1 lần) */}
-            <ProfileForm
-              key={profile.id}
-              profile={profile}
-              onSaved={(updated) => applyProfile(updated, 'Đã lưu thông tin cá nhân.')}
-              onEditEmail={() => setEmailDialogOpen(true)}
-              onChange={() => setNotice('')}
-            />
-          </section>
+              {/* key={profile.id}: tạo lại form khi đổi sang người dùng khác (useForm chỉ đọc giá trị ban đầu 1 lần) */}
+              <ProfileForm
+                key={profile.id}
+                profile={profile}
+                onSaved={(updated) => applyProfile(updated, 'Đã lưu thông tin cá nhân.')}
+                onEditEmail={() => setEmailDialogOpen(true)}
+                onChange={() => setNotice('')}
+              />
+            </section>
+
+            {/* Đăng ký / theo dõi đơn Cộng tác viên. profileKey đổi (vừa lưu CCCD, ngày sinh...) -> mục này tự kiểm tra lại điều kiện */}
+            {CONTRIBUTOR_SECTION_ROLES.includes(profile.role) && (
+              <ContributorSection
+                profileKey={[profile.citizenId, profile.dateOfBirth, profile.address, profile.reputationScore].join('|')}
+              />
+            )}
+          </div>
         </div>
       )}
 

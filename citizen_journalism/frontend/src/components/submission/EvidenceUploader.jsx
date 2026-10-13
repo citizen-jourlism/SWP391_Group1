@@ -2,10 +2,22 @@ import { useEffect, useRef, useState } from 'react'
 import Icon from '../ui/Icon'
 import { formatFileSize } from '../../lib/format'
 import { FILE_TYPE_INFO, MB, fileTypeOf } from '../../lib/submission'
+import '../../assets/styles/submit.css'
+
+/** Tên ngắn của từng định dạng để hiện gợi ý "JPG, PNG, PDF..." (2 kiểu khai báo MP3 gộp làm 1). */
+const FORMAT_LABELS = {
+  'image/jpeg': 'JPG',
+  'image/png': 'PNG',
+  'video/mp4': 'MP4',
+  'audio/mpeg': 'MP3',
+  'audio/mp3': 'MP3',
+  'application/pdf': 'PDF',
+}
 
 /**
- * KHU TẢI TƯ LIỆU / BẰNG CHỨNG của form gửi tin, khiếu nại (SRS 4.1.1: Evidence Files, bắt buộc ít nhất 1 tệp).
- * Dùng ở routes/SubmitReport.jsx. CSS: assets/styles/submit.css (mục "Tải tư liệu").
+ * KHU TẢI TỆP dùng chung: tư liệu của form gửi tin (SRS 4.1.1) và giấy tờ của đơn đăng ký Cộng tác viên.
+ * Dùng ở: components/submission/ReportForm.jsx, components/contributor/ContributorApplyForm.jsx.
+ * CSS: assets/styles/submit.css (mục "Tải tư liệu").
  *
  * CHỨC NĂNG:
  *   - Bấm để chọn tệp HOẶC kéo-thả tệp vào khung; chọn nhiều tệp một lúc.
@@ -88,6 +100,8 @@ function EvidenceUploader({ files, onChange, options, error }) {
   }
 
   const full = files.length >= options.maxFiles
+  // Ví dụ ['application/pdf', 'image/jpeg'] -> "PDF, JPG"; Set để bỏ trùng (2 kiểu MP3)
+  const formats = [...new Set(options.acceptedTypes.map((type) => FORMAT_LABELS[type] ?? type))].join(', ')
 
   return (
     <div className={`uploader ${error ? 'uploader--error' : ''}`}>
@@ -103,7 +117,7 @@ function EvidenceUploader({ files, onChange, options, error }) {
         </span>
         <strong>{full ? 'Đã đủ số tệp tối đa' : 'Kéo thả tệp vào đây hoặc bấm để chọn'}</strong>
         <small>
-          JPG, PNG, MP4, MP3, PDF · tối đa {options.maxFileSizeMb}MB/tệp · {options.maxFiles} tệp
+          {formats} · tối đa {options.maxFileSizeMb}MB/tệp · {options.maxFiles} tệp
         </small>
       </button>
       <input

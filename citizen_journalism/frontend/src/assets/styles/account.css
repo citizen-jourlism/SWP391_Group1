@@ -282,3 +282,11 @@
     padding: 20px 16px;
   }
 }
+
+/* Cột phải của trang Hồ sơ: thẻ "Thông tin cá nhân" + thẻ "Cộng tác viên" xếp dọc */
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}

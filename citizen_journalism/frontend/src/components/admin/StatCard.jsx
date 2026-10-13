@@ -1,7 +1,7 @@
 import Icon from '../ui/Icon'
 
 /**
- * Thẻ số liệu trên trang Tổng quan admin: icon màu + con số lớn + tên + dòng ghi chú nhỏ.
+ * Thẻ số liệu trên trang Tổng quan (admin và bàn Biên tập viên): icon màu + con số lớn + tên + dòng ghi chú nhỏ.
  * tone: 'blue' | 'green' | 'orange' | 'red' (màu icon, CSS .stat-card--<tone> trong admin.css)
  */
 function StatCard({ icon, label, value, hint, tone = 'blue' }) {

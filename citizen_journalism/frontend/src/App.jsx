@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AdminLayout from './components/admin/AdminLayout.jsx'
+import EditorLayout from './components/editor/EditorLayout.jsx'
 import ProtectedRoute from './components/layout/ProtectedRoute.jsx'
 import ScrollToTop from './components/layout/ScrollToTop.jsx'
 import { AuthProvider } from './context/AuthProvider.jsx'
@@ -18,6 +19,12 @@ import VerifyOtp from './routes/VerifyOtp.jsx'
 import { SUBMITTER_ROLES } from './lib/roles.js'
 import AdminOverview from './routes/admin/AdminOverview.jsx'
 import AdminUsers from './routes/admin/AdminUsers.jsx'
+import EditorApplicationDetail from './routes/editor/EditorApplicationDetail.jsx'
+import EditorApplications from './routes/editor/EditorApplications.jsx'
+import EditorOverview from './routes/editor/EditorOverview.jsx'
+import EditorPlanned from './routes/editor/EditorPlanned.jsx'
+import EditorQueue from './routes/editor/EditorQueue.jsx'
+import EditorSubmissionDetail from './routes/editor/EditorSubmissionDetail.jsx'
 
 /**
  * Component gốc của ứng dụng: khai báo BẢN ĐỒ ĐƯỜNG DẪN (routing).
@@ -98,6 +105,27 @@ function App() {
           >
             <Route index element={<AdminOverview />} />           {/* /admin       : Tổng quan */}
             <Route path="users" element={<AdminUsers />} />       {/* /admin/users : Quản lý tài khoản */}
+          </Route>
+
+          {/* ----- Bàn làm việc Biên tập viên: chỉ EDITOR. Cũng là route lồng nhau trong EditorLayout ----- */}
+          <Route
+            path="/editor"
+            element={
+              <ProtectedRoute roles={['EDITOR']}>
+                <EditorLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<EditorOverview />} />                                {/* Tổng quan */}
+            <Route path="queue" element={<EditorQueue />} />                            {/* Hàng đợi tin bài */}
+            <Route path="queue/:code" element={<EditorSubmissionDetail />} />           {/* Chi tiết 1 hồ sơ */}
+            <Route path="applications" element={<EditorApplications />} />              {/* Đơn đăng ký CTV */}
+            <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
+            {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
+            <Route path="screening" element={<EditorPlanned page="screening" />} />
+            <Route path="assignments" element={<EditorPlanned page="assignments" />} />
+            <Route path="articles" element={<EditorPlanned page="articles" />} />
+            <Route path="members" element={<EditorPlanned page="members" />} />
           </Route>
 
           {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link, hoặc trang chưa làm) */}

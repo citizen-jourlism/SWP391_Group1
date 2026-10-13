@@ -57,10 +57,11 @@ export const STATUS_INFO = {
 
 /**
  * Trang mặc định chuyển tới sau khi đăng nhập, theo vai trò. Vai trò không có trong bảng -> trang chủ.
- * Khi làm thêm trang riêng cho vai trò khác (ví dụ bàn làm việc của Biên tập viên) thì thêm vào đây.
+ * Khi làm thêm trang riêng cho vai trò khác (ví dụ bàn làm việc của Phó TBT) thì thêm vào đây.
  */
 const HOME_PATHS = {
   SYSTEM_ADMIN: '/admin',
+  EDITOR: '/editor', // Bàn làm việc Biên tập viên
 }
 
 export const homePathFor = (role) => HOME_PATHS[role] ?? '/'
