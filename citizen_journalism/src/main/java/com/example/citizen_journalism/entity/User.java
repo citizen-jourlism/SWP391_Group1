@@ -11,7 +11,17 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        // 1. Phục vụ tra cứu đăng nhập / kiểm tra trùng lặp số điện thoại
+        @Index(name = "idx_users_phone", columnList = "phone"),
+
+        // 2. Phục vụ màn hình Admin duyệt hồ sơ nâng cấp (lọc trạng thái + sắp xếp thời
+        // gian)
+        @Index(name = "idx_users_upgrade_created", columnList = "upgrade_status, created_at"),
+
+        // 3. Phục vụ lọc nhân sự tòa soạn (phân vai trò và trạng thái hoạt động)
+        @Index(name = "idx_users_role_status", columnList = "role, status")
+})
 @Getter
 @Setter
 @NoArgsConstructor

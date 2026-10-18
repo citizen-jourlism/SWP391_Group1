@@ -7,7 +7,16 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 @Entity
-@Table(name = "field_assignments")
+@Table(name = "field_assignments", indexes = {
+    // 1. Tìm kiếm bài viết đã được giao (cho Producer xem danh sách)
+    @Index(name = "idx_field_assignments_status_created", columnList = "status, created_at"),
+
+    // 2. Tìm các bài giao việc cho một Biên tập viên cụ thể (lọc theo editor_id)
+    @Index(name = "idx_field_assignments_editor", columnList = "contributor_id"),
+
+    // 3. Thống kê nhanh các nhiệm vụ theo trạng thái
+    @Index(name = "idx_field_assignments_status", columnList = "status")
+})
 @Getter
 @Setter
 @NoArgsConstructor
