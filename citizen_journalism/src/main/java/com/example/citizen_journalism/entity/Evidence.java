@@ -5,7 +5,13 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 @Entity
-@Table(name = "evidences")
+@Table(name = "evidences", indexes = {
+    // 1. Tìm kiếm bằng chứng cho một bài viết cụ thể (lọc theo submission_id)
+    @Index(name = "idx_evidences_submission", columnList = "submission_id"),
+
+    // 2. Tìm kiếm bằng chứng theo người đăng và thời gian (lọc theo uploaded_by)
+    @Index(name = "idx_evidences_uploader_created", columnList = "uploaded_by, created_at")
+})
 @Getter
 @Setter
 @NoArgsConstructor

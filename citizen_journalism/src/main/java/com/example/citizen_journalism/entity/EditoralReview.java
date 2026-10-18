@@ -5,7 +5,16 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 @Entity
-@Table(name = "editorial_reviews")
+@Table(name = "editorial_reviews", indexes = {
+    // 1. Tìm các bài đánh giá của một bài viết (lọc theo submission_id)
+    @Index(name = "idx_editorial_reviews_submission", columnList = "submission_id"),
+
+    // 2. Tìm các bài đánh giá của một biên tập viên (lọc theo reviewer_id)
+    @Index(name = "idx_editorial_reviews_reviewer", columnList = "reviewer_id"),
+
+    // 3. Tìm theo vai trò và hành động (thống kê nhanh)
+    @Index(name = "idx_editorial_reviews_role_action", columnList = "review_role, action")
+})
 @Getter
 @Setter
 @NoArgsConstructor

@@ -5,7 +5,16 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 @Entity
-@Table(name = "submissions")
+@Table(name = "submissions", indexes = {
+    // 1. Tìm bài viết theo trạng thái và ngày tạo (cho Admin duyệt)
+    @Index(name = "idx_submissions_status_created", columnList = "status, created_at"),
+
+    // 2. Tìm bài viết cần phân công biên tập (lọc theo loại và trạng thái)
+    @Index(name = "idx_submissions_type_status", columnList = "type, status"),
+
+    // 3. Thống kê nhanh số lượng bài viết của từng tác giả (nếu cần)
+    @Index(name = "idx_submissions_author", columnList = "author_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
