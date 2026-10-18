@@ -1,0 +1,292 @@
+/* ===== Khung các trang tài khoản (components/layout/AccountLayout.jsx) + trang Hồ sơ (routes/Profile.jsx) =====
+ * Màu sắc lấy từ design tokens trong src/index.css. Đặt tên class theo kiểu BEM (xem đầu file ui.css).
+ */
+
+.account {
+  min-height: 100vh;
+  background: var(--bg-soft);
+}
+
+.account__container {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+/* ---------- Nội dung ---------- */
+.account__main {
+  padding: 32px 0 56px;
+}
+
+.account__heading {
+  margin-bottom: 24px;
+}
+
+.account__heading h1 {
+  margin: 0 0 6px;
+  color: var(--navy-900);
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.account__heading p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Link "← Quay lại" phía trên tiêu đề (prop backLink của AccountLayout) */
+.account__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: var(--navy-700);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.account__back:hover {
+  color: var(--orange-strong);
+}
+
+.account__main > .alert {
+  margin-bottom: 20px;
+}
+
+/* Thẻ trắng dùng chung cho các khối nội dung */
+.account-card {
+  padding: 28px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: 0 12px 32px rgba(13, 31, 53, 0.06);
+}
+
+.account-card__header {
+  margin-bottom: 20px;
+}
+
+.account-card__header h2 {
+  margin: 0 0 4px;
+  color: var(--navy-900);
+  font-size: 19px;
+}
+
+.account-card__header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.account-card > .alert {
+  margin-bottom: 18px;
+}
+
+/* ===== Trang Hồ sơ ===== */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ---------- Thẻ tóm tắt (cột trái) ---------- */
+.profile-summary {
+  position: sticky;
+  top: 92px; /* nằm dưới thanh đầu trang khi cuộn */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-summary__name {
+  margin: 14px 0 6px;
+  color: var(--navy-900);
+  font-size: 20px;
+  word-break: break-word;
+}
+
+.profile-summary__role {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #fff1ea;
+  color: var(--orange-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-summary__meta {
+  margin: 12px 0 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.profile-summary__meta strong {
+  color: var(--navy-800);
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.profile-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+}
+
+.profile-stat strong {
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--navy-900);
+}
+
+.profile-stat span {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.profile-stat--trust {
+  background: var(--info-bg);
+  border-color: #cfe1fb;
+  color: var(--blue);
+}
+
+.profile-stat--reward {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: var(--orange-strong);
+}
+
+/* ---------- Ảnh đại diện (components/profile/AvatarUploader.jsx) ---------- */
+.avatar-uploader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.avatar-uploader__frame {
+  position: relative;
+  padding: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffb15d, #ff4500, #0d1f35); /* viền gradient cam -> đen giống logo */
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.avatar-uploader__frame .avatar {
+  border: 4px solid #fff;
+}
+
+.avatar-uploader__frame:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 28px rgba(255, 69, 0, 0.25);
+}
+
+.avatar-uploader__frame:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Đang xem trước: viền nét đứt màu cam để người dùng biết ảnh CHƯA được lưu */
+.avatar-uploader__frame.is-preview {
+  background: none;
+  outline: 3px dashed var(--orange);
+  outline-offset: 2px;
+}
+
+.avatar-uploader__camera {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--navy-800);
+  color: #fff;
+}
+
+.avatar-uploader__preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar-uploader__badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #fff1ea;
+  color: var(--orange-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.avatar-uploader__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.avatar-uploader__actions .btn {
+  min-height: 38px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.avatar-uploader__actions--subtle {
+  gap: 16px;
+  font-size: 14px;
+}
+
+.avatar-uploader__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 560px) {
+  .account__main {
+    padding-top: 20px;
+  }
+
+  .account-card {
+    padding: 20px 16px;
+  }
+}
+
+/* Cột phải của trang Hồ sơ: thẻ "Thông tin cá nhân" + thẻ "Cộng tác viên" xếp dọc */
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
