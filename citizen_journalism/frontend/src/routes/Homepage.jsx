@@ -1,6 +1,8 @@
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import SiteHeader from '../components/layout/SiteHeader'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import '../assets/styles/homepage.css'
-
-const navLinks = ['Trang chủ', 'Gửi phản ánh', 'Gửi khiếu nại', 'Về chúng tôi', 'Liên hệ']
 
 const scoreCards = [
 	{
@@ -39,51 +41,49 @@ const missions = [
 ]
 
 function Homepage() {
+	useDocumentTitle() // Không truyền tên -> tiêu đề tab chỉ là "Tin Nóng Dân Sinh" (tránh giữ tên của trang trước)
+	const navigate = useNavigate()
+	const [trackingCode, setTrackingCode] = useState('')
+
+	/** Ô tra cứu nhanh: chuyển sang trang Tra cứu (/track) với mã đã điền sẵn, ở đó nhập tiếp mã PIN. */
+	const goToTracking = (event) => {
+		event.preventDefault()
+		const code = trackingCode.trim()
+		navigate(code ? `/track?code=${encodeURIComponent(code)}` : '/track')
+	}
+
 	return (
 		<div className="page-shell">
-			<header className="topbar">
-				<div className="topbar-inner container">
-					<div className="topbar-left">
-						<span className="dot red" />
-						<span>Tiếp nhận phản ánh &amp; giải quyết tin tức</span>
-					</div>
-					<div className="topbar-right">
-						<span>Hệ thống</span>
-						<button className="login-button" type="button">Login</button>
-					</div>
-				</div>
-			</header>
-
-			<nav className="main-nav container" aria-label="Điều hướng chính">
-				<div className="brand-block">
-					<div className="brand-icon">✦</div>
-					<div className="brand-text">
-						<div className="brand-title">TIN NÓNG DÂN SINH</div>
-						<div className="brand-sub">Tiếp nhận thông tin &amp; chăm sóc người dân</div>
-					</div>
-				</div>
-				<div className="nav-links">
-					{navLinks.map((label) => <a href="#" key={label}>{label}</a>)}
-				</div>
-			</nav>
+			{/* Thanh đầu trang dùng chung: tự đổi nút theo trạng thái đăng nhập (xem components/layout/SiteHeader.jsx) */}
+			<SiteHeader />
 
 			<main className="container page-content">
 				<section className="hero-panel">
 					<div className="hero-badge">KÊNH TIẾP NHẬN &amp; PHẢN HỒI CHÍNH THỨC CỦA TÒA SOẠN</div>
-					<h1>CÔNG TIẾP NHẬN &amp; XÁC THỰC<br /><span>TIN NÓNG DÂN SINH 24/7</span></h1>
+					<h1>CỔNG TIẾP NHẬN &amp; XÁC THỰC<br /><span>TIN NÓNG DÂN SINH 24/7</span></h1>
 					<p>
 						Mỗi người dân là một &quot;mắt tốt&quot; của cộng đồng. Khi phát hiện sự cố, tai nạn,
 						hải quan, hay lộ thông tin sai lệch, hãy đồng hành và gửi thông tin cho đội ngũ
 						kiểm định để giúp cộng đồng được biết và giải quyết kịp thời.
 					</p>
+					{/* Chưa đăng nhập thì /submit tự chuyển sang trang Đăng nhập, đăng nhập xong quay lại đúng form.
+					    Một nút gửi chung: chọn Tin nóng hay Khiếu nại... ngay trong form. */}
 					<div className="hero-actions">
-						<button className="primary-btn" type="button">Bấm để gửi tin nóng</button>
-						<button className="secondary-btn" type="button">Tra cứu tin</button>
+						<Link className="primary-btn" to="/submit">Gửi thông tin</Link>
+						<Link className="secondary-btn" to="/track">Tra cứu hồ sơ</Link>
 					</div>
-					<div className="report-box">
-						<input type="text" placeholder="Nhập mã hồ sơ hoặc số điện thoại" aria-label="Mã hồ sơ hoặc số điện thoại" />
-						<button type="button">Tra cứu</button>
-					</div>
+					{/* Ô tra cứu nhanh: dùng thẻ <form> để nhấn Enter cũng tra cứu được */}
+					<form className="report-box" onSubmit={goToTracking}>
+						<input
+							type="text"
+							value={trackingCode}
+							onChange={(event) => setTrackingCode(event.target.value)}
+							placeholder="Nhập mã hồ sơ, ví dụ KB-2026-0001"
+							aria-label="Mã hồ sơ"
+							maxLength={20}
+						/>
+						<button type="submit">Tra cứu</button>
+					</form>
 					<div className="hero-stats">
 						<div className="stat-item">
 							<div className="stat-icon">⚑</div>
@@ -120,7 +120,7 @@ function Homepage() {
 					</div>
 				</section>
 
-				<section className="about-section">
+				<section className="about-section" id="gioi-thieu">
 					<div className="about-header">
 						<div className="about-tag">Giới thiệu</div>
 						<h2>GIỚI THIỆU VỀ TÒA SOẠN TIN NÓNG DÂN SINH</h2>
@@ -159,7 +159,7 @@ function Homepage() {
 					<div className="mission-head">
 						<div className="mission-badge">CƠ QUAN NGHIỆP VỤ</div>
 						<h2>CÁC BẢN CHUYỂN MÔN THỰC THUỘC TÒA SOẠN</h2>
-						<button className="mini-link" type="button">Làm việc lên tới 24/7</button>
+						<button className="mini-link" type="button">Làm việc 24/7</button>
 					</div>
 					<div className="mission-grid">
 						{missions.map(([icon, title, description]) => (
@@ -170,14 +170,10 @@ function Homepage() {
 							</div>
 						))}
 					</div>
-					<div className="cta-strip">
-						<div className="cta-copy">CÂM KẾT &quot;4 KHÔNG” - 4 CỘT CỦA TÒA SOẠN TIN NÓNG DÂN SINH</div>
-						<button type="button">Gửi Phản Ánh</button>
-					</div>
 				</section>
 			</main>
 
-			<footer className="site-footer">
+			<footer className="site-footer" id="lien-he">
 				<div className="container footer-top">
 					<div>Đường dây trợ giúp: 1900 6668</div>
 					<div>•</div>

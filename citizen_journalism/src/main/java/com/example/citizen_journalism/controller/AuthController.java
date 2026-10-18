@@ -1,0 +1,129 @@
+package com.example.citizen_journalism.controller;
+
+import com.example.citizen_journalism.dto.ApiResponse;
+import com.example.citizen_journalism.dto.auth.ChangePasswordRequest;
+import com.example.citizen_journalism.dto.auth.EmailRequest;
+import com.example.citizen_journalism.dto.auth.LoginRequest;
+import com.example.citizen_journalism.dto.auth.LoginResponse;
+import com.example.citizen_journalism.dto.auth.OtpInfo;
+import com.example.citizen_journalism.dto.auth.RegisterRequest;
+import com.example.citizen_journalism.dto.auth.ResetPasswordRequest;
+import com.example.citizen_journalism.dto.auth.VerifyOtpRequest;
+import com.example.citizen_journalism.dto.user.UserSummary;
+import com.example.citizen_journalism.service.AuthService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * CONTROLLER = "quầy tiếp dân" của backend: nơi nhận HTTP request từ frontend.
+ *
+ * LUỒNG CHẠY của một request đăng ký:
+ *   Frontend (Register.jsx) --POST /api/auth/register--> AuthController.register()
+ *     -> @Valid kiểm tra dữ liệu theo RegisterRequest (sai thì GlobalExceptionHandler trả lỗi 400)
+ *     -> AuthService.register() xử lý nghiệp vụ
+ *     -> UserRepository / OtpService lưu vào MySQL và gửi OTP
+ *   <-- trả về JSON dạng ApiResponse { success, message, data }
+ *
+ * TẠI SAO controller "mỏng" (chỉ gọi service)?
+ *   Controller chỉ lo nhận/trả HTTP. Toàn bộ logic nằm ở Service để dễ đọc, dễ test
+ *   và dùng lại được (ví dụ: sau này admin tạo tài khoản cũng có thể gọi lại service).
+ *
+ * Các API ở đây là công khai (chưa cần đăng nhập), TRỪ /me và /change-password (cần token).
+ * Xem SecurityConfig.PUBLIC_ENDPOINTS.
+ */
+@RestController                 // Lớp này trả dữ liệu JSON (không trả trang HTML)
+@RequestMapping("/api/auth")    // Tiền tố chung cho mọi đường dẫn bên dưới
+@RequiredArgsConstructor        // Lombok tự tạo constructor để Spring "tiêm" (inject) AuthService vào
+public class AuthController {
+
+    private final AuthService authService;
+
+    /**
+     * Bước 1 - Đăng ký: POST /api/auth/register
+     * Body: { fullName, email, phone, password }
+     * Trả về 201 + OtpInfo (email, số giây mã còn hiệu lực, số giây phải chờ để gửi lại)
+     * để frontend hiển thị đồng hồ đếm ngược ở trang nhập OTP.
+     */
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED) // 201 Created: đã tạo mới tài nguyên (tài khoản)
+    public ApiResponse<OtpInfo> register(@Valid @RequestBody RegisterRequest request) {
+        return ApiResponse.ok("Đăng ký thành công! Mã OTP đã được gửi tới email của bạn.", authService.register(request));
+    }
+
+    /**
+     * Bước 2 - Xác thực OTP: POST /api/auth/verify-otp
+     * Body: { email, otp }. Đúng mã thì tài khoản chuyển từ PENDING_OTP sang ACTIVE.
+     */
+    @PostMapping("/verify-otp")
+    public ApiResponse<Void> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        authService.verifyRegistration(request);
+        return ApiResponse.ok("Xác thực tài khoản thành công!");
+    }
+
+    /**
+     * Gửi lại mã OTP: POST /api/auth/resend-otp
+     * Body: { email }. Dùng khi mã hết hạn hoặc người dùng không nhận được email.
+     */
+    @PostMapping("/resend-otp")
+    public ApiResponse<OtpInfo> resendOtp(@Valid @RequestBody EmailRequest request) {
+        return ApiResponse.ok("Đã gửi lại mã OTP.", authService.resendRegistrationOtp(request.email()));
+    }
+
+    /**
+     * Đăng nhập: POST /api/auth/login
+     * Body: { email, password, rememberMe }. Đúng thì trả về LoginResponse { accessToken, expiresAt, user }.
+     * Sai email/mật khẩu -> 401; chưa xác thực / bị khoá -> 403 kèm code; sai quá nhiều lần -> 429.
+     */
+    @PostMapping("/login")
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ApiResponse.ok("Đăng nhập thành công!", authService.login(request));
+    }
+
+    /**
+     * Ai đang đăng nhập: GET /api/auth/me  (BẮT BUỘC có token, xem SecurityConfig).
+     * @AuthenticationPrincipal Jwt jwt: Spring đưa sẵn token ĐÃ ĐƯỢC KIỂM TRA vào đây;
+     * jwt.getSubject() là mã người dùng (ví dụ CT0001) được ghi vào token lúc đăng nhập.
+     */
+    @GetMapping("/me")
+    public ApiResponse<UserSummary> me(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.ok("OK", authService.getCurrentUser(jwt.getSubject()));
+    }
+
+    /**
+     * Quên mật khẩu - bước 1: POST /api/auth/forgot-password   Body: { email }
+     * Luôn trả cùng một câu (dù email có tồn tại hay không), xem AuthService.forgotPassword.
+     */
+    @PostMapping("/forgot-password")
+    public ApiResponse<OtpInfo> forgotPassword(@Valid @RequestBody EmailRequest request) {
+        return ApiResponse.ok("Nếu email đã đăng ký, mã OTP đặt lại mật khẩu đã được gửi tới email này.",
+                authService.forgotPassword(request.email()));
+    }
+
+    /** Quên mật khẩu - bước 2: POST /api/auth/reset-password   Body: { email, otp, newPassword } */
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ApiResponse.ok("Đặt lại mật khẩu thành công! Hãy đăng nhập bằng mật khẩu mới.");
+    }
+
+    /**
+     * Đổi mật khẩu (BẮT BUỘC đăng nhập): PUT /api/auth/change-password   Body: { currentPassword, newPassword }
+     * Dùng PUT vì đây là thao tác CẬP NHẬT dữ liệu đã có (mật khẩu của chính mình).
+     */
+    @PutMapping("/change-password")
+    public ApiResponse<Void> changePassword(@AuthenticationPrincipal Jwt jwt,
+                                            @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(jwt.getSubject(), request);
+        return ApiResponse.ok("Đổi mật khẩu thành công!");
+    }
+}

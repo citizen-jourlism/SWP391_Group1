@@ -1,20 +1,4 @@
-:root {
-  --bg-soft: #edeff3;
-  --panel: #ffffff;
-  --navy-900: #0d1f35;
-  --navy-800: #112844;
-  --navy-700: #163a5d;
-  --text: #172339;
-  --muted: #7a8190;
-  --orange: #ff6a2f;
-  --orange-strong: #ff4500;
-  --orange-light: #ffb15d;
-  --red: #d43328;
-  --blue: #1c6ac7;
-  --card-border: #dfe5ef;
-  --dark-panel: #091c2f;
-  --dark-panel-2: #0f2440;
-}
+/* Màu sắc (design tokens) được khai báo chung trong src/index.css */
 
 * {
   box-sizing: border-box;
@@ -55,107 +39,9 @@ button {
   margin: 0 auto;
 }
 
-.topbar {
-  background: linear-gradient(180deg, #9b0d1a 0%, #6a1014 100%);
-  color: #fff;
-  font-size: 12px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-}
-
-.topbar-inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.topbar-left,
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.dot.red {
-  background: #ff9a00;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.24);
-}
-
-.login-button {
-  background: linear-gradient(180deg, #ff9f53, #fd5d1d);
-  color: #fff;
-  border-radius: 8px;
-  padding: 6px 18px;
-  font-weight: 700;
-  box-shadow: 0 3px 12px rgba(255, 121, 56, 0.4);
-}
-
-.main-nav {
-  background: linear-gradient(180deg, #0a1b30 0%, #0d2135 100%);
-  min-height: 74px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 10px 20px rgba(7, 20, 32, 0.15);
-}
-
-.brand-block {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: linear-gradient(180deg, #ff9b3d, #fe4d35);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 18px;
-  font-weight: 700;
-  box-shadow: 0 10px 18px rgba(255, 92, 58, 0.3);
-}
-
-.brand-title {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  color: #fff;
-}
-
-.brand-sub {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.72);
-}
-
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.nav-links a {
-  text-decoration: none;
-  color: #e6edf7;
-  padding: 9px 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+/* Các khối có id (tra-cuu, gioi-thieu, lien-he) chừa chỗ cho thanh đầu trang dính phía trên khi cuộn tới */
+[id] {
+  scroll-margin-top: 90px;
 }
 
 .page-content {
@@ -222,6 +108,10 @@ button {
 .hero-actions button,
 .primary-btn,
 .secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   padding: 18px 26px;
   min-width: 190px;
   border-radius: 12px;
@@ -639,33 +529,6 @@ button {
   line-height: 1.7;
 }
 
-.cta-strip {
-  margin-top: 26px;
-  background: linear-gradient(90deg, #f3f6fa 0%, #eef4ff 100%);
-  border: 1px solid var(--card-border);
-  border-radius: 16px;
-  padding: 18px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-
-.cta-copy {
-  font-weight: 800;
-  color: var(--navy-900);
-  font-size: 17px;
-}
-
-.cta-strip button {
-  background: linear-gradient(90deg, #ff7129, #ff4a2f);
-  color: #fff;
-  padding: 14px 22px;
-  border-radius: 12px;
-  font-weight: 800;
-  box-shadow: 0 12px 16px rgba(255, 96, 59, 0.15);
-}
-
 .site-footer {
   margin-top: 32px;
   background: linear-gradient(180deg, #0a1b2d 0%, #071827 100%);
@@ -718,17 +581,11 @@ button {
 }
 
 @media (max-width: 980px) {
-  .main-nav,
   .mission-head,
   .about-header,
-  .section-head,
-  .cta-strip {
+  .section-head {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .nav-links {
-    width: 100%;
   }
 
   .score-grid,
@@ -746,7 +603,6 @@ button {
 }
 
 @media (max-width: 640px) {
-  .topbar-inner,
   .hero-stats,
   .score-grid,
   .level-grid,
@@ -756,11 +612,6 @@ button {
   .footer-main {
     grid-template-columns: 1fr;
     display: grid;
-  }
-
-  .main-nav {
-    padding-top: 18px;
-    padding-bottom: 18px;
   }
 
   .report-box {
@@ -776,9 +627,5 @@ button {
   .hero-panel {
     padding-left: 18px;
     padding-right: 18px;
-  }
-
-  .cta-strip {
-    padding: 16px 14px;
   }
 }
