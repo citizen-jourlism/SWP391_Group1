@@ -1,5 +1,45 @@
+/* ===== Design tokens dùng chung cho toàn bộ giao diện =====
+ * File CSS GỐC, được nạp đầu tiên trong main.jsx nên áp dụng cho mọi trang.
+ *
+ * "Design token" = biến CSS lưu màu, bo góc, đổ bóng... dùng bằng var(--ten-bien).
+ * TẠI SAO? Muốn đổi màu chủ đạo của cả web thì chỉ sửa 1 dòng ở đây, không phải tìm sửa ở hàng chục file.
+ */
 :root {
+  --bg-soft: #edeff3;
+  --panel: #ffffff;
+  --navy-900: #0d1f35;
+  --navy-800: #112844;
+  --navy-700: #163a5d;
+  --text: #172339;
+  --muted: #7a8190;
+  --orange: #ff6a2f;
+  --orange-strong: #ff4500;
+  --orange-light: #ffb15d;
+  --red: #d43328;
+  --blue: #1c6ac7;
+  --card-border: #dfe5ef;
+  --dark-panel: #091c2f;
+  --dark-panel-2: #0f2440;
+
+  --success: #16a34a;
+  --success-bg: #ecfdf3;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --info: #1c6ac7;
+  --info-bg: #eef5ff;
+  --warning: #b45309;
+  --warning-bg: #fff7ed;
+
+  --input-border: #cfd6e2;
+  --focus-ring: 0 0 0 4px rgba(255, 106, 47, 0.18);
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --shadow-card: 0 24px 60px rgba(13, 31, 53, 0.12);
+  --gradient-primary: linear-gradient(135deg, #ff9f53 0%, #ff4500 100%);
+
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,9 +59,64 @@ html {
 body {
   min-width: 320px;
   margin: 0;
+  background: var(--bg-soft);
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+/* Ảnh đại diện tròn dùng chung (components/ui/Avatar.jsx). Kích thước truyền qua prop size. */
+.avatar {
+  display: block;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover; /* ảnh không vuông vẫn lấp đầy hình tròn, không bị méo */
+  background: #eef1f6;
+}
+
+.avatar--initial {
+  display: grid;
+  place-items: center;
+  background: var(--gradient-primary);
+  color: #fff;
+  font-weight: 800;
+}
+
+/* Logo dùng chung (components/ui/Logo.jsx). Bo góc theo tỉ lệ để khớp với góc bo trong file SVG. */
+.logo {
+  display: block;
+  flex: none;
+  border-radius: 22%;
+  box-shadow: 0 10px 22px rgba(255, 69, 0, 0.3);
+}
+
+/* Ẩn khỏi màn hình nhưng trình đọc màn hình vẫn đọc được (ví dụ tiêu đề nhóm ô chọn loại phản ánh) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Người dùng bật "giảm chuyển động" trong hệ điều hành (ví dụ người dễ chóng mặt) thì tắt các hiệu ứng động. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

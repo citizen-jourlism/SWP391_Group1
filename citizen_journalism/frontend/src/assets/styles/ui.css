@@ -1,0 +1,880 @@
+/* ===== Component dùng chung: form, nút, thông báo... =====
+ * Style cho các component trong src/components/ui/ (TextField, Button, Alert, Checkbox, OtpInput...).
+ * File được nạp trong AuthLayout.jsx; các trang khác dùng component này thì cũng import file này.
+ *
+ * QUY ƯỚC ĐẶT TÊN CLASS (kiểu BEM) để không bị trùng tên giữa các phần:
+ *   .field            -> khối (block): cả ô nhập
+ *   .field__input     -> phần tử (element) bên trong khối, nối bằng 2 dấu gạch dưới "__"
+ *   .field--error     -> biến thể (modifier) của khối, nối bằng 2 dấu gạch ngang "--"
+ *   .is-filled/.is-active -> trạng thái tạm thời do JavaScript bật/tắt
+ * Màu sắc lấy từ biến var(--...) khai báo trong src/index.css.
+ */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 560px) {
+  .form__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Một hàng gồm 2 phần nằm 2 đầu, ví dụ "Ghi nhớ đăng nhập" ... "Quên mật khẩu?" */
+.form__inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Hàng nút cuối form, căn phải (ví dụ "Huỷ thay đổi" + "Lưu thay đổi") */
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+@media (max-width: 560px) {
+  .form__actions {
+    flex-direction: column-reverse; /* điện thoại: nút chính lên trên, rộng hết khung */
+  }
+}
+
+/* Ô chỉ hiển thị (không gõ được), có nút hành động bên phải. Ví dụ ô Email ở trang Hồ sơ. */
+.readonly-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1.5px dashed var(--input-border);
+  border-radius: var(--radius-sm);
+  background: #f6f8fb;
+  color: var(--muted);
+}
+
+.readonly-field__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 15px;
+}
+
+/* Link chữ màu cam (không phải nút) */
+.text-link {
+  color: var(--orange-strong);
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Ô nhập liệu ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-800);
+}
+
+.field__required {
+  color: var(--danger);
+  margin-left: 3px;
+}
+
+.field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field__icon {
+  position: absolute;
+  left: 14px;
+  color: var(--muted);
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.field__input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: #fbfcfe;
+  color: var(--text);
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.field__input.has-icon {
+  padding-left: 42px;
+}
+
+.field__input.has-action {
+  padding-right: 46px;
+}
+
+.field__input::placeholder {
+  color: #a3abb9;
+}
+
+.field__input:hover {
+  border-color: #b6c0d0;
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--orange);
+  background: #fff;
+  box-shadow: var(--focus-ring);
+}
+
+.field__control:focus-within .field__icon {
+  color: var(--orange);
+}
+
+.field--error .field__input {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.field--error .field__input:focus {
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.14);
+}
+
+.field--error .field__icon {
+  color: var(--danger);
+}
+
+.field__action {
+  position: absolute;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.field__action:hover {
+  color: var(--navy-800);
+  background: #eef1f6;
+}
+
+.field__action:focus-visible {
+  outline: 2px solid var(--orange);
+}
+
+.field__error,
+.field__hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.field__error {
+  color: var(--danger);
+  animation: fade-in 0.2s ease;
+}
+
+.field__hint {
+  color: var(--muted);
+}
+
+/* Ô nhiều dòng (TextField multiline): bỏ chiều cao cố định, cho kéo giãn theo chiều dọc */
+.field__textarea {
+  height: auto;
+  min-height: 96px;
+  padding: 12px 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+/* Hàng dưới ô: lỗi/gợi ý bên trái, bộ đếm ký tự bên phải */
+.field__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.field__counter {
+  margin-left: auto; /* luôn nằm sát phải kể cả khi không có lỗi/gợi ý */
+  flex: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums; /* các chữ số rộng bằng nhau -> bộ đếm không bị "nhảy" khi gõ */
+  color: var(--muted);
+}
+
+.field__counter.is-over {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* Gợi ý đứng riêng một dòng (không gắn với ô nhập), ví dụ mô tả vai trò trong form tạo tài khoản */
+.field__hint--block {
+  margin-top: -10px;
+}
+
+/* Nút chữ nhỏ ngay dưới ô nhập, ví dụ "Tạo mật khẩu ngẫu nhiên" */
+.field__inline-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-size: 13px;
+}
+
+/* ---------- Ô chọn (SelectField) ---------- */
+.field__select {
+  padding-right: 40px;
+  appearance: none; /* ẩn mũi tên mặc định của trình duyệt, dùng icon riêng cho đẹp và đồng bộ */
+  cursor: pointer;
+}
+
+.field__select-arrow {
+  position: absolute;
+  right: 14px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* ---------- Chọn nhiều dạng chip (ChipSelect) ---------- */
+.chip-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--input-border);
+  border-radius: 999px;
+  background: #fbfcfe;
+  color: var(--navy-800);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: #b6c0d0;
+}
+
+.chip.is-selected {
+  border-color: var(--orange);
+  background: #fff1ea;
+  color: var(--orange-strong);
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.field--error .chip:not(.is-selected) {
+  border-color: #f3b4b4;
+}
+
+/* ---------- Nhãn nhỏ dạng thẻ (lĩnh vực của đơn CTV, bài nghiên cứu) ---------- */
+.tag {
+  display: inline-flex;
+  white-space: nowrap; /* "Đời sống" không bị gãy thành 2 dòng trong bảng hẹp */
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff1ea;
+  color: var(--orange-strong);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* ---------- Nhãn màu (Badge) ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badge--neutral { background: #eef1f6; color: #475569; }
+.badge--green { background: var(--success-bg); color: #15803d; }
+.badge--blue { background: var(--info-bg); color: var(--blue); }
+.badge--orange { background: #fff1ea; color: var(--orange-strong); }
+.badge--red { background: var(--danger-bg); color: var(--danger); }
+.badge--purple { background: #f3efff; color: #7c3aed; }
+.badge--dark { background: var(--navy-900); color: #fff; }
+
+/* ---------- Phân trang (Pagination) ---------- */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+.pagination strong {
+  color: var(--navy-900);
+}
+
+.pagination__buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pagination__buttons button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--navy-800);
+  cursor: pointer;
+}
+
+.pagination__buttons button:hover:not(:disabled) {
+  border-color: var(--navy-700);
+}
+
+.pagination__buttons button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pagination__next svg {
+  transform: rotate(180deg); /* dùng lại icon mũi tên trái, xoay thành mũi tên phải */
+}
+
+/* ---------- Khung xám nhấp nháy khi đang tải (skeleton) ---------- */
+.skeleton {
+  border-radius: 12px;
+  background: linear-gradient(90deg, #e6eaf0 25%, #f1f4f8 50%, #e6eaf0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+
+.skeleton--card { height: 112px; border-radius: 16px; }
+.skeleton--row { height: 36px; }
+.skeleton--page { height: 420px; border-radius: var(--radius-lg); }
+
+/* ---------- Checkbox ---------- */
+.checkbox__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.checkbox__label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.checkbox__label a {
+  color: var(--orange-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.checkbox__label a:hover {
+  text-decoration: underline;
+}
+
+.checkbox__box {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border: 1.5px solid var(--input-border);
+  border-radius: 6px;
+  background: #fff;
+  color: transparent;
+  transition: all 0.2s;
+}
+
+.checkbox__input:checked + .checkbox__label .checkbox__box {
+  background: var(--gradient-primary);
+  border-color: var(--orange-strong);
+  color: #fff;
+}
+
+.checkbox__input:focus-visible + .checkbox__label .checkbox__box {
+  box-shadow: var(--focus-ring);
+}
+
+.checkbox--error .checkbox__box {
+  border-color: var(--danger);
+}
+
+.checkbox .field__error {
+  margin-top: 6px;
+}
+
+/* ---------- Nút bấm ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s, filter 0.2s, background 0.2s;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn--primary {
+  background: var(--gradient-primary);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(255, 69, 0, 0.28);
+}
+
+.btn--primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(255, 69, 0, 0.34);
+}
+
+.btn--secondary {
+  background: #fff;
+  color: var(--navy-800);
+  border: 1.5px solid var(--card-border);
+}
+
+.btn--secondary:hover {
+  border-color: var(--navy-700);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--navy-800);
+}
+
+.btn--ghost:hover {
+  background: #f1f4f8;
+}
+
+/* Nút cho hành động nguy hiểm (khoá tài khoản, xoá...) */
+.btn--danger {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.25);
+}
+
+.btn--danger:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+/* Nút nhỏ (ví dụ "Xem tất cả" ở góc khối nội dung) */
+.btn--sm {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+/* Nút vuông chỉ có icon (ví dụ nút sao chép cạnh mã hồ sơ) */
+.btn--icon {
+  flex: none;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.btn__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--orange-strong);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.link-button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.link-button:disabled {
+  color: var(--muted);
+  font-weight: 600;
+  cursor: default;
+}
+
+/* Biến thể màu xám cho hành động phụ / nguy hiểm nhẹ (ví dụ "Xoá ảnh") */
+.link-button--muted {
+  color: var(--muted);
+}
+
+.link-button--muted:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+/* ---------- Hộp thoại (components/ui/Modal.jsx) ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(9, 28, 47, 0.55);
+  backdrop-filter: blur(3px);
+  animation: fade-in 0.15s ease;
+}
+
+.modal__dialog {
+  width: min(460px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+  animation: pop-in 0.25s ease;
+}
+
+.modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 0;
+}
+
+.modal__header h2 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 19px;
+}
+
+.modal__close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.modal__close:hover {
+  background: #f1f4f8;
+  color: var(--navy-800);
+}
+
+.modal__body {
+  padding: 16px 24px 24px;
+}
+
+.modal__text {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.modal__text strong {
+  color: var(--navy-800);
+  word-break: break-all;
+}
+
+/* Hàng nút cuối hộp thoại, căn phải */
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ---------- Thông báo ---------- */
+.alert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 13.5px;
+  line-height: 1.5;
+  animation: fade-in 0.25s ease;
+}
+
+.alert__icon {
+  flex: none;
+  margin-top: 1px;
+}
+
+.alert__title {
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* Hàng nút hành động bên trong hộp thông báo (ví dụ "Xác thực email ngay") */
+.alert__actions {
+  margin-top: 10px;
+}
+
+.alert__actions .btn {
+  min-height: 38px;
+  padding: 0 16px;
+  font-size: 13.5px;
+}
+
+.alert code {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.alert--error {
+  color: #991b1b;
+  background: var(--danger-bg);
+  border-color: #fecaca;
+}
+
+.alert--success {
+  color: #166534;
+  background: var(--success-bg);
+  border-color: #bbf7d0;
+}
+
+.alert--info {
+  color: #1e4f8f;
+  background: var(--info-bg);
+  border-color: #cfe1fb;
+}
+
+.alert--warning {
+  color: var(--warning);
+  background: var(--warning-bg);
+  border-color: #fed7aa;
+}
+
+/* ---------- Độ mạnh mật khẩu ---------- */
+.strength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.strength__bars {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.strength__bars span {
+  height: 5px;
+  border-radius: 999px;
+  background: #e3e8f0;
+  transition: background 0.3s;
+}
+
+.strength__label {
+  min-width: 112px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.strength--weak .is-active { background: var(--danger); }
+.strength--weak .strength__label { color: var(--danger); }
+.strength--fair .is-active { background: #f59e0b; }
+.strength--fair .strength__label { color: #b45309; }
+.strength--good .is-active { background: #3b82f6; }
+.strength--good .strength__label { color: var(--blue); }
+.strength--strong .is-active { background: var(--success); }
+.strength--strong .strength__label { color: var(--success); }
+
+/* ---------- Ô nhập OTP ---------- */
+.otp {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.otp__cell {
+  width: 100%;
+  aspect-ratio: 1 / 1.15;
+  max-height: 64px;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: #fbfcfe;
+  color: var(--navy-900);
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  caret-color: var(--orange);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s, background 0.2s;
+}
+
+.otp__cell:focus {
+  outline: none;
+  border-color: var(--orange);
+  background: #fff;
+  box-shadow: var(--focus-ring);
+  transform: translateY(-2px);
+}
+
+.otp__cell.is-filled {
+  border-color: var(--navy-700);
+  background: #fff;
+}
+
+.otp__cell:disabled {
+  opacity: 0.6;
+}
+
+.otp--invalid .otp__cell {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.otp--invalid {
+  animation: shake 0.4s ease;
+}
+
+/* ---------- Màn hình kết quả (thành công / thông báo) ---------- */
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.result__icon {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  animation: pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.result__icon--success {
+  color: var(--success);
+  background: var(--success-bg);
+  box-shadow: 0 0 0 10px rgba(22, 163, 74, 0.07);
+}
+
+.result__icon--muted {
+  color: var(--navy-700);
+  background: #eef1f6;
+}
+
+.result__text {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.result__actions {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+/* ---------- Animation ---------- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes shake {
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
