@@ -39,6 +39,7 @@ public record ViolationDetail(
     }
 
     public record ReputationEntry(Integer pointsChange, ReputationLog.ReputationReason reason,
+                                  ReputationLog.ContributionType contributionType, Long contributionId,
                                   String trackingCode, String submissionTitle, LocalDateTime createdAt) {
     }
 
@@ -62,6 +63,7 @@ public record ViolationDetail(
                 violation.getReviewedAt(), staff(violation.getApprovedBy()), violation.getApprovalNote(),
                 violation.getApprovedAt(), violation.getCreatedAt(), history.stream().map(log ->
                         new ReputationEntry(log.getPointsChange(), log.getReason(),
+                                log.getContributionType(), log.getContributionId(),
                                 log.getRelatedSubmission() == null ? null : log.getRelatedSubmission().getTrackingCode(),
                                 log.getRelatedSubmission() == null ? null : log.getRelatedSubmission().getTitle(),
                                 log.getCreatedAt())).toList());

@@ -14,6 +14,17 @@ import { ROLE_LABELS, STATUS_INFO } from '../../lib/roles'
 import { violationService } from '../../services/violationService'
 
 const ACTION_OPTIONS = Object.entries(VIOLATION_ACTIONS).map(([value, label]) => ({ value, label }))
+const REPUTATION_REASONS = {
+  CITIZEN_SUBMISSION_PUBLISHED: 'Bài Citizen được xuất bản',
+  EXPERT_RESEARCH_APPROVED: 'Bài nghiên cứu Expert được duyệt',
+  SUBMISSION_APPROVED: 'Bài gửi được duyệt',
+  TASK_COMPLETED_ON_TIME: 'Hoàn thành nhiệm vụ đúng hạn',
+  TASK_LATE: 'Hoàn thành nhiệm vụ trễ',
+  INACCURATE_EVIDENCE: 'Bằng chứng không chính xác',
+  SPAM_REPORTED: 'Spam',
+  COPYRIGHT_VIOLATION: 'Vi phạm bản quyền',
+  INITIAL_CONTRIBUTOR_ONBOARDING: 'Điểm khởi tạo cộng tác viên',
+}
 
 function EditorViolationDetail() {
   const { id } = useParams()
@@ -167,7 +178,7 @@ function EditorViolationDetail() {
             <div className="admin-panel__header"><h2>Lịch sử uy tín gần đây</h2><span>20 lần thay đổi gần nhất</span></div>
             {data.reputationHistory?.length ? (
               <div className="table-wrap"><table className="data-table"><thead><tr><th>Ngày</th><th>Thay đổi</th><th>Lý do</th><th>Nội dung</th></tr></thead>
-                <tbody>{data.reputationHistory.map((entry, index) => <tr key={`${entry.createdAt}-${index}`}><td>{formatDateTime(entry.createdAt)}</td><td>{entry.pointsChange > 0 ? '+' : ''}{entry.pointsChange}</td><td>{entry.reason}</td><td>{entry.trackingCode ? `${entry.trackingCode} · ${entry.submissionTitle ?? ''}` : '—'}</td></tr>)}</tbody>
+                <tbody>{data.reputationHistory.map((entry, index) => <tr key={`${entry.createdAt}-${index}`}><td>{formatDateTime(entry.createdAt)}</td><td>{entry.pointsChange > 0 ? '+' : ''}{entry.pointsChange}</td><td>{REPUTATION_REASONS[entry.reason] ?? entry.reason}</td><td>{entry.trackingCode ? `${entry.trackingCode} · ${entry.submissionTitle ?? ''}` : entry.contributionType ? `${entry.contributionType === 'CITIZEN_SUBMISSION' ? 'Bài Citizen' : 'Bài nghiên cứu'} #${entry.contributionId}` : '—'}</td></tr>)}</tbody>
               </table></div>
             ) : <p className="data-table__empty">Chưa có lịch sử thay đổi điểm uy tín.</p>}
           </section>

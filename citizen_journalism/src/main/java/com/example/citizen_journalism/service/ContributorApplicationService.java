@@ -350,7 +350,7 @@ public class ContributorApplicationService {
         return new EditorApplicationDetail(toView(application), new EditorApplicationDetail.Applicant(
                 user.getId(), user.getFullName(), user.getEmail(), user.getPhone(), user.getCitizenId(),
                 user.getDateOfBirth(), user.getAddress(), user.getAvatarUrl(), user.getReputationScore(),
-                user.getRewardPoints(), user.getCreatedAt(), submissionRepository.countByAuthorId(user.getId())));
+                user.getCreatedAt(), submissionRepository.countByAuthorId(user.getId())));
     }
 
     private static List<String> splitFields(String value) {

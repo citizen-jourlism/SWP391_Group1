@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Alert from '../../components/ui/Alert'
 import Badge from '../../components/ui/Badge'
+import Button from '../../components/ui/Button'
 import Icon from '../../components/ui/Icon'
 import Pagination from '../../components/ui/Pagination'
 import { useAsyncData } from '../../hooks/useAsyncData'
@@ -11,10 +12,15 @@ import { VIOLATION_ACTIONS, VIOLATION_SEVERITIES, VIOLATION_STATUSES, VIOLATION_
 import { violationService } from '../../services/violationService'
 
 const PAGE_SIZE = 10
-const STATUS_TABS = [
-  { value: 'PENDING_APPROVAL', label: 'Chờ duyệt' },
-  { value: 'PENDING_FINAL', label: 'Chờ duyệt' },
+const APPEAL_STATUS_TABS = [
+  { value: 'PENDING_FINAL', label: 'Chờ phê duyệt' },
   { value: 'APPROVED', label: 'Đã duyệt' },
+  { value: 'REJECTED', label: 'Đã từ chối' },
+  { value: '', label: 'Tất cả' },
+]
+const VIOLATION_STATUS_TABS = [
+  { value: 'PENDING_APPROVAL', label: 'Chờ duyệt' },
+  { value: 'RESOLVED', label: 'Đã duyệt' },
   { value: 'REJECTED', label: 'Đã từ chối' },
   { value: '', label: 'Tất cả' },
 ]
@@ -45,6 +51,16 @@ function LeadershipApprovals({ initialKind = 'violations' }) {
 
   return (
     <section className="admin-panel">
+      <div className="admin-toolbar">
+        <div>
+          <strong>Quy trình xét duyệt của Ban biên tập</strong>
+          <div className="data-table__note">Truy cập nhanh hàng chờ khiếu nại mở khóa tài khoản.</div>
+        </div>
+        <Button to="/leadership/appeals" variant="secondary">
+          <Icon name="user" size={16} />
+          Xét duyệt mở khóa tài khoản
+        </Button>
+      </div>
       <div className="desk-tabs" role="tablist" aria-label="Loại hồ sơ phê duyệt">
         <button type="button" role="tab" aria-selected={kind === 'violations'} className={kind === 'violations' ? 'is-active' : ''} onClick={() => changeKind('violations')}>Xử lý vi phạm</button>
         <button type="button" role="tab" aria-selected={kind === 'retractions'} className={kind === 'retractions' ? 'is-active' : ''} onClick={() => changeKind('retractions')}>Rút / gỡ bài</button>
@@ -57,9 +73,7 @@ function LeadershipApprovals({ initialKind = 'violations' }) {
         </label>
       </div>
       <div className="desk-tabs" role="tablist" aria-label="Lọc hồ sơ theo trạng thái">
-        {(kind !== 'appeals'
-          ? [{ value: 'PENDING_APPROVAL', label: 'Chờ duyệt' }, { value: 'RESOLVED', label: 'Đã duyệt' }, { value: 'REJECTED', label: 'Đã từ chối' }, { value: '', label: 'Tất cả' }]
-          : STATUS_TABS).map((tab) => (
+        {(isAppeal ? APPEAL_STATUS_TABS : VIOLATION_STATUS_TABS).map((tab) => (
           <button key={tab.value || 'ALL'} type="button" role="tab" aria-selected={status === tab.value} className={status === tab.value ? 'is-active' : ''} onClick={() => { setStatus(tab.value); setPage(0) }}>{tab.label}</button>
         ))}
       </div>

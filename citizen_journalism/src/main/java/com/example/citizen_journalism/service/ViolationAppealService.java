@@ -119,6 +119,9 @@ public class ViolationAppealService {
             if (user.getStatus() != User.Status.LOCKED) {
                 throw AppException.conflict("Tài khoản không còn ở trạng thái bị khóa.");
             }
+            if (user.hasBelowMinimumReputation()) {
+                throw AppException.conflict("Tài khoản phải có ít nhất 80 điểm uy tín mới được mở khóa.");
+            }
             user.setStatus(User.Status.ACTIVE);
             user.setIsVerified(true);
             user.setFailedLoginAttempts(0);

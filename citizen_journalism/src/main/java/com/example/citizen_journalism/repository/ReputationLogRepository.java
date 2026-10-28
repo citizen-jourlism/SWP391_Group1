@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ReputationLogRepository extends JpaRepository<ReputationLog, Long> {
 
     List<ReputationLog> findTop20ByUserIdOrderByCreatedAtDesc(String userId);
+
+    boolean existsByContributionTypeAndContributionId(ReputationLog.ContributionType type, Long contributionId);
 }

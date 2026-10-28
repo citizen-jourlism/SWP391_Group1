@@ -89,11 +89,6 @@ public class User {
     @Column(name = "reputation_score")
     private Integer reputationScore;
 
-    /** Điểm thưởng tích luỹ (đổi quà sau này). Mặc định 0, người dùng chỉ được xem. */
-    @Column(name = "reward_points", nullable = false, columnDefinition = "int default 0")
-    @Builder.Default
-    private int rewardPoints = 0;
-
     // ----- Thông tin hồ sơ cá nhân (trang Hồ sơ, xem UserService) -----
 
     /** Số căn cước công dân. Không bắt buộc; nếu có thì không được trùng với người khác. */
@@ -136,6 +131,17 @@ public class User {
 
     /** Điểm uy tín mặc định của mọi tài khoản mới. */
     public static final int DEFAULT_REPUTATION_SCORE = 100;
+    public static final int MIN_REPUTATION_SCORE = 80;
+
+    public boolean hasBelowMinimumReputation() {
+        return reputationScore != null && reputationScore < MIN_REPUTATION_SCORE;
+    }
+
+    public void lockIfBelowMinimumReputation() {
+        if (hasBelowMinimumReputation() && status == Status.ACTIVE) {
+            status = Status.LOCKED;
+        }
+    }
 
     /** Chạy tự động ngay TRƯỚC khi lưu tài khoản mới vào DB lần đầu (@PrePersist): gán giá trị mặc định. */
     @PrePersist

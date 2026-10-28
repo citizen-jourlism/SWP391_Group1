@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
  * Thông tin ĐẦY ĐỦ hiển thị ở trang Hồ sơ (GET /api/users/me). Rộng hơn UserSummary.
  * Vẫn KHÔNG có mật khẩu, file giấy tờ... (những thứ không được lộ ra ngoài).
  *
- * reputationScore, rewardPoints: chỉ để XEM, người dùng không sửa được (UpdateProfileRequest không có 2 trường này).
+ * reputationScore: chỉ để XEM, người dùng không sửa được (UpdateProfileRequest không có trường này).
  */
 public record UserProfile(
         String id,
@@ -21,7 +21,6 @@ public record UserProfile(
         String avatarUrl,
         User.Role role,
         Integer reputationScore,
-        int rewardPoints,
         LocalDateTime createdAt  // Ngày tham gia
 ) {
 
@@ -37,7 +36,6 @@ public record UserProfile(
                 user.getAvatarUrl(),
                 user.getRole(),
                 user.getReputationScore(),
-                user.getRewardPoints(),
                 user.getCreatedAt());
     }
 }

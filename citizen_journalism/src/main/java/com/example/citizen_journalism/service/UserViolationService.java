@@ -207,6 +207,7 @@ public class UserViolationService {
             User user = violation.getReportedUser();
             int deduction = points == null ? 0 : points;
             user.setReputationScore(Math.max(0, user.getReputationScore() - deduction));
+            user.lockIfBelowMinimumReputation();
             violation.setPointsDeducted(deduction);
             reputationLogRepository.save(ReputationLog.builder()
                     .user(user)
@@ -222,6 +223,9 @@ public class UserViolationService {
         switch (violation.getProposedAction()) {
             case LOCK_ACCOUNT -> user.setStatus(User.Status.LOCKED);
             case UNLOCK_ACCOUNT -> {
+                if (user.hasBelowMinimumReputation()) {
+                    throw AppException.badRequest("Tài khoản phải có ít nhất 80 điểm uy tín mới được mở khóa.");
+                }
                 user.setStatus(User.Status.ACTIVE);
                 user.setFailedLoginAttempts(0);
                 user.setLockedUntil(null);

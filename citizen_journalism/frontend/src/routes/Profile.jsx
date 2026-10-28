@@ -107,11 +107,6 @@ function Profile() {
                 <strong>{profile.reputationScore ?? 0}</strong>
                 <span>Điểm uy tín</span>
               </div>
-              <div className="profile-stat profile-stat--reward">
-                <Icon name="gift" size={20} />
-                <strong>{profile.rewardPoints}</strong>
-                <span>Điểm thưởng</span>
-              </div>
             </div>
 
             <Button to="/account/change-password" variant="secondary" block>

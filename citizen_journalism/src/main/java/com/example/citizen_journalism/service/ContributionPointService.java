@@ -1,10 +1,10 @@
 package com.example.citizen_journalism.service;
 
-import com.example.citizen_journalism.entity.BonusPointAward;
 import com.example.citizen_journalism.entity.ResearchArticle;
+import com.example.citizen_journalism.entity.ReputationLog;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.entity.User;
-import com.example.citizen_journalism.repository.BonusPointAwardRepository;
+import com.example.citizen_journalism.repository.ReputationLogRepository;
 import com.example.citizen_journalism.repository.ResearchArticleRepository;
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class ContributionPointService {
 
     private final SubmissionRepository submissionRepository;
     private final ResearchArticleRepository researchArticleRepository;
-    private final BonusPointAwardRepository awardRepository;
+    private final ReputationLogRepository reputationLogRepository;
 
     @Transactional
     public AwardSummary accumulate(int citizenPoints, int expertPoints) {
@@ -35,16 +35,18 @@ public class ContributionPointService {
         return processPages(
                 page -> submissionRepository.findByStatusAndAuthorRole(Submission.SubmissionStatus.PUBLISHED,
                         User.Role.CITIZEN, page),
-                item -> award(item.getId(), BonusPointAward.ContributionType.CITIZEN_SUBMISSION,
-                        item.getAuthor(), points));
+                item -> award(item.getId(), ReputationLog.ContributionType.CITIZEN_SUBMISSION,
+                        ReputationLog.ReputationReason.CITIZEN_SUBMISSION_PUBLISHED,
+                        item.getAuthor(), points, item));
     }
 
     private int awardExpertArticles(int points) {
         return processPages(
                 page -> researchArticleRepository.findByStatusAndAuthorRole(ResearchArticle.Status.APPROVED,
                         User.Role.EXPERT, page),
-                item -> award(item.getId(), BonusPointAward.ContributionType.EXPERT_RESEARCH_ARTICLE,
-                        item.getAuthor(), points));
+                item -> award(item.getId(), ReputationLog.ContributionType.EXPERT_RESEARCH_ARTICLE,
+                        ReputationLog.ReputationReason.EXPERT_RESEARCH_APPROVED,
+                        item.getAuthor(), points, null));
     }
 
     private <T> int processPages(java.util.function.Function<PageRequest, Page<T>> pageQuery,
@@ -61,16 +63,22 @@ public class ContributionPointService {
         return awardCount;
     }
 
-    private int award(Long contributionId, BonusPointAward.ContributionType type, User user, int points) {
-        if (awardRepository.existsByContributionTypeAndContributionId(type, contributionId)) {
+    private int award(Long contributionId, ReputationLog.ContributionType type, ReputationLog.ReputationReason reason,
+                      User user, int points, Submission submission) {
+        if (reputationLogRepository.existsByContributionTypeAndContributionId(type, contributionId)) {
             return 0;
         }
-        user.setRewardPoints(Math.addExact(user.getRewardPoints(), points));
-        awardRepository.save(BonusPointAward.builder()
+        user.lockIfBelowMinimumReputation();
+        user.setReputationScore(Math.addExact(
+                user.getReputationScore() == null ? User.DEFAULT_REPUTATION_SCORE : user.getReputationScore(), points));
+        user.lockIfBelowMinimumReputation();
+        reputationLogRepository.save(ReputationLog.builder()
                 .user(user)
+                .pointsChange(points)
+                .reason(reason)
+                .relatedSubmission(submission)
                 .contributionType(type)
                 .contributionId(contributionId)
-                .points(points)
                 .build());
         return 1;
     }

@@ -14,24 +14,24 @@ public class ContributionPointBatchJob {
 
     private final ContributionPointService contributionPointService;
 
-    @Value("${app.bonus-points.citizen:5}")
+    @Value("${app.reputation-points.citizen:5}")
     private int citizenPoints;
 
-    @Value("${app.bonus-points.expert:10}")
+    @Value("${app.reputation-points.expert:10}")
     private int expertPoints;
 
     @PostConstruct
     void validateConfiguration() {
         if (citizenPoints <= 0 || expertPoints <= 0) {
-            throw new IllegalStateException("Bonus point awards must be positive integers.");
+            throw new IllegalStateException("Reputation point awards must be positive integers.");
         }
     }
 
-    @Scheduled(cron = "${app.bonus-points.cron:0 5 0 * * *}", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "${app.reputation-points.cron:0 5 0 * * *}", zone = "Asia/Ho_Chi_Minh")
     public void accumulateContributionPoints() {
         ContributionPointService.AwardSummary result =
                 contributionPointService.accumulate(citizenPoints, expertPoints);
-        log.info("Contribution bonus batch completed: {} Citizen awards, {} Expert awards ({} total).",
+        log.info("Contribution reputation batch completed: {} Citizen awards, {} Expert awards ({} total).",
                 result.citizenAwards(), result.expertAwards(), result.totalAwards());
     }
 }
