@@ -3,6 +3,8 @@ package com.example.citizen_journalism.service;
 import static com.example.citizen_journalism.util.TextUtils.blankToNull;
 
 import com.example.citizen_journalism.dto.PageResponse;
+import com.example.citizen_journalism.dto.editor.ResearchReviewItem;
+import com.example.citizen_journalism.dto.editor.ResearchReviewDetail;
 import com.example.citizen_journalism.dto.research.ResearchArticleSummary;
 import com.example.citizen_journalism.dto.research.ResearchArticleView;
 import com.example.citizen_journalism.dto.research.ResearchOptions;
@@ -38,7 +40,8 @@ import tools.jackson.databind.ObjectMapper;
  *
  *   - create / update : LƯU NHÁP (action DRAFT) hoặc NỘP (action SUBMIT). Cùng 1 hàm save() cho cả 2,
  *                       khác nhau ở bước kiểm tra: nháp chỉ cần có chút nội dung, nộp thì phải đủ điều kiện.
- *   - list / get      : danh sách bản nháp / bài đã nộp, mở 1 bài để viết tiếp hoặc xem lại.
+ *   - list / get      : danh sách bản nháp / bài đã nộp hoặc duyệt, mở lại để viết tiếp hoặc xem.
+ *   - listForEditor / approveForEditor : Biên tập viên duyệt bài đã nộp để đủ điều kiện tích lũy điểm thưởng.
  *   - delete          : xoá bản nháp (kèm xoá ảnh trên ổ đĩa).
  * Chỉ tác giả thao tác được trên bài của mình; bài đã nộp thì khoá, không sửa / xoá.
  *
@@ -79,7 +82,8 @@ public class ResearchArticleService {
                 MAX_IMAGE_BYTES / 1024 / 1024,
                 FileStorageService.IMAGE_TYPES.keySet().stream().sorted().toList(),
                 articleRepository.countByAuthorIdAndStatus(userId, Status.DRAFT),
-                articleRepository.countByAuthorIdAndStatus(userId, Status.SUBMITTED));
+                articleRepository.countByAuthorIdAndStatus(userId, Status.SUBMITTED),
+                articleRepository.countByAuthorIdAndStatus(userId, Status.APPROVED));
     }
 
     /** Danh sách bài theo trạng thái, bài sửa / nộp gần nhất lên đầu. */
@@ -113,6 +117,38 @@ public class ResearchArticleService {
         ResearchArticle article = findEditable(userId, id);
         imagesOf(article).forEach(image -> fileStorageService.delete(image.url()));
         articleRepository.delete(article);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ResearchReviewItem> listForEditor(int page, int size) {
+        return PageResponse.from(articleRepository.findByStatusAndAuthorRole(Status.SUBMITTED, User.Role.EXPERT,
+                Paging.of(page, size, Sort.by(Sort.Order.asc("submittedAt"), Sort.Order.asc("id"))))
+                .map(ResearchReviewItem::from));
+    }
+
+    @Transactional
+    public ResearchReviewDetail approveForEditor(String editorId, Long id) {
+        User editor = userRepository.getActiveById(editorId);
+        ResearchArticle article = articleRepository.findById(id)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy bài nghiên cứu."));
+        if (article.getStatus() != Status.SUBMITTED) {
+            throw AppException.conflict("Bài nghiên cứu này không còn chờ xét duyệt.");
+        }
+        article.setStatus(Status.APPROVED);
+        article.setApprovedBy(editor);
+        article.setApprovedAt(LocalDateTime.now());
+        return ResearchReviewDetail.from(article);
+    }
+
+    @Transactional(readOnly = true)
+    public ResearchReviewDetail getForEditor(Long id) {
+        ResearchArticle article = articleRepository.findWithReviewDetailsById(id)
+                .filter(value -> value.getAuthor().getRole() == User.Role.EXPERT)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy bài nghiên cứu."));
+        if (article.getStatus() == Status.DRAFT) {
+            throw AppException.notFound("Không tìm thấy bài nghiên cứu đã nộp.");
+        }
+        return ResearchReviewDetail.from(article);
     }
 
     // ================================ LƯU / NỘP ================================

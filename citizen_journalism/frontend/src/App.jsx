@@ -36,6 +36,8 @@ import EditorQueue from './routes/editor/EditorQueue.jsx'
 import EditorSubmissionDetail from './routes/editor/EditorSubmissionDetail.jsx'
 import EditorViolations from './routes/editor/EditorViolations.jsx'
 import EditorViolationDetail from './routes/editor/EditorViolationDetail.jsx'
+import EditorResearchApprovals from './routes/editor/EditorResearchApprovals.jsx'
+import EditorResearchApprovalDetail from './routes/editor/EditorResearchApprovalDetail.jsx'
 
 /**
  * Component gốc của ứng dụng: khai báo BẢN ĐỒ ĐƯỜNG DẪN (routing).
@@ -153,6 +155,7 @@ function App() {
             }
           >
             <Route index element={<LeadershipApprovals />} />
+            <Route path="appeals" element={<LeadershipApprovals initialKind="appeals" />} />
             <Route path="approvals/violations/:id" element={<AdminViolationApprovalDetail />} />
             <Route path="approvals/appeals/:id" element={<LeadershipAppealDetail />} />
           </Route>
@@ -178,7 +181,8 @@ function App() {
             {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
             <Route path="screening" element={<EditorPlanned page="screening" />} />
             <Route path="assignments" element={<EditorPlanned page="assignments" />} />
-            <Route path="articles" element={<EditorPlanned page="articles" />} />
+            <Route path="articles" element={<EditorResearchApprovals />} />
+            <Route path="articles/:id" element={<EditorResearchApprovalDetail />} />
           </Route>
 
           {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link, hoặc trang chưa làm) */}

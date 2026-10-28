@@ -6,6 +6,8 @@ import com.example.citizen_journalism.dto.editor.ApplicationListItem;
 import com.example.citizen_journalism.dto.editor.EditorApplicationDetail;
 import com.example.citizen_journalism.dto.editor.EditorOverview;
 import com.example.citizen_journalism.dto.editor.ReviewApplicationRequest;
+import com.example.citizen_journalism.dto.editor.ResearchReviewItem;
+import com.example.citizen_journalism.dto.editor.ResearchReviewDetail;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
 import com.example.citizen_journalism.dto.submission.SubmissionSummary;
 import com.example.citizen_journalism.dto.violation.CreateViolationRequest;
@@ -22,6 +24,7 @@ import com.example.citizen_journalism.service.ContributorApplicationService;
 import com.example.citizen_journalism.service.EditorService;
 import com.example.citizen_journalism.service.UserViolationService;
 import com.example.citizen_journalism.service.ViolationAppealService;
+import com.example.citizen_journalism.service.ResearchArticleService;
 import com.example.citizen_journalism.util.FileResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +50,8 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /api/editor/applications/{id}                      -> chi tiết đơn + hồ sơ người nộp
  *   POST /api/editor/applications/{id}/review               -> xét duyệt: chuyển Phó TBT / từ chối
  *   GET  /api/editor/applications/{id}/documents/{index}    -> xem giấy tờ người nộp
+ *   GET  /api/editor/research                             -> hàng đợi bài nghiên cứu Expert
+ *   POST /api/editor/research/{id}/approve                -> duyệt bài nghiên cứu
  *
  * @RequestParam(required = false): không truyền thì null = không lọc. Spring tự đổi chuỗi "PENDING" thành enum.
  */
@@ -59,10 +64,29 @@ public class EditorController {
     private final ContributorApplicationService applicationService;
     private final UserViolationService violationService;
     private final ViolationAppealService appealService;
+    private final ResearchArticleService researchService;
 
     @GetMapping("/overview")
     public ApiResponse<EditorOverview> overview() {
         return ApiResponse.ok("OK", editorService.getOverview());
+    }
+
+    @GetMapping("/research")
+    public ApiResponse<PageResponse<ResearchReviewItem>> listResearchForReview(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", researchService.listForEditor(page, size));
+    }
+
+    @GetMapping("/research/{id}")
+    public ApiResponse<ResearchReviewDetail> getResearchForReview(@PathVariable Long id) {
+        return ApiResponse.ok("OK", researchService.getForEditor(id));
+    }
+
+    @PostMapping("/research/{id}/approve")
+    public ApiResponse<ResearchReviewDetail> approveResearch(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return ApiResponse.ok("Đã duyệt bài nghiên cứu. Chuyên gia sẽ được cộng điểm ở đợt batch tiếp theo.",
+                researchService.approveForEditor(jwt.getSubject(), id));
     }
 
     // ----------------------------- Hàng đợi tin bài -----------------------------

@@ -36,7 +36,7 @@ public class UserViolation extends BaseEntity {
     @NotNull
     private User reportedUser;
 
-    @Column(name = "reported_user_id", nullable = false)
+    @Column(name = "reported_user_id", nullable = false, length = 10)
     private String currentReportedUserId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -48,7 +48,7 @@ public class UserViolation extends BaseEntity {
     @NotNull
     private User reportedBy;
 
-    @Column(name = "reported_by", nullable = false)
+    @Column(name = "reported_by", nullable = false, length = 10)
     private String legacyReportedById;
 
     @Column(name = "violation_type", nullable = false, length = 40)

@@ -19,9 +19,9 @@ const STATUS_TABS = [
   { value: '', label: 'Tất cả' },
 ]
 
-function LeadershipApprovals() {
-  const [kind, setKind] = useState('violations')
-  const [status, setStatus] = useState('PENDING_APPROVAL')
+function LeadershipApprovals({ initialKind = 'violations' }) {
+  const [kind, setKind] = useState(initialKind)
+  const [status, setStatus] = useState(initialKind === 'appeals' ? 'PENDING_FINAL' : 'PENDING_APPROVAL')
   const [keyword, setKeyword] = useState('')
   const [page, setPage] = useState(0)
   const debouncedKeyword = useDebouncedValue(keyword.trim())

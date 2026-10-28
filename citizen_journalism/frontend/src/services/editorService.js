@@ -17,4 +17,9 @@ export const editorService = {
   /** decision: 'FORWARD' (chuyển Phó TBT) | 'REJECT' (từ chối, bắt buộc có note) */
   reviewApplication: (id, decision, note) => api.post(`/editor/applications/${id}/review`, { decision, note }),
   documentPath: (id, index) => `/editor/applications/${id}/documents/${index}`,
+
+  // ----- Duyệt bài nghiên cứu của chuyên gia -----
+  listResearch: (params) => api.get('/editor/research', { params: cleanParams(params) }),
+  getResearch: (id) => api.get(`/editor/research/${id}`),
+  approveResearch: (id) => api.post(`/editor/research/${id}/approve`),
 }
