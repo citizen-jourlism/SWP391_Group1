@@ -33,14 +33,14 @@ function LeadershipAppealDetail() {
     setNote('')
   }
 
-  if (error && !data) return <div className="desk-detail"><Link to="/leadership" className="desk-back"><Icon name="arrowLeft" size={16} />Hàng chờ phê duyệt</Link><Alert type="error">{error}</Alert></div>
+  if (error && !data) return <div className="desk-detail"><Link to="/leadership/appeals" className="desk-back"><Icon name="arrowLeft" size={16} />Hàng chờ mở khóa tài khoản</Link><Alert type="error">{error}</Alert></div>
   if (!data) return <div className="skeleton skeleton--page" />
 
   const pending = data.status === 'PENDING_FINAL'
   const accountStatus = STATUS_INFO[data.account.status]
   return (
     <div className="desk-detail">
-      <Link to="/leadership" className="desk-back"><Icon name="arrowLeft" size={16} />Hàng chờ phê duyệt</Link>
+      <Link to="/leadership/appeals" className="desk-back"><Icon name="arrowLeft" size={16} />Hàng chờ mở khóa tài khoản</Link>
       <Alert type="success">{notice}</Alert><Alert type="error">{error}</Alert>
       <div className="review-grid">
         <aside className="admin-panel">

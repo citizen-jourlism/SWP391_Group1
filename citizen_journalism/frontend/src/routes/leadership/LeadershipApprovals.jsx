@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Alert from '../../components/ui/Alert'
 import Badge from '../../components/ui/Badge'
-import Button from '../../components/ui/Button'
 import Icon from '../../components/ui/Icon'
 import Pagination from '../../components/ui/Pagination'
 import { useAsyncData } from '../../hooks/useAsyncData'
@@ -12,26 +11,28 @@ import { VIOLATION_ACTIONS, VIOLATION_SEVERITIES, VIOLATION_STATUSES, VIOLATION_
 import { violationService } from '../../services/violationService'
 
 const PAGE_SIZE = 10
-const APPEAL_STATUS_TABS = [
-  { value: 'PENDING_FINAL', label: 'Chờ phê duyệt' },
-  { value: 'APPROVED', label: 'Đã duyệt' },
-  { value: 'REJECTED', label: 'Đã từ chối' },
-  { value: '', label: 'Tất cả' },
-]
 const VIOLATION_STATUS_TABS = [
   { value: 'PENDING_APPROVAL', label: 'Chờ duyệt' },
   { value: 'RESOLVED', label: 'Đã duyệt' },
   { value: 'REJECTED', label: 'Đã từ chối' },
   { value: '', label: 'Tất cả' },
 ]
+const APPEAL_STATUS_TABS = [
+  { value: 'PENDING_FINAL', label: 'Chờ phê duyệt' },
+  { value: 'APPROVED', label: 'Đã duyệt' },
+  { value: 'REJECTED', label: 'Đã từ chối' },
+  { value: '', label: 'Tất cả' },
+]
 
 function LeadershipApprovals({ initialKind = 'violations' }) {
-  const [kind, setKind] = useState(initialKind)
-  const [status, setStatus] = useState(initialKind === 'appeals' ? 'PENDING_FINAL' : 'PENDING_APPROVAL')
+  const isAppeal = initialKind === 'appeals'
+  const [kind, setKind] = useState('violations')
+  const [violationStatus, setViolationStatus] = useState('PENDING_APPROVAL')
+  const [appealStatus, setAppealStatus] = useState('PENDING_FINAL')
   const [keyword, setKeyword] = useState('')
   const [page, setPage] = useState(0)
   const debouncedKeyword = useDebouncedValue(keyword.trim())
-  const isAppeal = kind === 'appeals'
+  const status = isAppeal ? appealStatus : violationStatus
   const load = () => isAppeal
     ? violationService.listLeadershipAppeals({ status, keyword: debouncedKeyword, page, size: PAGE_SIZE })
     : violationService.listApprovals({
@@ -45,7 +46,7 @@ function LeadershipApprovals({ initialKind = 'violations' }) {
 
   const changeKind = (value) => {
     setKind(value)
-    setStatus(value === 'appeals' ? 'PENDING_FINAL' : 'PENDING_APPROVAL')
+    setViolationStatus('PENDING_APPROVAL')
     setPage(0)
   }
 
@@ -53,19 +54,16 @@ function LeadershipApprovals({ initialKind = 'violations' }) {
     <section className="admin-panel">
       <div className="admin-toolbar">
         <div>
-          <strong>Quy trình xét duyệt của Ban biên tập</strong>
-          <div className="data-table__note">Truy cập nhanh hàng chờ khiếu nại mở khóa tài khoản.</div>
+          <strong>{isAppeal ? 'Khiếu nại mở khóa tài khoản' : 'Quy trình xét duyệt vi phạm và gỡ bài'}</strong>
+          <div className="data-table__note">{isAppeal
+            ? 'Xem xét các khiếu nại đã qua sơ duyệt của Biên tập viên.'
+            : 'Xem xét các đề xuất xử lý vi phạm hoặc gỡ nội dung cần lãnh đạo phê duyệt.'}</div>
         </div>
-        <Button to="/leadership/appeals" variant="secondary">
-          <Icon name="user" size={16} />
-          Xét duyệt mở khóa tài khoản
-        </Button>
       </div>
-      <div className="desk-tabs" role="tablist" aria-label="Loại hồ sơ phê duyệt">
+      {!isAppeal && <div className="desk-tabs" role="tablist" aria-label="Loại hồ sơ phê duyệt">
         <button type="button" role="tab" aria-selected={kind === 'violations'} className={kind === 'violations' ? 'is-active' : ''} onClick={() => changeKind('violations')}>Xử lý vi phạm</button>
         <button type="button" role="tab" aria-selected={kind === 'retractions'} className={kind === 'retractions' ? 'is-active' : ''} onClick={() => changeKind('retractions')}>Rút / gỡ bài</button>
-        <button type="button" role="tab" aria-selected={kind === 'appeals'} className={kind === 'appeals' ? 'is-active' : ''} onClick={() => changeKind('appeals')}>Khiếu nại mở khóa</button>
-      </div>
+      </div>}
       <div className="admin-toolbar">
         <label className="search-box">
           <Icon name="search" size={18} />
@@ -74,7 +72,7 @@ function LeadershipApprovals({ initialKind = 'violations' }) {
       </div>
       <div className="desk-tabs" role="tablist" aria-label="Lọc hồ sơ theo trạng thái">
         {(isAppeal ? APPEAL_STATUS_TABS : VIOLATION_STATUS_TABS).map((tab) => (
-          <button key={tab.value || 'ALL'} type="button" role="tab" aria-selected={status === tab.value} className={status === tab.value ? 'is-active' : ''} onClick={() => { setStatus(tab.value); setPage(0) }}>{tab.label}</button>
+          <button key={tab.value || 'ALL'} type="button" role="tab" aria-selected={status === tab.value} className={status === tab.value ? 'is-active' : ''} onClick={() => { (isAppeal ? setAppealStatus : setViolationStatus)(tab.value); setPage(0) }}>{tab.label}</button>
         ))}
       </div>
       <Alert type="error">{error}</Alert>
