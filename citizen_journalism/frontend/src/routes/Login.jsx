@@ -89,6 +89,8 @@ function Login() {
       footer={
         <>
           Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+          <span className="auth__footer-separator"> · </span>
+          <Link to="/account-appeal">Tài khoản bị khóa? Gửi khiếu nại mở khóa</Link>
         </>
       }
     >

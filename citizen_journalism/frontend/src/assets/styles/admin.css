@@ -20,6 +20,20 @@
   background: var(--admin-bg);
 }
 
+.content-snapshot {
+  max-height: 360px;
+  overflow: auto;
+  margin: 10px 0 0;
+  padding: 14px;
+  border: 1px solid var(--admin-line);
+  border-radius: 10px;
+  background: #f7f8fb;
+  color: #273248;
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Thanh menu dọc ---------- */
 .admin__sidebar {
   position: sticky;
@@ -679,6 +693,23 @@
   color: var(--navy-800);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.row-actions__link {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: #f1f4f9;
+  color: var(--navy-700);
+  text-decoration: none;
+}
+
+.row-actions__link:hover {
+  background: #fff3ec;
+  color: var(--orange-strong);
 }
 
 .row-actions button:hover {

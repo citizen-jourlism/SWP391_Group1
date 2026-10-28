@@ -156,15 +156,19 @@ function AdminUsers() {
                           <button type="button" title="Đổi vai trò" aria-label={`Đổi vai trò ${user.fullName}`} onClick={() => setRoleTarget(user)}>
                             <Icon name="edit" size={16} />
                           </button>
-                          <button
-                            type="button"
-                            className={user.status === 'LOCKED' ? 'is-positive' : 'is-danger'}
-                            title={user.status === 'LOCKED' ? 'Mở khoá tài khoản' : 'Khoá tài khoản'}
-                            aria-label={`${user.status === 'LOCKED' ? 'Mở khoá' : 'Khoá'} ${user.fullName}`}
-                            onClick={() => setStatusTarget(user)}
-                          >
-                            <Icon name="lock" size={16} />
-                          </button>
+                          {user.status === 'LOCKED' ? (
+                            <span className="data-table__note">Mở khóa qua quy trình khiếu nại</span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="is-danger"
+                              title="Khoá tài khoản"
+                              aria-label={`Khoá ${user.fullName}`}
+                              onClick={() => setStatusTarget(user)}
+                            >
+                              <Icon name="lock" size={16} />
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>

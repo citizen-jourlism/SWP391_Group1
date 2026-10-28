@@ -8,10 +8,20 @@ import com.example.citizen_journalism.dto.editor.EditorOverview;
 import com.example.citizen_journalism.dto.editor.ReviewApplicationRequest;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
 import com.example.citizen_journalism.dto.submission.SubmissionSummary;
+import com.example.citizen_journalism.dto.violation.CreateViolationRequest;
+import com.example.citizen_journalism.dto.violation.ReviewAppealRequest;
+import com.example.citizen_journalism.dto.violation.ReviewViolationRequest;
+import com.example.citizen_journalism.dto.violation.ViolationAppealView;
+import com.example.citizen_journalism.dto.violation.ViolationDetail;
+import com.example.citizen_journalism.dto.violation.ViolationSummary;
 import com.example.citizen_journalism.entity.ContributorApplication;
 import com.example.citizen_journalism.entity.Submission;
+import com.example.citizen_journalism.entity.UserViolation;
+import com.example.citizen_journalism.entity.ViolationAppeal;
 import com.example.citizen_journalism.service.ContributorApplicationService;
 import com.example.citizen_journalism.service.EditorService;
+import com.example.citizen_journalism.service.UserViolationService;
+import com.example.citizen_journalism.service.ViolationAppealService;
 import com.example.citizen_journalism.util.FileResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +57,8 @@ public class EditorController {
 
     private final EditorService editorService;
     private final ContributorApplicationService applicationService;
+    private final UserViolationService violationService;
+    private final ViolationAppealService appealService;
 
     @GetMapping("/overview")
     public ApiResponse<EditorOverview> overview() {
@@ -96,5 +108,62 @@ public class EditorController {
     @GetMapping("/applications/{id}/documents/{index}")
     public ResponseEntity<Resource> openApplicationDocument(@PathVariable Long id, @PathVariable int index) {
         return FileResponses.inline(applicationService.openDocumentForStaff(id, index));
+    }
+
+    // ----------------------------- Uy tín & vi phạm -----------------------------
+
+    @GetMapping("/violations")
+    public ApiResponse<PageResponse<ViolationSummary>> listViolations(
+            @RequestParam(required = false) UserViolation.Status status,
+            @RequestParam(required = false) UserViolation.Type type,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", violationService.list(status, type, null, keyword, page, size));
+    }
+
+    @GetMapping("/violations/{id}")
+    public ApiResponse<ViolationDetail> getViolation(@PathVariable Long id) {
+        return ApiResponse.ok("OK", violationService.get(id));
+    }
+
+    @PostMapping("/violations")
+    public ApiResponse<ViolationDetail> createViolation(@AuthenticationPrincipal Jwt jwt,
+                                                         @Valid @RequestBody CreateViolationRequest request) {
+        return ApiResponse.ok("Đã lập báo cáo vi phạm.", violationService.create(jwt.getSubject(), request));
+    }
+
+    @PostMapping("/violations/{id}/review")
+    public ApiResponse<ViolationDetail> reviewViolation(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                                         @Valid @RequestBody ReviewViolationRequest request) {
+        ViolationDetail detail = violationService.review(jwt.getSubject(), id, request);
+        String message = detail.status() == UserViolation.Status.PENDING_APPROVAL
+                ? "Đã chuyển yêu cầu sang Quản trị hệ thống phê duyệt."
+                : "Đã hoàn tất xử lý báo cáo vi phạm.";
+        return ApiResponse.ok(message, detail);
+    }
+
+    @GetMapping("/appeals")
+    public ApiResponse<PageResponse<ViolationAppealView>> listAppeals(
+            @RequestParam(required = false) ViolationAppeal.Status status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", appealService.list(status, keyword, page, size));
+    }
+
+    @GetMapping("/appeals/{id}")
+    public ApiResponse<ViolationAppealView> getAppeal(@PathVariable Long id) {
+        return ApiResponse.ok("OK", appealService.get(id));
+    }
+
+    @PostMapping("/appeals/{id}/review")
+    public ApiResponse<ViolationAppealView> reviewAppeal(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                                          @Valid @RequestBody ReviewAppealRequest request) {
+        ViolationAppealView appeal = appealService.review(jwt.getSubject(), id, request);
+        String message = request.decision() == ReviewAppealRequest.Decision.FORWARD
+                ? "Đã chuyển khiếu nại đến bước phê duyệt cuối."
+                : "Đã từ chối khiếu nại.";
+        return ApiResponse.ok(message, appeal);
     }
 }

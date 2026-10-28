@@ -22,11 +22,20 @@ import { SUBMITTER_ROLES } from './lib/roles.js'
 import AdminOverview from './routes/admin/AdminOverview.jsx'
 import AdminUsers from './routes/admin/AdminUsers.jsx'
 import EditorApplicationDetail from './routes/editor/EditorApplicationDetail.jsx'
+import LeadershipApprovals from './routes/leadership/LeadershipApprovals.jsx'
+import LeadershipAppealDetail from './routes/leadership/LeadershipAppealDetail.jsx'
+import LeadershipLayout from './components/leadership/LeadershipLayout.jsx'
+import AdminViolationApprovalDetail from './routes/admin/AdminViolationApprovalDetail.jsx'
+import AccountAppeal from './routes/AccountAppeal.jsx'
+import EditorAppeals from './routes/editor/EditorAppeals.jsx'
+import EditorAppealDetail from './routes/editor/EditorAppealDetail.jsx'
 import EditorApplications from './routes/editor/EditorApplications.jsx'
 import EditorOverview from './routes/editor/EditorOverview.jsx'
 import EditorPlanned from './routes/editor/EditorPlanned.jsx'
 import EditorQueue from './routes/editor/EditorQueue.jsx'
 import EditorSubmissionDetail from './routes/editor/EditorSubmissionDetail.jsx'
+import EditorViolations from './routes/editor/EditorViolations.jsx'
+import EditorViolationDetail from './routes/editor/EditorViolationDetail.jsx'
 
 /**
  * Component gốc của ứng dụng: khai báo BẢN ĐỒ ĐƯỜNG DẪN (routing).
@@ -50,6 +59,7 @@ function App() {
           <Route path="/verify-otp" element={<VerifyOtp />} />            {/* Nhập mã OTP sau khi đăng ký */}
           <Route path="/forgot-password" element={<ForgotPassword />} />  {/* Quên mật khẩu */}
           <Route path="/track" element={<TrackSubmission />} />          {/* Tra cứu hồ sơ bằng mã + PIN */}
+          <Route path="/account-appeal" element={<AccountAppeal />} />
 
           {/* ----- Trang cần đăng nhập ----- */}
           <Route
@@ -134,6 +144,19 @@ function App() {
             <Route path="users" element={<AdminUsers />} />       {/* /admin/users : Quản lý tài khoản */}
           </Route>
 
+          <Route
+            path="/leadership"
+            element={
+              <ProtectedRoute roles={['DEPUTY_EIC', 'EIC']}>
+                <LeadershipLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<LeadershipApprovals />} />
+            <Route path="approvals/violations/:id" element={<AdminViolationApprovalDetail />} />
+            <Route path="approvals/appeals/:id" element={<LeadershipAppealDetail />} />
+          </Route>
+
           {/* ----- Bàn làm việc Biên tập viên: chỉ EDITOR. Cũng là route lồng nhau trong EditorLayout ----- */}
           <Route
             path="/editor"
@@ -148,11 +171,14 @@ function App() {
             <Route path="queue/:code" element={<EditorSubmissionDetail />} />           {/* Chi tiết 1 hồ sơ */}
             <Route path="applications" element={<EditorApplications />} />              {/* Đơn đăng ký CTV */}
             <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
+            <Route path="members" element={<EditorViolations />} />
+            <Route path="members/:id" element={<EditorViolationDetail />} />
+            <Route path="appeals" element={<EditorAppeals />} />
+            <Route path="appeals/:id" element={<EditorAppealDetail />} />
             {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
             <Route path="screening" element={<EditorPlanned page="screening" />} />
             <Route path="assignments" element={<EditorPlanned page="assignments" />} />
             <Route path="articles" element={<EditorPlanned page="articles" />} />
-            <Route path="members" element={<EditorPlanned page="members" />} />
           </Route>
 
           {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link, hoặc trang chưa làm) */}

@@ -33,7 +33,8 @@ const NAV_GROUPS = [
     label: 'Cộng đồng',
     items: [
       { to: '/editor/applications', icon: 'award', label: 'Đơn đăng ký CTV', title: 'Đơn đăng ký Cộng tác viên' },
-      { to: '/editor/members', icon: 'shield', label: 'Uy tín & vi phạm', title: 'Uy tín & vi phạm', soon: true },
+      { to: '/editor/members', icon: 'shield', label: 'Uy tín & vi phạm', title: 'Uy tín & vi phạm' },
+      { to: '/editor/appeals', icon: 'shield', label: 'Khiếu nại mở khóa', title: 'Khiếu nại mở khóa' },
     ],
   },
 ]

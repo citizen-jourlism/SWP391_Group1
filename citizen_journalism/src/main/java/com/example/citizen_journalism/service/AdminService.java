@@ -111,6 +111,9 @@ public class AdminService {
             throw AppException.badRequest("Chỉ có thể khoá hoặc mở khoá tài khoản.");
         }
         User user = findManageableUser(userId);
+        if (user.getStatus() == User.Status.LOCKED && status == User.Status.ACTIVE) {
+            throw AppException.badRequest("Tài khoản bị khoá do vi phạm phải được mở qua mục Phê duyệt vi phạm.");
+        }
         user.setStatus(status);
         if (status == User.Status.ACTIVE) {
             user.setIsVerified(true);   // Mở khoá một tài khoản chưa xác thực = admin xác nhận hộ

@@ -46,6 +46,8 @@ public class SecurityConfig {
             "/api/auth/login",
             "/api/auth/forgot-password",
             "/api/auth/reset-password",
+            "/api/appeals",
+            "/api/appeals/status",
             "/api/tracking"); // Tra cứu hồ sơ bằng mã + PIN (TrackingController)
 
     private final RestAuthenticationHandler restAuthenticationHandler;
@@ -61,6 +63,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
+                .requestMatchers("/api/leadership/**").hasAnyRole("DEPUTY_EIC", "EIC")
                 // Gửi tin / khiếu nại: người dân, cộng tác viên, chuyên gia (nhân sự toà soạn và admin thì không)
                 .requestMatchers("/api/submissions/**").hasAnyRole("CITIZEN", "CONTRIBUTOR", "EXPERT")
                 // Đăng ký / theo dõi đơn Cộng tác viên: người dân (nộp đơn) và CTV (xem lại đơn cũ)

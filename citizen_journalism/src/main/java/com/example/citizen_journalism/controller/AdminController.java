@@ -40,7 +40,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
 
     private final AdminService adminService;
-
     @GetMapping("/stats")
     public ApiResponse<AdminStats> stats() {
         return ApiResponse.ok("OK", adminService.getStats());
@@ -75,4 +74,5 @@ public class AdminController {
         AdminUserItem user = adminService.updateRole(id, request.role());
         return ApiResponse.ok("Đã đổi vai trò của " + user.fullName() + ".", user);
     }
+
 }
