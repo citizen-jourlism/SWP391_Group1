@@ -2,8 +2,8 @@ package com.example.citizen_journalism.service;
 
 import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.editor.EditorOverview;
+import com.example.citizen_journalism.dto.editor.EditorSubmissionSummary;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
-import com.example.citizen_journalism.dto.submission.SubmissionSummary;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.entity.Submission.SubmissionStatus;
 import com.example.citizen_journalism.repository.SubmissionRepository;
@@ -39,7 +39,8 @@ public class EditorService {
                 submissionRepository.countByStatus(SubmissionStatus.IN_REVIEW),
                 submissionRepository.countByStatus(SubmissionStatus.NEED_MORE_INFO),
                 applicationService.countPendingForEditor(),
-                submissionRepository.searchForStaff(SubmissionStatus.PENDING, null, latest).map(SubmissionSummary::from).getContent(),
+                submissionRepository.searchForStaff(SubmissionStatus.PENDING, null, latest)
+                        .map(EditorSubmissionSummary::from).getContent(),
                 applicationService.latestPending(5));
     }
 
@@ -48,11 +49,12 @@ public class EditorService {
      * các trường hợp khác: mới nhất trước. status / category = null nghĩa là không lọc.
      */
     @Transactional(readOnly = true)
-    public PageResponse<SubmissionSummary> listSubmissions(SubmissionStatus status, Submission.ReportCategory category,
-                                                           int page, int size) {
+    public PageResponse<EditorSubmissionSummary> listSubmissions(SubmissionStatus status,
+                                                                  Submission.ReportCategory category,
+                                                                  int page, int size) {
         Sort sort = status == SubmissionStatus.PENDING ? Paging.OLDEST_FIRST : Paging.NEWEST_FIRST;
         return PageResponse.from(submissionRepository.searchForStaff(status, category, Paging.of(page, size, sort))
-                .map(SubmissionSummary::from));
+                .map(EditorSubmissionSummary::from));
     }
 
     public SubmissionDetail getSubmission(String trackingCode) {

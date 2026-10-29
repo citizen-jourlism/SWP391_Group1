@@ -15,7 +15,7 @@ import '../../assets/styles/submit.css' // Màu icon theo loại phản ánh (.c
  * HÀNG ĐỢI TIN BÀI — /editor/queue.
  * Dữ liệu THẬT: GET /api/editor/submissions?status=&category=&page= (mặc định: hồ sơ chờ tiếp nhận, cũ nhất trước).
  * Hiện mới XEM được; bấm 1 dòng -> /editor/queue/<mã> (EditorSubmissionDetail) có các nút xử lý dự kiến.
- * Biên tập viên chỉ thấy loại, tiêu đề, khu vực, KHÔNG thấy người gửi ở danh sách (bảo vệ nguồn tin).
+ * Hiện mã tài khoản người gửi; hồ sơ ẩn danh không tiết lộ mã tài khoản.
  */
 
 const PAGE_SIZE = 10
@@ -53,6 +53,7 @@ function EditorQueue() {
             <tr>
               <th>Hồ sơ</th>
               <th>Mã</th>
+              <th>Mã tài khoản người gửi</th>
               <th>Khu vực</th>
               <th>Gửi lúc</th>
               <th>Trạng thái</th>
@@ -63,7 +64,7 @@ function EditorQueue() {
             {!data &&
               Array.from({ length: 4 }, (_, index) => (
                 <tr key={index}>
-                  <td colSpan={6}>
+                  <td colSpan={7}>
                     <div className="skeleton skeleton--row" />
                   </td>
                 </tr>
@@ -71,7 +72,7 @@ function EditorQueue() {
 
             {data?.items.length === 0 && (
               <tr>
-                <td colSpan={6} className="data-table__empty">
+                <td colSpan={7} className="data-table__empty">
                   <Icon name="checkCircle" size={28} />
                   Không có hồ sơ nào phù hợp.
                 </td>
@@ -98,6 +99,9 @@ function EditorQueue() {
                     </div>
                   </td>
                   <td className="data-table__mono">{item.trackingCode}</td>
+                  <td className="data-table__mono">
+                    {item.anonymous ? 'Ẩn danh' : item.senderAccountId}
+                  </td>
                   <td>{item.province}</td>
                   <td>{formatDateTime(item.createdAt)}</td>
                   <td>

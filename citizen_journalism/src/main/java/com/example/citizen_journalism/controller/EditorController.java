@@ -5,11 +5,11 @@ import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.editor.ApplicationListItem;
 import com.example.citizen_journalism.dto.editor.EditorApplicationDetail;
 import com.example.citizen_journalism.dto.editor.EditorOverview;
+import com.example.citizen_journalism.dto.editor.EditorSubmissionSummary;
 import com.example.citizen_journalism.dto.editor.ReviewApplicationRequest;
 import com.example.citizen_journalism.dto.editor.ResearchReviewItem;
 import com.example.citizen_journalism.dto.editor.ResearchReviewDetail;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
-import com.example.citizen_journalism.dto.submission.SubmissionSummary;
 import com.example.citizen_journalism.dto.violation.CreateViolationRequest;
 import com.example.citizen_journalism.dto.violation.ReviewAppealRequest;
 import com.example.citizen_journalism.dto.violation.ReviewViolationRequest;
@@ -92,7 +92,7 @@ public class EditorController {
     // ----------------------------- Hàng đợi tin bài -----------------------------
 
     @GetMapping("/submissions")
-    public ApiResponse<PageResponse<SubmissionSummary>> listSubmissions(
+    public ApiResponse<PageResponse<EditorSubmissionSummary>> listSubmissions(
             @RequestParam(required = false) Submission.SubmissionStatus status,
             @RequestParam(required = false) Submission.ReportCategory category,
             @RequestParam(defaultValue = "0") int page,
