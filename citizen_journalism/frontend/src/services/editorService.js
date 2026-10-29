@@ -10,6 +10,14 @@ export const editorService = {
   // ----- Hàng đợi tin bài -----
   listSubmissions: (params) => api.get('/editor/submissions', { params: cleanParams(params) }),
   getSubmission: (code) => api.get(`/editor/submissions/${encodeURIComponent(code)}`),
+  reviewReputationSubmission: (code, payload) => api.post(`/editor/reputation/submissions/${encodeURIComponent(code)}/review`, payload),
+
+  // ----- Uy tín và xử phạt -----
+  listReputationAccounts: (params) => api.get('/editor/reputation/accounts', { params: cleanParams(params) }),
+  getReputationAccount: (id) => api.get(`/editor/reputation/accounts/${encodeURIComponent(id)}`),
+  listAccountSubmissions: (id, params) => api.get(`/editor/reputation/accounts/${encodeURIComponent(id)}/submissions`, { params: cleanParams(params) }),
+  listAccountResearch: (id, params) => api.get(`/editor/reputation/accounts/${encodeURIComponent(id)}/research`, { params: cleanParams(params) }),
+  reviewResearchReputation: (id, payload) => api.post(`/editor/reputation/research/${id}/review`, payload),
 
   // ----- Đơn đăng ký Cộng tác viên -----
   listApplications: (params) => api.get('/editor/applications', { params: cleanParams(params) }),
@@ -19,7 +27,5 @@ export const editorService = {
   documentPath: (id, index) => `/editor/applications/${id}/documents/${index}`,
 
   // ----- Duyệt bài nghiên cứu của chuyên gia -----
-  listResearch: (params) => api.get('/editor/research', { params: cleanParams(params) }),
-  getResearch: (id) => api.get(`/editor/research/${id}`),
-  approveResearch: (id) => api.post(`/editor/research/${id}/approve`),
+  getReputationResearch: (id) => api.get(`/editor/reputation/research/${id}`),
 }

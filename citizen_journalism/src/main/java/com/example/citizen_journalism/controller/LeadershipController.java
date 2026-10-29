@@ -2,13 +2,8 @@ package com.example.citizen_journalism.controller;
 
 import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.PageResponse;
-import com.example.citizen_journalism.dto.violation.ApproveViolationRequest;
 import com.example.citizen_journalism.dto.violation.DecideAppealRequest;
 import com.example.citizen_journalism.dto.violation.ViolationAppealView;
-import com.example.citizen_journalism.dto.violation.ViolationDetail;
-import com.example.citizen_journalism.dto.violation.ViolationSummary;
-import com.example.citizen_journalism.entity.UserViolation;
-import com.example.citizen_journalism.service.UserViolationService;
 import com.example.citizen_journalism.service.ViolationAppealService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,33 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class LeadershipController {
 
-    private final UserViolationService violationService;
     private final ViolationAppealService appealService;
-
-    @GetMapping("/violation-approvals")
-    public ApiResponse<PageResponse<ViolationSummary>> listViolationApprovals(
-            @RequestParam(required = false) UserViolation.Status status,
-            @RequestParam(required = false) UserViolation.Action action,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok("OK", violationService.list(status, null, action, keyword, page, size));
-    }
-
-    @GetMapping("/violation-approvals/{id}")
-    public ApiResponse<ViolationDetail> getViolationApproval(@PathVariable Long id) {
-        return ApiResponse.ok("OK", violationService.get(id));
-    }
-
-    @PostMapping("/violation-approvals/{id}/decision")
-    public ApiResponse<ViolationDetail> decideViolation(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
-                                                         @Valid @RequestBody ApproveViolationRequest request) {
-        ViolationDetail detail = violationService.approve(jwt.getSubject(), id, request);
-        String message = request.decision() == ApproveViolationRequest.Decision.APPROVE
-                ? "Đã phê duyệt và áp dụng đề xuất."
-                : "Đã từ chối đề xuất.";
-        return ApiResponse.ok(message, detail);
-    }
 
     @GetMapping("/appeals")
     public ApiResponse<PageResponse<ViolationAppealView>> listAppeals(

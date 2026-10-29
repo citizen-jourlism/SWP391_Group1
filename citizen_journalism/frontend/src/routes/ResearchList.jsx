@@ -26,6 +26,7 @@ const TABS = [
   { value: 'DRAFT', label: 'Bản nháp', countKey: 'draftCount' },
   { value: 'SUBMITTED', label: 'Chờ duyệt', countKey: 'submittedCount' },
   { value: 'APPROVED', label: 'Đã duyệt', countKey: 'approvedCount' },
+  { value: 'REJECTED', label: 'Đã từ chối', countKey: 'rejectedCount' },
 ]
 
 function ResearchList() {

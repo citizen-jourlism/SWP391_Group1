@@ -63,7 +63,7 @@ function LeadershipAppealDetail() {
           {pending && (
             <section className="admin-panel review-box">
               <div className="admin-panel__header"><h2>Quyết định cuối cùng</h2><span>Phê duyệt mở khóa hoặc từ chối khiếu nại</span></div>
-              <Alert type="info">Chỉ phê duyệt khi xác minh được giải trình. Duyệt sẽ kích hoạt lại tài khoản ngay lập tức.</Alert>
+              <Alert type="info">Chỉ Phó Tổng biên tập được quyết định. Khi chấp thuận, tài khoản được mở khóa và điểm uy tín được khôi phục về 81.</Alert>
               <TextField label="Ghi chú quyết định" multiline rows={3} counter={2000} value={note} onChange={(event) => { setNote(event.target.value); setFormError('') }} hint="Bắt buộc nếu từ chối, tối thiểu 10 ký tự." error={formError} />
               <div className="review-box__actions">
                 <Button variant="danger" onClick={() => askDecision('REJECT')}><Icon name="x" size={16} />Từ chối</Button>
@@ -73,7 +73,7 @@ function LeadershipAppealDetail() {
           )}
         </div>
       </div>
-      <ConfirmDialog open={Boolean(confirm)} title={confirm === 'REJECT' ? 'Từ chối khiếu nại' : 'Phê duyệt mở khóa'} message={confirm === 'REJECT' ? 'Khiếu nại sẽ bị đóng và tài khoản tiếp tục bị khóa.' : `Mở khóa tài khoản ${data.account.fullName}?`} confirmLabel={confirm === 'REJECT' ? 'Từ chối' : 'Mở khóa'} danger={confirm === 'REJECT'} onConfirm={decide} onClose={() => setConfirm('')} />
+      <ConfirmDialog open={Boolean(confirm)} title={confirm === 'REJECT' ? 'Từ chối khiếu nại' : 'Phê duyệt mở khóa'} message={confirm === 'REJECT' ? 'Khiếu nại sẽ bị đóng và tài khoản tiếp tục bị khóa.'       : `Mở khóa tài khoản ${data.account.fullName} và khôi phục 81 điểm uy tín?`} confirmLabel={confirm === 'REJECT' ? 'Từ chối' : 'Mở khóa'} danger={confirm === 'REJECT'} onConfirm={decide} onClose={() => setConfirm('')} />
     </div>
   )
 }

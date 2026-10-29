@@ -16,6 +16,7 @@ export const RESEARCH_STATUS = {
   DRAFT: { label: 'Bản nháp', tone: 'neutral' },
   SUBMITTED: { label: 'Chờ duyệt', tone: 'orange' },
   APPROVED: { label: 'Đã duyệt', tone: 'green' },
+  REJECTED: { label: 'Đã từ chối', tone: 'red' },
 }
 
 /**

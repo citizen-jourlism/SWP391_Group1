@@ -8,9 +8,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 
 /**
  * REPOSITORY cho bảng "submissions" (tin nóng, khiếu nại, bài viết...).
@@ -24,10 +26,16 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     /** Tra cứu theo mã hồ sơ, ví dụ "KB-2026-0001". */
     Optional<Submission> findByTrackingCode(String trackingCode);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = "author")
+    @Query("select s from Submission s where s.trackingCode = :trackingCode")
+    Optional<Submission> findForReviewByTrackingCode(@Param("trackingCode") String trackingCode);
+
     /** Hồ sơ theo mã, CHỈ khi đúng người gửi (để người khác không xem được hồ sơ của mình bằng cách đổi mã trên URL). */
     Optional<Submission> findByTrackingCodeAndAuthorId(String trackingCode, String authorId);
 
     /** Các hồ sơ của 1 người gửi, có phân trang (thứ tự sắp xếp truyền qua Pageable). */
+    @EntityGraph(attributePaths = "author")
     Page<Submission> findByAuthorId(String authorId, Pageable pageable);
 
     long countByAuthorId(String authorId);

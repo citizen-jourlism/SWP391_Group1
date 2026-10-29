@@ -71,7 +71,7 @@ function EditorAppealDetail() {
           )}
         </div>
       </div>
-      <ConfirmDialog open={confirm} title={decision === 'REJECT' ? 'Từ chối khiếu nại' : 'Trình lãnh đạo'} message={decision === 'REJECT' ? 'Khiếu nại sẽ bị đóng, tài khoản vẫn bị khóa.' : 'Chuyển hồ sơ cùng nhận xét của bạn đến Deputy EIC/EIC?'} confirmLabel={decision === 'REJECT' ? 'Từ chối' : 'Chuyển cấp trên'} danger={decision === 'REJECT'} onConfirm={confirmReview} onClose={() => setConfirm(false)} />
+      <ConfirmDialog open={confirm} title={decision === 'REJECT' ? 'Từ chối khiếu nại' : 'Trình Phó Tổng biên tập'} message={decision === 'REJECT' ? 'Khiếu nại sẽ bị đóng, tài khoản vẫn bị khóa.' : 'Chuyển hồ sơ cùng nhận xét của bạn đến Phó Tổng biên tập?'} confirmLabel={decision === 'REJECT' ? 'Từ chối' : 'Chuyển cấp trên'} danger={decision === 'REJECT'} onConfirm={confirmReview} onClose={() => setConfirm(false)} />
     </div>
   )
 }

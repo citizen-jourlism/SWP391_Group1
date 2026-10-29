@@ -25,7 +25,6 @@ import EditorApplicationDetail from './routes/editor/EditorApplicationDetail.jsx
 import LeadershipApprovals from './routes/leadership/LeadershipApprovals.jsx'
 import LeadershipAppealDetail from './routes/leadership/LeadershipAppealDetail.jsx'
 import LeadershipLayout from './components/leadership/LeadershipLayout.jsx'
-import AdminViolationApprovalDetail from './routes/admin/AdminViolationApprovalDetail.jsx'
 import AccountAppeal from './routes/AccountAppeal.jsx'
 import EditorAppeals from './routes/editor/EditorAppeals.jsx'
 import EditorAppealDetail from './routes/editor/EditorAppealDetail.jsx'
@@ -34,10 +33,9 @@ import EditorOverview from './routes/editor/EditorOverview.jsx'
 import EditorPlanned from './routes/editor/EditorPlanned.jsx'
 import EditorQueue from './routes/editor/EditorQueue.jsx'
 import EditorSubmissionDetail from './routes/editor/EditorSubmissionDetail.jsx'
-import EditorViolations from './routes/editor/EditorViolations.jsx'
-import EditorViolationDetail from './routes/editor/EditorViolationDetail.jsx'
-import EditorResearchApprovals from './routes/editor/EditorResearchApprovals.jsx'
-import EditorResearchApprovalDetail from './routes/editor/EditorResearchApprovalDetail.jsx'
+import EditorReputationResearchDetail from './routes/editor/EditorReputationResearchDetail.jsx'
+import EditorReputation from './routes/editor/EditorReputation.jsx'
+import EditorReputationAccount from './routes/editor/EditorReputationAccount.jsx'
 
 /**
  * Component gốc của ứng dụng: khai báo BẢN ĐỒ ĐƯỜNG DẪN (routing).
@@ -149,14 +147,13 @@ function App() {
           <Route
             path="/leadership"
             element={
-              <ProtectedRoute roles={['DEPUTY_EIC', 'EIC']}>
+              <ProtectedRoute roles={['DEPUTY_EIC']}>
                 <LeadershipLayout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<LeadershipApprovals />} />
+            <Route index element={<LeadershipApprovals initialKind="appeals" />} />
             <Route path="appeals" element={<LeadershipApprovals initialKind="appeals" />} />
-            <Route path="approvals/violations/:id" element={<AdminViolationApprovalDetail />} />
             <Route path="approvals/appeals/:id" element={<LeadershipAppealDetail />} />
           </Route>
 
@@ -172,17 +169,17 @@ function App() {
             <Route index element={<EditorOverview />} />                                {/* Tổng quan */}
             <Route path="queue" element={<EditorQueue />} />                            {/* Hàng đợi tin bài */}
             <Route path="queue/:code" element={<EditorSubmissionDetail />} />           {/* Chi tiết 1 hồ sơ */}
+            <Route path="reputation" element={<EditorReputation />} />
+            <Route path="reputation/accounts/:accountId" element={<EditorReputationAccount />} />
+            <Route path="reputation/accounts/:accountId/submissions/:code" element={<EditorSubmissionDetail reputationMode />} />
+            <Route path="reputation/accounts/:accountId/research/:id" element={<EditorReputationResearchDetail />} />
             <Route path="applications" element={<EditorApplications />} />              {/* Đơn đăng ký CTV */}
             <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
-            <Route path="members" element={<EditorViolations />} />
-            <Route path="members/:id" element={<EditorViolationDetail />} />
             <Route path="appeals" element={<EditorAppeals />} />
             <Route path="appeals/:id" element={<EditorAppealDetail />} />
             {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
             <Route path="screening" element={<EditorPlanned page="screening" />} />
             <Route path="assignments" element={<EditorPlanned page="assignments" />} />
-            <Route path="articles" element={<EditorResearchApprovals />} />
-            <Route path="articles/:id" element={<EditorResearchApprovalDetail />} />
           </Route>
 
           {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link, hoặc trang chưa làm) */}

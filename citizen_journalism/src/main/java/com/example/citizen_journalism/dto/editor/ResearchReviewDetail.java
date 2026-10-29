@@ -20,7 +20,8 @@ public record ResearchReviewDetail(
         String authorEmail,
         LocalDateTime submittedAt,
         String reviewerName,
-        LocalDateTime approvedAt) {
+        LocalDateTime approvedAt,
+        String editorialNote) {
 
     public static ResearchReviewDetail from(ResearchArticle article) {
         return new ResearchReviewDetail(article.getId(), article.getStatus(), article.getTitle(),
@@ -28,6 +29,6 @@ public record ResearchReviewDetail(
                 article.getReferenceList(), article.getHasConflict(), article.getConflictNote(),
                 article.getAuthor().getId(), article.getAuthor().getFullName(), article.getAuthor().getEmail(),
                 article.getSubmittedAt(), article.getApprovedBy() == null ? null : article.getApprovedBy().getFullName(),
-                article.getApprovedAt());
+                article.getApprovedAt(), article.getEditorialNote());
     }
 }

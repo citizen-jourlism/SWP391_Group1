@@ -14,6 +14,7 @@ import com.example.citizen_journalism.entity.SubmissionEvent;
 import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.entity.UserViolation;
 import com.example.citizen_journalism.exception.AppException;
+import com.example.citizen_journalism.exception.ErrorCode;
 import com.example.citizen_journalism.repository.ReputationLogRepository;
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
@@ -42,6 +43,16 @@ public class UserViolationService {
                                                String keyword, int page, int size) {
         return PageResponse.from(violationRepository.search(status, type, action, blankToNull(keyword),
                 Paging.of(page, size, Paging.NEWEST_FIRST)).map(ViolationSummary::from));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ViolationSummary> listForLeadership(UserViolation.Status status,
+                                                            UserViolation.Action action,
+                                                            String keyword, int page, int size) {
+        boolean includePendingReview = status == UserViolation.Status.PENDING_APPROVAL;
+        return PageResponse.from(violationRepository.searchForLeadershipApprovals(
+                status, includePendingReview, UserViolation.Status.PENDING_REVIEW, action,
+                blankToNull(keyword), Paging.of(page, size, Paging.NEWEST_FIRST)).map(ViolationSummary::from));
     }
 
     @Transactional(readOnly = true)
@@ -78,7 +89,7 @@ public class UserViolationService {
                 .severity(request.severity())
                 .description(request.description().trim())
                 .evidenceNote(blankToNull(request.evidenceNote()))
-                .status(UserViolation.Status.PENDING_REVIEW)
+                .status(UserViolation.Status.PENDING_APPROVAL)
                 .build());
         return ViolationDetail.from(violation);
     }
@@ -111,6 +122,13 @@ public class UserViolationService {
             throw AppException.invalidFields(Map.of("note", "Vui lòng nhập nội dung cảnh báo, tối thiểu 5 ký tự."));
         }
         validateAction(violation, action, request.points());
+        if (request.decision() == ReviewViolationRequest.Decision.HANDLE
+                && requiresApproval(action) && action != UserViolation.Action.LOCK_ACCOUNT) {
+            String approver = action == UserViolation.Action.LOCK_ACCOUNT
+                    ? "Phó Tổng biên tập"
+                    : "lãnh đạo";
+            throw AppException.badRequest("Biện pháp này phải được trình " + approver + " phê duyệt.");
+        }
         if (request.decision() == ReviewViolationRequest.Decision.ESCALATE && !requiresApproval(action)) {
             throw AppException.badRequest("Chỉ có thể chuyển cấp trên các đề xuất khóa/mở khóa hoặc gỡ nội dung.");
         }
@@ -121,6 +139,11 @@ public class UserViolationService {
             violation.setRetractionSnapshot(violation.getRelatedSubmission().getContent());
         }
         violation.setProposedAction(action);
+
+        if (action == UserViolation.Action.LOCK_ACCOUNT) {
+            violation.setStatus(UserViolation.Status.PENDING_APPROVAL);
+            return ViolationDetail.from(violation);
+        }
 
         if (requiresApproval(action) || request.decision() == ReviewViolationRequest.Decision.ESCALATE) {
             violation.setStatus(UserViolation.Status.PENDING_APPROVAL);
@@ -136,10 +159,28 @@ public class UserViolationService {
     @Transactional
     public ViolationDetail approve(String adminId, Long id, ApproveViolationRequest request) {
         UserViolation violation = find(id);
-        if (violation.getStatus() != UserViolation.Status.PENDING_APPROVAL) {
+        if (violation.getStatus() != UserViolation.Status.PENDING_APPROVAL
+                && violation.getStatus() != UserViolation.Status.PENDING_REVIEW) {
             throw AppException.conflict("Yêu cầu này không còn chờ phê duyệt.");
         }
         User admin = userRepository.getActiveById(adminId);
+        UserViolation.Action action = violation.getProposedAction();
+        if (request.decision() == ApproveViolationRequest.Decision.APPROVE) {
+            if (action == null) {
+                action = request.action();
+                if (action == null) {
+                    throw AppException.invalidFields(Map.of("action", "Vui lòng chọn khóa tài khoản hoặc gỡ nội dung."));
+                }
+                validateAction(violation, action, null);
+                if (action == UserViolation.Action.RETRACT_CONTENT) {
+                    violation.setRetractionSnapshot(violation.getRelatedSubmission().getContent());
+                }
+                violation.setProposedAction(action);
+            }
+            if (action == UserViolation.Action.LOCK_ACCOUNT && admin.getRole() != User.Role.DEPUTY_EIC) {
+                throw AppException.forbidden("Chỉ Phó Tổng biên tập được phê duyệt khóa tài khoản.", ErrorCode.FORBIDDEN);
+            }
+        }
         String note = blankToNull(request.note());
         violation.setApprovedBy(admin);
         violation.setApprovalNote(note);
@@ -153,7 +194,7 @@ public class UserViolationService {
         } else {
             applyApprovedAction(violation);
             violation.setStatus(UserViolation.Status.RESOLVED);
-            notifyResult(violation, "Quyết định xử lý vi phạm đã được phê duyệt", null);
+            notifyResult(violation, "Quyết định xử lý vi phạm đã được phê duyệt", note);
         }
         return ViolationDetail.from(violation);
     }
@@ -168,6 +209,10 @@ public class UserViolationService {
             case DEDUCT_POINTS -> {
                 if (points == null || points < 1 || points > 100) {
                     throw AppException.invalidFields(Map.of("points", "Nhập số điểm cần trừ từ 1 đến 100."));
+                }
+                if (user.getReputationScore() - points < User.MIN_REPUTATION_SCORE) {
+                    throw AppException.badRequest(
+                            "Biên tập viên không thể trừ điểm khiến tài khoản bị khóa; hãy trình đề xuất để Phó Tổng biên tập phê duyệt.");
                 }
             }
             case LOCK_ACCOUNT -> {

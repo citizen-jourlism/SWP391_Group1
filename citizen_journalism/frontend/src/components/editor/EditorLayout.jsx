@@ -25,15 +25,14 @@ const NAV_GROUPS = [
   {
     label: 'Xác minh & biên tập',
     items: [
+      { to: '/editor/reputation', icon: 'shield', label: 'Uy tín và xử phạt', title: 'Uy tín và xử phạt' },
       { to: '/editor/assignments', icon: 'mapPin', label: 'Giao nhiệm vụ', title: 'Nhiệm vụ xác minh hiện trường', soon: true },
-      { to: '/editor/articles', icon: 'edit', label: 'Duyệt bài Expert', title: 'Duyệt bài nghiên cứu Expert' },
     ],
   },
   {
     label: 'Cộng đồng',
     items: [
       { to: '/editor/applications', icon: 'award', label: 'Đơn đăng ký CTV', title: 'Đơn đăng ký Cộng tác viên' },
-      { to: '/editor/members', icon: 'shield', label: 'Uy tín & vi phạm', title: 'Uy tín & vi phạm' },
       { to: '/editor/appeals', icon: 'shield', label: 'Khiếu nại mở khóa', title: 'Khiếu nại mở khóa' },
     ],
   },

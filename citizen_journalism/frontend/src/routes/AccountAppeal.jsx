@@ -38,7 +38,7 @@ function AccountAppeal() {
         })
         const statusLabels = {
           PENDING_EDITOR: 'Chờ biên tập viên xem xét',
-          PENDING_FINAL: 'Chờ lãnh đạo tòa soạn phê duyệt',
+          PENDING_FINAL: 'Chờ Phó Tổng biên tập phê duyệt',
           APPROVED: 'Đã duyệt - tài khoản đã được mở khóa',
           REJECTED: 'Đã từ chối',
         }
@@ -55,7 +55,7 @@ function AccountAppeal() {
     <AuthLayout
       badge="Hỗ trợ tài khoản"
       title="Khiếu nại mở khóa"
-      subtitle="Tài khoản bị khóa có thể gửi yêu cầu để Biên tập viên xem xét và trình lãnh đạo tòa soạn quyết định."
+      subtitle="Tài khoản Citizen bị khóa có thể gửi yêu cầu để Biên tập viên sơ duyệt, sau đó Phó Tổng biên tập quyết định."
       footer={<a href="/login">Quay lại đăng nhập</a>}
     >
       <div className="desk-tabs" role="tablist" aria-label="Chọn thao tác khiếu nại">

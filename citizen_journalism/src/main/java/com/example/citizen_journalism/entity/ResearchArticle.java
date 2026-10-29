@@ -13,7 +13,7 @@ import lombok.*;
  *   DRAFT     : bản nháp - chuyên gia viết dần, lưu bao nhiêu lần cũng được, sửa / xoá thoải mái
  *               (chức năng "Quản lý bản nháp"). Bản nháp chưa cần đủ các ô bắt buộc.
  *   SUBMITTED : đã nộp, chờ Biên tập viên xét duyệt.
- *   APPROVED  : đã được Biên tập viên duyệt; đủ điều kiện tích lũy điểm thưởng theo batch.
+ *   APPROVED  : đã được Biên tập viên xác minh là bài hợp lệ.
  *   Bài đã nộp không được tác giả sửa / xoá.
  *
  * TẠI SAO bảng riêng mà không dùng chung bảng submissions? Bản nháp cần lưu khi còn dở dang (thiếu tiêu đề, nội dung...)
@@ -88,9 +88,13 @@ public class ResearchArticle extends BaseEntity {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
+    @Column(name = "editorial_note", columnDefinition = "TEXT")
+    private String editorialNote;
+
     public enum Status {
         DRAFT,
         SUBMITTED,
-        APPROVED
+        APPROVED,
+        REJECTED
     }
 }

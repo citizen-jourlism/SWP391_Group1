@@ -4,8 +4,7 @@ const NAV_GROUPS = [
   {
     label: 'Phê duyệt',
     items: [
-      { to: '/leadership', end: true, icon: 'shield', label: 'Xử lý vi phạm / gỡ bài', title: 'Phê duyệt vi phạm' },
-      { to: '/leadership/appeals', icon: 'user', label: 'Mở khóa tài khoản', title: 'Xét duyệt mở khóa tài khoản' },
+      { to: '/leadership', end: true, icon: 'user', label: 'Khiếu nại mở khóa', title: 'Xét duyệt mở khóa tài khoản' },
     ],
   },
 ]

@@ -3,28 +3,27 @@ package com.example.citizen_journalism.controller;
 import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.editor.ApplicationListItem;
+import com.example.citizen_journalism.dto.editor.EditorSubmissionDetail;
 import com.example.citizen_journalism.dto.editor.EditorApplicationDetail;
 import com.example.citizen_journalism.dto.editor.EditorOverview;
 import com.example.citizen_journalism.dto.editor.EditorSubmissionSummary;
+import com.example.citizen_journalism.dto.editor.ReputationAccountSummary;
+import com.example.citizen_journalism.dto.editor.ReputationResearchItem;
+import com.example.citizen_journalism.dto.editor.ReputationReviewResult;
+import com.example.citizen_journalism.dto.editor.ReputationSubmissionItem;
+import com.example.citizen_journalism.dto.editor.ReputationResearchDetail;
+import com.example.citizen_journalism.dto.editor.ReviewSubmissionRequest;
 import com.example.citizen_journalism.dto.editor.ReviewApplicationRequest;
-import com.example.citizen_journalism.dto.editor.ResearchReviewItem;
 import com.example.citizen_journalism.dto.editor.ResearchReviewDetail;
-import com.example.citizen_journalism.dto.submission.SubmissionDetail;
-import com.example.citizen_journalism.dto.violation.CreateViolationRequest;
 import com.example.citizen_journalism.dto.violation.ReviewAppealRequest;
-import com.example.citizen_journalism.dto.violation.ReviewViolationRequest;
 import com.example.citizen_journalism.dto.violation.ViolationAppealView;
-import com.example.citizen_journalism.dto.violation.ViolationDetail;
-import com.example.citizen_journalism.dto.violation.ViolationSummary;
 import com.example.citizen_journalism.entity.ContributorApplication;
 import com.example.citizen_journalism.entity.Submission;
-import com.example.citizen_journalism.entity.UserViolation;
+import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.entity.ViolationAppeal;
 import com.example.citizen_journalism.service.ContributorApplicationService;
 import com.example.citizen_journalism.service.EditorService;
-import com.example.citizen_journalism.service.UserViolationService;
 import com.example.citizen_journalism.service.ViolationAppealService;
-import com.example.citizen_journalism.service.ResearchArticleService;
 import com.example.citizen_journalism.util.FileResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,14 +43,15 @@ import org.springframework.web.bind.annotation.RestController;
  * API BÀN LÀM VIỆC BIÊN TẬP VIÊN — chỉ vai trò EDITOR (luật "/api/editor/**" trong SecurityConfig).
  *
  *   GET  /api/editor/overview                               -> số liệu trang Tổng quan
- *   GET  /api/editor/submissions?status=&category=&page=    -> hàng đợi tin bài (chỉ xem)
+ *   GET  /api/editor/submissions?status=&category=&page=    -> hàng đợi tin bài
  *   GET  /api/editor/submissions/{mã hồ sơ}                 -> chi tiết 1 hồ sơ
+ *   GET  /api/editor/reputation/accounts                    -> danh sách Citizen / Expert
+ *   GET  /api/editor/reputation/accounts/{id}/submissions   -> bài gửi của tài khoản
+ *   GET  /api/editor/reputation/accounts/{id}/research      -> bài nghiên cứu của Expert
  *   GET  /api/editor/applications?status=&page=             -> đơn đăng ký Cộng tác viên
  *   GET  /api/editor/applications/{id}                      -> chi tiết đơn + hồ sơ người nộp
  *   POST /api/editor/applications/{id}/review               -> xét duyệt: chuyển Phó TBT / từ chối
  *   GET  /api/editor/applications/{id}/documents/{index}    -> xem giấy tờ người nộp
- *   GET  /api/editor/research                             -> hàng đợi bài nghiên cứu Expert
- *   POST /api/editor/research/{id}/approve                -> duyệt bài nghiên cứu
  *
  * @RequestParam(required = false): không truyền thì null = không lọc. Spring tự đổi chuỗi "PENDING" thành enum.
  */
@@ -62,31 +62,11 @@ public class EditorController {
 
     private final EditorService editorService;
     private final ContributorApplicationService applicationService;
-    private final UserViolationService violationService;
     private final ViolationAppealService appealService;
-    private final ResearchArticleService researchService;
 
     @GetMapping("/overview")
     public ApiResponse<EditorOverview> overview() {
         return ApiResponse.ok("OK", editorService.getOverview());
-    }
-
-    @GetMapping("/research")
-    public ApiResponse<PageResponse<ResearchReviewItem>> listResearchForReview(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok("OK", researchService.listForEditor(page, size));
-    }
-
-    @GetMapping("/research/{id}")
-    public ApiResponse<ResearchReviewDetail> getResearchForReview(@PathVariable Long id) {
-        return ApiResponse.ok("OK", researchService.getForEditor(id));
-    }
-
-    @PostMapping("/research/{id}/approve")
-    public ApiResponse<ResearchReviewDetail> approveResearch(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
-        return ApiResponse.ok("Đã duyệt bài nghiên cứu. Chuyên gia sẽ được cộng điểm ở đợt batch tiếp theo.",
-                researchService.approveForEditor(jwt.getSubject(), id));
     }
 
     // ----------------------------- Hàng đợi tin bài -----------------------------
@@ -101,8 +81,73 @@ public class EditorController {
     }
 
     @GetMapping("/submissions/{trackingCode}")
-    public ApiResponse<SubmissionDetail> getSubmission(@PathVariable String trackingCode) {
+    public ApiResponse<EditorSubmissionDetail> getSubmission(@PathVariable String trackingCode) {
         return ApiResponse.ok("OK", editorService.getSubmission(trackingCode));
+    }
+
+    @GetMapping("/reputation/accounts")
+    public ApiResponse<PageResponse<ReputationAccountSummary>> listReputationAccounts(
+            @RequestParam User.Role role,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", editorService.listReputationAccounts(role, keyword, page, size));
+    }
+
+    @GetMapping("/reputation/accounts/{accountId}")
+    public ApiResponse<ReputationAccountSummary> getReputationAccount(@PathVariable String accountId) {
+        return ApiResponse.ok("OK", editorService.getReputationAccount(accountId));
+    }
+
+    @GetMapping("/reputation/accounts/{accountId}/submissions")
+    public ApiResponse<PageResponse<ReputationSubmissionItem>> listReputationSubmissions(
+            @PathVariable String accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", editorService.listReputationSubmissions(accountId, page, size));
+    }
+
+    @GetMapping("/reputation/accounts/{accountId}/research")
+    public ApiResponse<PageResponse<ReputationResearchItem>> listReputationResearch(
+            @PathVariable String accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", editorService.listReputationResearch(accountId, page, size));
+    }
+
+    @GetMapping("/reputation/research/{id}")
+    public ApiResponse<ReputationResearchDetail> getReputationResearch(@PathVariable Long id) {
+        return ApiResponse.ok("OK", editorService.getReputationResearch(id));
+    }
+
+    @PostMapping("/reputation/submissions/{trackingCode}/review")
+    public ApiResponse<ReputationReviewResult<EditorSubmissionDetail>> reviewReputationSubmission(
+            @PathVariable String trackingCode, @Valid @RequestBody ReviewSubmissionRequest request) {
+        ReputationReviewResult<EditorSubmissionDetail> result =
+                editorService.reviewSubmission(trackingCode, request);
+        return reputationReviewResponse(result);
+    }
+
+    @PostMapping("/reputation/research/{id}/review")
+    public ApiResponse<ReputationReviewResult<com.example.citizen_journalism.dto.editor.ResearchReviewDetail>>
+    reviewReputationResearch(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                             @Valid @RequestBody ReviewSubmissionRequest request) {
+        return reputationReviewResponse(editorService.reviewResearch(jwt.getSubject(), id, request));
+    }
+
+    private static <T> ApiResponse<ReputationReviewResult<T>> reputationReviewResponse(
+            ReputationReviewResult<T> result) {
+        String message;
+        if (result.pointsChange() < 0) {
+            message = "Đã ghi nhận tin sai, trừ 10 điểm uy tín và gỡ bài."
+                    + (result.accountStatus() == User.Status.LOCKED
+                            ? " Tài khoản đã bị khóa vì điểm uy tín dưới 80." : "");
+        } else if (result.pointsChange() > 0) {
+            message = "Đã ghi nhận bài viết hợp lệ và cộng " + result.pointsChange() + " điểm uy tín.";
+        } else {
+            message = "Đã xử lý bài viết. Tài khoản đã đạt mức điểm uy tín tối đa 100, không được cộng thêm.";
+        }
+        return ApiResponse.ok(message, result);
     }
 
     // ----------------------------- Đơn đăng ký CTV -----------------------------
@@ -132,39 +177,6 @@ public class EditorController {
     @GetMapping("/applications/{id}/documents/{index}")
     public ResponseEntity<Resource> openApplicationDocument(@PathVariable Long id, @PathVariable int index) {
         return FileResponses.inline(applicationService.openDocumentForStaff(id, index));
-    }
-
-    // ----------------------------- Uy tín & vi phạm -----------------------------
-
-    @GetMapping("/violations")
-    public ApiResponse<PageResponse<ViolationSummary>> listViolations(
-            @RequestParam(required = false) UserViolation.Status status,
-            @RequestParam(required = false) UserViolation.Type type,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok("OK", violationService.list(status, type, null, keyword, page, size));
-    }
-
-    @GetMapping("/violations/{id}")
-    public ApiResponse<ViolationDetail> getViolation(@PathVariable Long id) {
-        return ApiResponse.ok("OK", violationService.get(id));
-    }
-
-    @PostMapping("/violations")
-    public ApiResponse<ViolationDetail> createViolation(@AuthenticationPrincipal Jwt jwt,
-                                                         @Valid @RequestBody CreateViolationRequest request) {
-        return ApiResponse.ok("Đã lập báo cáo vi phạm.", violationService.create(jwt.getSubject(), request));
-    }
-
-    @PostMapping("/violations/{id}/review")
-    public ApiResponse<ViolationDetail> reviewViolation(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
-                                                         @Valid @RequestBody ReviewViolationRequest request) {
-        ViolationDetail detail = violationService.review(jwt.getSubject(), id, request);
-        String message = detail.status() == UserViolation.Status.PENDING_APPROVAL
-                ? "Đã chuyển yêu cầu sang Quản trị hệ thống phê duyệt."
-                : "Đã hoàn tất xử lý báo cáo vi phạm.";
-        return ApiResponse.ok(message, detail);
     }
 
     @GetMapping("/appeals")

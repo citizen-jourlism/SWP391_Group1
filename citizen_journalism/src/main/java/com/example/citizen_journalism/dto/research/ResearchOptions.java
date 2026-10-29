@@ -16,5 +16,6 @@ public record ResearchOptions(
         List<String> acceptedImageTypes,
         long draftCount,
         long submittedCount,
-        long approvedCount) {
+        long approvedCount,
+        long rejectedCount) {
 }

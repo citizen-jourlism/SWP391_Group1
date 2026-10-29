@@ -25,6 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
  *      /api/submissions/**                         -> CITIZEN, CONTRIBUTOR, EXPERT (gửi tin / khiếu nại)
  *      /api/contributor-applications/**            -> CITIZEN, CONTRIBUTOR (đơn đăng ký Cộng tác viên)
  *      /api/editor/**                              -> chỉ EDITOR (bàn làm việc Biên tập viên)
+ *      /api/leadership/**                          -> chỉ DEPUTY_EIC (duyệt khiếu nại mở khóa)
  *      /api/research/**                            -> chỉ EXPERT (bài nghiên cứu, bản nháp)
  *   3. /api/** còn lại                              -> phải đăng nhập (có token hợp lệ)
  *   4. Mọi thứ khác (file tĩnh...)                  -> mở, TRỪ /uploads/applications/** (giấy tờ tuỳ thân) bị chặn
@@ -63,7 +64,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
-                .requestMatchers("/api/leadership/**").hasAnyRole("DEPUTY_EIC", "EIC")
+                .requestMatchers("/api/leadership/**").hasRole("DEPUTY_EIC")
                 // Gửi tin / khiếu nại: người dân, cộng tác viên, chuyên gia (nhân sự toà soạn và admin thì không)
                 .requestMatchers("/api/submissions/**").hasAnyRole("CITIZEN", "CONTRIBUTOR", "EXPERT")
                 // Đăng ký / theo dõi đơn Cộng tác viên: người dân (nộp đơn) và CTV (xem lại đơn cũ)

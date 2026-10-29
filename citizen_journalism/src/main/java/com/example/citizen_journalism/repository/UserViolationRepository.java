@@ -29,6 +29,25 @@ public interface UserViolationRepository extends JpaRepository<UserViolation, Lo
                                Pageable pageable);
 
     @EntityGraph(attributePaths = {"reportedUser", "reportedBy", "relatedSubmission", "reviewedBy", "approvedBy"})
+    @Query("""
+            select v from UserViolation v
+            where (:status is null or v.status = :status
+                   or (:includePendingReview = true and v.status = :pendingReview))
+              and (:action is null or v.proposedAction = :action)
+              and (:keyword is null
+                   or lower(v.reportedUser.fullName) like lower(concat('%', :keyword, '%'))
+                   or lower(v.reportedUser.id) like lower(concat('%', :keyword, '%'))
+                   or lower(v.reportedUser.email) like lower(concat('%', :keyword, '%')))
+            """)
+    Page<UserViolation> searchForLeadershipApprovals(
+            @Param("status") UserViolation.Status status,
+            @Param("includePendingReview") boolean includePendingReview,
+            @Param("pendingReview") UserViolation.Status pendingReview,
+            @Param("action") UserViolation.Action action,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = {"reportedUser", "reportedBy", "relatedSubmission", "reviewedBy", "approvedBy"})
     Optional<UserViolation> findWithDetailsById(Long id);
 
     long countByStatus(UserViolation.Status status);

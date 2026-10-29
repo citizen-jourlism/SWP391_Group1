@@ -177,13 +177,9 @@ function EditorOverview() {
                 <Icon name="mapPin" size={18} />
                 Giao nhiệm vụ
               </Link>
-              <Link to="/editor/articles">
-                <Icon name="edit" size={18} />
-                Biên tập bài
-              </Link>
-              <Link to="/editor/members">
-                <Icon name="shield" size={18} />
-                Uy tín & vi phạm
+              <Link to="/editor/reputation">
+                <Icon name="checkCircle" size={18} />
+                Uy tín và xử phạt
               </Link>
             </div>
           </section>

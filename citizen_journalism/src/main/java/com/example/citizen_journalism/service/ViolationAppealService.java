@@ -10,7 +10,10 @@ import com.example.citizen_journalism.dto.violation.ReviewAppealRequest;
 import com.example.citizen_journalism.dto.violation.ViolationAppealView;
 import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.entity.ViolationAppeal;
+import com.example.citizen_journalism.entity.ReputationLog;
 import com.example.citizen_journalism.exception.AppException;
+import com.example.citizen_journalism.exception.ErrorCode;
+import com.example.citizen_journalism.repository.ReputationLogRepository;
 import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.repository.ViolationAppealRepository;
 import com.example.citizen_journalism.util.Paging;
@@ -30,6 +33,7 @@ public class ViolationAppealService {
 
     private final ViolationAppealRepository appealRepository;
     private final UserRepository userRepository;
+    private final ReputationLogRepository reputationLogRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
 
@@ -38,6 +42,7 @@ public class ViolationAppealService {
         User user = userRepository.findByEmail(normalizeEmail(request.email()))
                 .filter(account -> passwordEncoder.matches(request.password(), account.getPasswordHash()))
                 .filter(account -> account.getStatus() == User.Status.LOCKED)
+                .filter(account -> account.getRole() == User.Role.CITIZEN)
                 .orElseThrow(() -> AppException.badRequest("Không thể gửi khiếu nại. Hãy kiểm tra thông tin đăng nhập và trạng thái tài khoản."));
         if (appealRepository.existsByUserIdAndStatusIn(user.getId(), OPEN_STATUSES)) {
             throw AppException.conflict("Tài khoản đang có khiếu nại chờ xử lý.");
@@ -95,7 +100,7 @@ public class ViolationAppealService {
                 ? ViolationAppeal.Status.PENDING_FINAL : ViolationAppeal.Status.REJECTED);
         notifyUser(appeal, "Cập nhật khiếu nại mở khóa",
                 request.decision() == ReviewAppealRequest.Decision.FORWARD
-                        ? "Hồ sơ đã được chuyển đến lãnh đạo tòa soạn để quyết định."
+                        ? "Hồ sơ đã được chuyển đến Phó Tổng biên tập để quyết định."
                         : "Hồ sơ đã bị từ chối ở bước sơ duyệt. Ghi chú: " + (note == null ? "Không có" : note));
         return ViolationAppealView.from(appeal);
     }
@@ -107,6 +112,10 @@ public class ViolationAppealService {
             throw AppException.conflict("Khiếu nại này chưa được chuyển đến bước phê duyệt cuối.");
         }
         User leader = userRepository.getActiveById(leaderId);
+        if (leader.getRole() != User.Role.DEPUTY_EIC) {
+            throw AppException.forbidden("Chỉ Phó Tổng biên tập được quyết định mở khóa tài khoản.",
+                    ErrorCode.FORBIDDEN);
+        }
         String note = blankToNull(request.note());
         if (request.decision() == DecideAppealRequest.Decision.REJECT && (note == null || note.length() < 10)) {
             throw AppException.invalidFields(java.util.Map.of("note", "Vui lòng ghi lý do từ chối, ít nhất 10 ký tự."));
@@ -119,13 +128,18 @@ public class ViolationAppealService {
             if (user.getStatus() != User.Status.LOCKED) {
                 throw AppException.conflict("Tài khoản không còn ở trạng thái bị khóa.");
             }
-            if (user.hasBelowMinimumReputation()) {
-                throw AppException.conflict("Tài khoản phải có ít nhất 80 điểm uy tín mới được mở khóa.");
-            }
+            int previousScore = user.getReputationScore() == null
+                    ? User.DEFAULT_REPUTATION_SCORE : user.getReputationScore();
+            user.setReputationScore(81);
             user.setStatus(User.Status.ACTIVE);
             user.setIsVerified(true);
             user.setFailedLoginAttempts(0);
             user.setLockedUntil(null);
+            reputationLogRepository.save(ReputationLog.builder()
+                    .user(user)
+                    .pointsChange(81 - previousScore)
+                    .reason(ReputationLog.ReputationReason.ACCOUNT_APPEAL_RESTORED)
+                    .build());
             appeal.setStatus(ViolationAppeal.Status.APPROVED);
         } else {
             appeal.setStatus(ViolationAppeal.Status.REJECTED);
