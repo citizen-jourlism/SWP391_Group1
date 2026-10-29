@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import AccountLayout from '../components/layout/AccountLayout'
+import { PendingRevisionsBanner, ReviewResultNote } from '../components/research/ResearchEditorial'
 import Alert from '../components/ui/Alert'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
@@ -29,7 +30,9 @@ const TABS = [
 
 function ResearchList() {
   useDocumentTitle('Bài nghiên cứu của tôi')
-  const [status, setStatus] = useState('DRAFT')
+  // Thẻ đang xem nằm trên đường dẫn (?status=SUBMITTED): xem bài rồi quay lại vẫn đúng thẻ cũ
+  const [searchParams, setSearchParams] = useSearchParams()
+  const status = searchParams.get('status') === 'SUBMITTED' ? 'SUBMITTED' : 'DRAFT'
   const [page, setPage] = useState(0)
   const [version, setVersion] = useState(0) // Tăng sau khi xoá để tải lại danh sách + số lượng
   const [deleting, setDeleting] = useState(null) // Bài đang chờ xác nhận xoá
@@ -37,6 +40,9 @@ function ResearchList() {
 
   const { data, error, loading } = useAsyncData(() => researchService.list(status, page), `${status}|${page}|${version}`)
   const { data: options } = useAsyncData(() => researchService.getOptions(), String(version))
+  // Kết quả duyệt của Biên tập viên (bị từ chối kèm lý do / đã duyệt), gắn vào đúng thẻ bài theo id
+  const { data: reviews } = useAsyncData(() => researchService.listReviewResults(), 'my-review-results')
+  const reviewOf = (id) => reviews?.find((review) => review.articleId === id)
 
   const remove = async () => {
     const response = await researchService.remove(deleting.id)
@@ -56,7 +62,7 @@ function ResearchList() {
               aria-selected={status === tab.value}
               className={status === tab.value ? 'is-active' : ''}
               onClick={() => {
-                setStatus(tab.value)
+                setSearchParams({ status: tab.value }, { replace: true })
                 setPage(0)
               }}
             >
@@ -71,6 +77,7 @@ function ResearchList() {
         </Button>
       </div>
 
+      <PendingRevisionsBanner />
       <Alert type="success">{notice}</Alert>
       <Alert type="error">{error}</Alert>
       {!data && !error && <div className="skeleton skeleton--card" />}
@@ -105,6 +112,7 @@ function ResearchList() {
                     {item.title || <em>(Chưa đặt tiêu đề)</em>}
                   </Link>
                   <p className="research-card__excerpt">{item.excerpt || 'Chưa có nội dung.'}</p>
+                  <ReviewResultNote result={reviewOf(item.id)} />
                   <div className="research-card__meta">
                     <span>
                       <Icon name="fileText" size={13} />

@@ -1,11 +1,13 @@
 package com.example.citizen_journalism.dto.admin;
 
 import com.example.citizen_journalism.entity.User;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Một dòng trong bảng quản lý tài khoản của admin. Có thêm trạng thái (status) và tên đăng nhập
- * so với UserSummary, vẫn KHÔNG có mật khẩu / giấy tờ.
+ * Thông tin một tài khoản cho admin: dùng cho cả bảng quản lý tài khoản lẫn trang chi tiết /admin/users/:id.
+ * Có thêm trạng thái (status), tên đăng nhập, CCCD... so với UserSummary,
+ * nhưng KHÔNG BAO GIỜ có mật khẩu / giấy tờ (dữ liệu tệp).
  */
 public record AdminUserItem(
         String id,
@@ -17,7 +19,15 @@ public record AdminUserItem(
         User.Status status,
         String avatarUrl,
         Integer reputationScore,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        int rewardPoints,
+        String citizenId,
+        String address,
+        LocalDate dateOfBirth,
+        User.UpgradeStatus upgradeStatus,
+        String expertiseFields,
+        LocalDateTime lockedUntil,
+        LocalDateTime updatedAt
 ) {
 
     public static AdminUserItem from(User user) {
@@ -31,6 +41,14 @@ public record AdminUserItem(
                 user.getStatus(),
                 user.getAvatarUrl(),
                 user.getReputationScore(),
-                user.getCreatedAt());
+                user.getCreatedAt(),
+                user.getRewardPoints(),
+                user.getCitizenId(),
+                user.getAddress(),
+                user.getDateOfBirth(),
+                user.getUpgradeStatus(),
+                user.getExpertiseFields(),
+                user.getLockedUntil(),
+                user.getUpdatedAt());
     }
 }

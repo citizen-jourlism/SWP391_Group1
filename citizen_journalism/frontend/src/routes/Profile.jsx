@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import AccountLayout from '../components/layout/AccountLayout'
 import AvatarUploader from '../components/profile/AvatarUploader'
 import ChangeEmailDialog from '../components/profile/ChangeEmailDialog'
@@ -7,7 +7,6 @@ import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import TextField from '../components/ui/TextField'
-import { useAsyncData } from '../hooks/useAsyncData'
 import { useAuth } from '../hooks/useAuth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useForm } from '../hooks/useForm'
@@ -53,33 +52,50 @@ const validate = createValidator({
   dateOfBirth: [rules.optional(rules.pastDate('Ngày sinh phải là một ngày trong quá khứ.'))],
 })
 
+
 function Profile() {
   useDocumentTitle('Hồ sơ của tôi')
   const { updateUser } = useAuth()
+  const [profile, setProfile] = useState(null)
+  const [loadError, setLoadError] = useState('')
   const [notice, setNotice] = useState('') // Thông báo thành công chung của trang
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
-  // Tải hồ sơ 1 lần khi mở trang. reload = nút "Thử lại" khi tải lỗi (ví dụ backend chưa chạy);
-  // setProfile = thay hồ sơ bằng bản mới backend trả về sau khi lưu (không cần gọi lại API).
-  const { data: profile, error: loadError, loading, reload, setData: setProfile } = useAsyncData(
-    () => userService.getProfile(),
-    'profile',
-  )
+  const fetchProfile = useCallback(() => {
+    userService
+      .getProfile()
+      .then((response) => setProfile(response.data))
+      .catch((error) => setLoadError(error.message))
+  }, [])
+
+  // Tải hồ sơ 1 lần khi mở trang.
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
+
+  /** Nút "Thử lại" khi tải lỗi (ví dụ backend chưa chạy). */
+  const retry = () => {
+    setLoadError('')
+    fetchProfile()
+  }
 
   /** Mọi thay đổi (thông tin, ảnh, email) đều đi qua đây: lưu hồ sơ mới + đồng bộ menu tài khoản + báo thành công. */
-  const applyProfile = (updated, message) => {
-    setProfile(updated)
-    updateUser({ fullName: updated.fullName, email: updated.email, avatarUrl: updated.avatarUrl })
-    setNotice(message)
-  }
+  const applyProfile = useCallback(
+    (updated, message) => {
+      setProfile(updated)
+      updateUser({ fullName: updated.fullName, email: updated.email, avatarUrl: updated.avatarUrl })
+      setNotice(message)
+    },
+    [updateUser],
+  )
 
   return (
     <AccountLayout title="Hồ sơ của tôi" subtitle="Quản lý thông tin cá nhân, ảnh đại diện và bảo mật tài khoản.">
-      {loadError && !loading && (
+      {loadError && (
         <Alert type="error">
           {loadError}
           <div className="alert__actions">
-            <Button variant="secondary" onClick={reload}>
+            <Button variant="secondary" onClick={retry}>
               Thử lại
             </Button>
           </div>
@@ -87,7 +103,7 @@ function Profile() {
       )}
 
       {/* Đang tải: hiện khung xám "skeleton" thay cho nội dung để người dùng biết trang đang tải */}
-      {!profile && loading && <div className="skeleton skeleton--page" aria-busy="true" aria-label="Đang tải hồ sơ" />}
+      {!profile && !loadError && <div className="skeleton skeleton--page" aria-busy="true" aria-label="Đang tải hồ sơ" />}
 
       {profile && (
         <div className="profile-grid">

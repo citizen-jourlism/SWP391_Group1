@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import ChangeRoleDialog from '../../components/admin/ChangeRoleDialog'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import CreateUserDialog from '../../components/admin/CreateUserDialog'
 import UserCell from '../../components/admin/UserCell'
 import Alert from '../../components/ui/Alert'
@@ -9,7 +9,6 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import Icon from '../../components/ui/Icon'
 import Pagination from '../../components/ui/Pagination'
 import SelectField from '../../components/ui/SelectField'
-import { useAsyncData } from '../../hooks/useAsyncData'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { formatDate } from '../../lib/format'
 import { ROLE_LABELS, ROLE_TONES, STATUS_INFO } from '../../lib/roles'
@@ -22,11 +21,12 @@ import { adminService } from '../../services/adminService'
  * CHỨC NĂNG:
  *   - Tìm theo tên / email / mã / SĐT (chờ người dùng ngừng gõ mới tìm, xem useDebouncedValue)
  *   - Lọc theo vai trò, trạng thái; phân trang 10 dòng/trang
- *   - Tạo tài khoản nội bộ (CreateUserDialog), đổi vai trò (ChangeRoleDialog), khoá / mở khoá (ConfirmDialog)
+ *   - Tạo tài khoản nội bộ (CreateUserDialog), khoá / mở khoá (ConfirmDialog)
+ *   - Nút sửa -> trang chi tiết /admin/users/:id (AdminUserDetail: xem đủ thông tin, sửa thông tin + vai trò)
  *   - Hàng của tài khoản quản trị bị khoá thao tác (hệ thống chỉ có 1 admin, không được tự khoá mình)
  *
- * CÁCH TẢI DỮ LIỆU (hook useAsyncData): mọi điều kiện tìm kiếm gom vào 1 `key`. key đổi -> tự gọi lại API.
- * `loading` = bảng đang hiển thị thuộc về điều kiện CŨ (vẫn giữ bảng cũ, chỉ làm mờ, để trang không bị giật).
+ * CÁCH TẢI DỮ LIỆU: mọi điều kiện tìm kiếm gom vào `queryKey`. queryKey đổi -> useEffect gọi API.
+ * `loading` = kết quả đang hiển thị thuộc về queryKey CŨ (vẫn giữ bảng cũ, chỉ làm mờ, để trang không bị giật).
  */
 
 const PAGE_SIZE = 10
@@ -34,21 +34,35 @@ const ROLE_FILTERS = Object.entries(ROLE_LABELS).map(([value, label]) => ({ valu
 const STATUS_FILTERS = Object.entries(STATUS_INFO).map(([value, info]) => ({ value, label: info.label }))
 
 function AdminUsers() {
+  const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(0)
+  const [reloadToken, setReloadToken] = useState(0) // Tăng lên để buộc tải lại (sau khi tạo / sửa tài khoản)
   const debouncedKeyword = useDebouncedValue(keyword.trim())
 
+  const [result, setResult] = useState({ key: null, data: null, error: '' })
   const [notice, setNotice] = useState('')
   const [creating, setCreating] = useState(false)
-  const [roleTarget, setRoleTarget] = useState(null) // Tài khoản đang đổi vai trò
   const [statusTarget, setStatusTarget] = useState(null) // Tài khoản đang khoá / mở khoá
 
-  const { data, error, loading, reload } = useAsyncData(
-    () => adminService.searchUsers({ keyword: debouncedKeyword, role, status, page, size: PAGE_SIZE }),
-    JSON.stringify([debouncedKeyword, role, status, page]),
-  )
+  const queryKey = JSON.stringify({ keyword: debouncedKeyword, role, status, page, reloadToken })
+
+  useEffect(() => {
+    let cancelled = false // Bỏ qua kết quả của request cũ nếu người dùng đã đổi điều kiện trong lúc chờ
+    const { reloadToken: _ignored, ...params } = JSON.parse(queryKey)
+    adminService
+      .searchUsers({ ...params, size: PAGE_SIZE })
+      .then((response) => !cancelled && setResult({ key: queryKey, data: response.data, error: '' }))
+      .catch((error) => !cancelled && setResult({ key: queryKey, data: null, error: error.message }))
+    return () => {
+      cancelled = true
+    }
+  }, [queryKey])
+
+  const loading = result.key !== queryKey
+  const data = result.data
 
   /** Đổi bộ lọc thì quay về trang đầu. */
   const changeFilter = (setter) => (event) => {
@@ -59,7 +73,7 @@ function AdminUsers() {
   /** Sau mỗi thao tác thành công: hiện thông báo + tải lại bảng. */
   const afterChange = (message) => {
     setNotice(message)
-    reload()
+    setReloadToken((value) => value + 1)
   }
 
   const toggleLock = async () => {
@@ -95,7 +109,7 @@ function AdminUsers() {
         </div>
 
         <Alert type="success">{notice}</Alert>
-        <Alert type="error">{error}</Alert>
+        <Alert type="error">{result.error}</Alert>
 
         {/* ----- Bảng tài khoản (cuộn ngang trên màn hình hẹp) ----- */}
         <div className={`table-wrap ${loading && data ? 'is-loading' : ''}`}>
@@ -153,7 +167,7 @@ function AdminUsers() {
                       ) : (
                         // Nút dạng icon cho gọn bảng; title = chú thích hiện khi rê chuột, aria-label = tên cho trình đọc màn hình
                         <div className="row-actions">
-                          <button type="button" title="Đổi vai trò" aria-label={`Đổi vai trò ${user.fullName}`} onClick={() => setRoleTarget(user)}>
+                          <button type="button" title="Xem / sửa tài khoản" aria-label={`Xem / sửa ${user.fullName}`} onClick={() => navigate(`/admin/users/${user.id}`)}>
                             <Icon name="edit" size={16} />
                           </button>
                           <button
@@ -183,12 +197,6 @@ function AdminUsers() {
         open={creating}
         onClose={() => setCreating(false)}
         onCreated={(user) => afterChange(`Đã tạo tài khoản ${user.id} - ${user.fullName}.`)}
-      />
-      <ChangeRoleDialog
-        key={roleTarget?.id}
-        user={roleTarget}
-        onClose={() => setRoleTarget(null)}
-        onChanged={(_user, message) => afterChange(message)}
       />
       <ConfirmDialog
         open={Boolean(statusTarget)}

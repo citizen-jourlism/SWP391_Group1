@@ -79,8 +79,34 @@ public class ResearchArticle extends BaseEntity {
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
+    // ----- KẾT QUẢ DUYỆT CỦA BIÊN TẬP VIÊN (ResearchEditorialService) -----
+    // Chỉ giữ 2 cột để lọc hàng đợi và hiện nhãn nhanh. Chi tiết (ai duyệt, lúc nào, ghi chú / lý do, điểm, Phó TBT)
+    // nằm ở dòng APPROVE / REJECT của bảng editorial_reviews.
+    // Cho phép NULL: bài cũ / bài vừa nộp có reviewStatus = null nghĩa là "chờ Biên tập viên duyệt".
+
+    /** null = chờ BTV duyệt; DEPUTY_PENDING = đã duyệt, chuyển Phó TBT; REJECTED = BTV từ chối (dừng xử lý). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "review_status", columnDefinition = "VARCHAR(30)")
+    private ReviewStatus reviewStatus;
+
+    /** Cấp độ BTV phân loại khi duyệt (tính từ điểm, xem ResearchEditorialService.priorityOf). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "priority", columnDefinition = "VARCHAR(20)")
+    private Priority priority;
+
     public enum Status {
         DRAFT,
         SUBMITTED
+    }
+
+    public enum ReviewStatus {
+        DEPUTY_PENDING,
+        REJECTED
+    }
+
+    public enum Priority {
+        LOW,
+        MEDIUM,
+        HIGH
     }
 }
