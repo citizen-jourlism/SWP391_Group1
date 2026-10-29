@@ -1,4 +1,4 @@
-/* ===== Theo dõi hồ sơ: trang Tra cứu (routes/TrackSubmission.jsx), Hồ sơ đã gửi (routes/MySubmissions.jsx),
+/* ===== Theo dõi hồ sơ: trang Tra cứu (routes/TrackSubmission.jsx), Thông tin đã gửi (routes/MySubmissions.jsx),
  * chi tiết hồ sơ (components/submission/SubmissionDetail.jsx).
  * Thanh tiến trình và danh sách tệp dùng chung nằm trong submit.css. Màu lấy từ design tokens (src/index.css).
  */
@@ -340,7 +340,7 @@
   white-space: pre-line;
 }
 
-/* ---------- Danh sách "Hồ sơ đã gửi" ---------- */
+/* ---------- Danh sách "Thông tin đã gửi" ---------- */
 .my-subs__toolbar {
   display: flex;
   justify-content: space-between;

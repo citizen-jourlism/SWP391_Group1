@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
- * Dữ liệu form TRA CỨU HỒ SƠ (SRS 4.1.2): mã hồ sơ (tối đa 20 ký tự, ví dụ KB-2026-0001) + mã PIN 6 số.
+ * Dữ liệu form TRA CỨU HỒ SƠ: mã hồ sơ (tối đa 20 ký tự, ví dụ KB-2026-0001) + mã PIN 6 số.
  * Gửi bằng POST (trong body) chứ không để trên đường dẫn, để mã PIN không bị lưu vào lịch sử trình duyệt / log máy chủ.
  */
 public record TrackRequest(

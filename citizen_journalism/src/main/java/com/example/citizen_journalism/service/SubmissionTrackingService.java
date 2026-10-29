@@ -27,11 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * THEO DÕI TRẠNG THÁI HỒ SƠ (SRS 4.1.2 "Submission Status Tracker"). Có 2 cách:
+ * THEO DÕI TRẠNG THÁI HỒ SƠ. Có 2 cách:
  *
  *   1. track()   : tra cứu bằng MÃ HỒ SƠ + MÃ PIN, KHÔNG cần đăng nhập (TrackingController).
  *                  Dành cho mọi người gửi, kể cả gửi ẩn danh hoặc đang dùng máy khác.
- *   2. listMine() / getMine(): người gửi ĐÃ ĐĂNG NHẬP xem danh sách "Hồ sơ đã gửi" và chi tiết từng hồ sơ,
+ *   2. listMine() / getMine(): người gửi ĐÃ ĐĂNG NHẬP xem danh sách "Thông tin đã gửi" và chi tiết từng hồ sơ,
  *                  không cần nhập PIN vì đã biết chắc là chủ hồ sơ (SubmissionController).
  * Cả 2 cách trả về cùng một SubmissionDetail (toDetail).
  *

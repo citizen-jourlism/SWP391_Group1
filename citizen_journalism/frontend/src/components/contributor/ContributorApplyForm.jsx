@@ -15,7 +15,7 @@ import { createValidator, rules } from '../../lib/validators'
 import { contributorService } from '../../services/contributorService'
 
 /*
- * FORM ĐĂNG KÝ LÀM CỘNG TÁC VIÊN (SRS: Register as a Contributor / "Upgrade to CTV Form").
+ * FORM ĐĂNG KÝ LÀM CỘNG TÁC VIÊN.
  * Nằm trong mục "Cộng tác viên" của trang Hồ sơ (ContributorSection), chỉ hiện khi người dân đủ điều kiện.
  *
  * Các ô (khớp backend ApplyContributorRequest):

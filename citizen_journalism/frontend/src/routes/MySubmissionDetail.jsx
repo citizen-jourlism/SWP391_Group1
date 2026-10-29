@@ -11,7 +11,7 @@ import { submissionService } from '../services/submissionService'
 /*
  * TRANG THEO DÕI 1 HỒ SƠ CỦA TÔI — /account/submissions/:code (ví dụ /account/submissions/KB-2026-0001).
  * Chỉ người dân / CTV / chuyên gia đã đăng nhập; backend chỉ trả hồ sơ nếu đúng là người gửi (không cần PIN).
- * Mở từ: danh sách "Hồ sơ đã gửi", nút "Theo dõi hồ sơ" ở biên nhận sau khi gửi.
+ * Mở từ: danh sách "Thông tin đã gửi", nút "Theo dõi hồ sơ" ở biên nhận sau khi gửi.
  * Dữ liệu: GET /api/submissions/mine/{code} -> hiển thị bằng SubmissionDetail (dùng chung với trang Tra cứu).
  * Nút "Làm mới" tải lại để xem trạng thái mới nhất (toà soạn có thể vừa xử lý).
  */
@@ -37,7 +37,7 @@ function MySubmissionDetail() {
   const loading = result.key !== key
 
   return (
-    <AccountLayout title="Theo dõi hồ sơ" backLink={{ to: '/account/submissions', label: 'Hồ sơ đã gửi' }}>
+    <AccountLayout title="Theo dõi hồ sơ" backLink={{ to: '/account/submissions', label: 'Thông tin đã gửi' }}>
       {result.error ? (
         <Alert type="error" title="Không xem được hồ sơ">
           {result.error}
@@ -59,7 +59,8 @@ function MySubmissionDetail() {
               Làm mới
             </Button>
           </div>
-          <SubmissionDetail detail={result.detail} />
+          {/* Hồ sơ "Cần bổ sung" -> nút "Bổ sung ngay" mở trang Bổ sung thông tin (routes/SupplementSubmission.jsx) */}
+          <SubmissionDetail detail={result.detail} supplementLink={`/account/submissions/${encodeURIComponent(code)}/supplement`} />
         </>
       ) : (
         <div className="skeleton skeleton--page" />

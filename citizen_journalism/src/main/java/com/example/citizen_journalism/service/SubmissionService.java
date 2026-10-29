@@ -34,27 +34,38 @@ import org.springframework.web.util.HtmlUtils;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Nghiệp vụ GỬI TIN / KHIẾU NẠI của người dân (SRS mục 4.1.1 + luồng 2.1.3 "Complaint intake").
+ * Nghiệp vụ GỬI TIN / KHIẾU NẠI của người dân.
  * Được SubmissionController gọi; người gửi luôn lấy từ token đăng nhập.
  *
  * LUỒNG create():
- *   1. Kiểm tra những gì annotation trong DTO không làm được: thông tin liên hệ (bắt buộc khi KHÔNG ẩn danh),
- *      tỉnh/thành hợp lệ, số lượng + định dạng + dung lượng tệp. Có lỗi -> trả về lỗi theo từng ô, chưa lưu gì.
- *   2. Lưu bản ghi submissions (trạng thái PENDING = chờ Biên tập viên tiếp nhận), sinh mã hồ sơ + mã PIN.
- *   3. Lưu từng tệp vào uploads/evidences + bảng evidences (tên gốc, loại, dung lượng).
- *   4. Gửi email biên nhận (mã hồ sơ + PIN) rồi trả biên nhận cho frontend hiển thị.
+ * 1. Kiểm tra những gì annotation trong DTO không làm được: thông tin liên hệ
+ * (bắt buộc khi KHÔNG ẩn danh),
+ * tỉnh/thành hợp lệ, số lượng + định dạng + dung lượng tệp. Có lỗi -> trả về
+ * lỗi theo từng ô, chưa lưu gì.
+ * 2. Lưu bản ghi submissions (trạng thái PENDING = chờ Biên tập viên tiếp
+ * nhận), sinh mã hồ sơ + mã PIN.
+ * 3. Lưu từng tệp vào uploads/evidences + bảng evidences (tên gốc, loại, dung
+ * lượng).
+ * 4. Gửi email biên nhận (mã hồ sơ + PIN) rồi trả biên nhận cho frontend hiển
+ * thị.
  *
- * ẨN DANH: không lưu họ tên / SĐT / email / CMND trên hồ sơ; chỉ giữ author_id để Tổng biên tập có thể
- * giải mật khi có căn cứ (chức năng sau). Email biên nhận khi đó gửi về email TÀI KHOẢN của người gửi.
+ * ẨN DANH: không lưu họ tên / SĐT / email / CMND trên hồ sơ; chỉ giữ author_id
+ * để Tổng biên tập có thể
+ * giải mật khi có căn cứ (chức năng sau). Email biên nhận khi đó gửi về email
+ * TÀI KHOẢN của người gửi.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubmissionService {
 
-    /** Số tệp tối đa mỗi lần gửi và dung lượng tối đa mỗi tệp (SRS: 50MB/tệp). */
+    /** Số tệp tối đa mỗi lần gửi và dung lượng tối đa mỗi tệp. */
     public static final int MAX_FILES = 10;
     public static final long MAX_FILE_BYTES = 50L * 1024 * 1024;
+    // public static final long MAX_FILE_BYTES_IMAGE = 10L * 1024 * 1024;
+    // public static final long MAX_FILE_BYTES_VIDEO = 50L * 1024 * 1024;
+    // public static final long MAX_FILE_BYTES_AUDIO = 50L * 1024 * 1024;
+    // public static final long MAX_FILE_BYTES_DOCUMENT = 10L * 1024 * 1024;
 
     private static final String EVIDENCE_FOLDER = "evidences";
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -68,11 +79,17 @@ public class SubmissionService {
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
 
-    /** Tổng dung lượng tối đa 1 request (application.properties). Vượt quá thì Spring chặn trước khi vào service. */
+    /**
+     * Tổng dung lượng tối đa 1 request (application.properties). Vượt quá thì
+     * Spring chặn trước khi vào service.
+     */
     @Value("${spring.servlet.multipart.max-request-size}")
     private DataSize maxRequestSize;
 
-    /** Tuỳ chọn cho form (loại phản ánh được phép theo vai trò, danh sách tỉnh, giới hạn tệp). Xem SubmissionFormOptions. */
+    /**
+     * Tuỳ chọn cho form (loại phản ánh được phép theo vai trò, danh sách tỉnh, giới
+     * hạn tệp). Xem SubmissionFormOptions.
+     */
     @Transactional(readOnly = true)
     public SubmissionFormOptions getFormOptions(String userId) {
         User user = userRepository.getActiveById(userId);
@@ -117,7 +134,8 @@ public class SubmissionService {
                 .status(Submission.SubmissionStatus.PENDING)
                 .build());
         // Mã hồ sơ cần id (chỉ có sau khi lưu), ví dụ id 7 năm 2026 -> "KB-2026-0007".
-        // Không cần save() lại: submission đang được JPA quản lý, tự ghi xuống DB khi kết thúc transaction.
+        // Không cần save() lại: submission đang được JPA quản lý, tự ghi xuống DB khi
+        // kết thúc transaction.
         submission.setTrackingCode("KB-%d-%04d".formatted(submission.getCreatedAt().getYear(), submission.getId()));
         // Bước 1 của nhật ký xử lý (người gửi xem được khi tra cứu)
         submissionEventService.record(submission, Submission.SubmissionStatus.PENDING, SubmissionEvent.Actor.REPORTER,
@@ -129,7 +147,8 @@ public class SubmissionService {
         try {
             evidences = evidenceFiles.stream().map(file -> saveEvidence(submission, author, file, storedUrls)).toList();
         } catch (RuntimeException ex) {
-            // Lỗi giữa chừng: DB tự huỷ (rollback) nhờ @Transactional, còn file đã ghi ra ổ đĩa thì phải tự xoá.
+            // Lỗi giữa chừng: DB tự huỷ (rollback) nhờ @Transactional, còn file đã ghi ra ổ
+            // đĩa thì phải tự xoá.
             storedUrls.forEach(fileStorageService::delete);
             throw ex;
         }
@@ -155,13 +174,15 @@ public class SubmissionService {
     // ================================ HÀM PHỤ ================================
 
     /**
-     * Gom MỌI lỗi theo từng ô rồi ném 1 lần (người dùng thấy hết lỗi cùng lúc, không phải sửa từng cái).
+     * Gom MỌI lỗi theo từng ô rồi ném 1 lần (người dùng thấy hết lỗi cùng lúc,
+     * không phải sửa từng cái).
      * Tên khoá trong map trùng tên ô ở frontend để lỗi hiện đúng chỗ.
      */
     private void validate(User author, CreateSubmissionRequest request, List<MultipartFile> files) {
         Map<String, String> errors = new LinkedHashMap<>();
 
-        // Loại phản ánh phải đúng vai trò (ví dụ người dân chỉ gửi Tin nóng / Khiếu nại) - xem ReportCategory
+        // Loại phản ánh phải đúng vai trò (ví dụ người dân chỉ gửi Tin nóng / Khiếu
+        // nại) - xem ReportCategory
         if (!request.category().isAllowedFor(author.getRole())) {
             errors.put("category", "Tài khoản của bạn không gửi được loại phản ánh này.");
         }
@@ -170,7 +191,8 @@ public class SubmissionService {
             errors.put("province", "Tỉnh/thành phố không hợp lệ.");
         }
 
-        // Không ẩn danh thì bắt buộc có đủ họ tên, SĐT, email (để toà soạn liên hệ, gửi mã PIN)
+        // Không ẩn danh thì bắt buộc có đủ họ tên, SĐT, email (để toà soạn liên hệ, gửi
+        // mã PIN)
         if (!request.anonymous()) {
             if (blankToNull(request.fullName()) == null) {
                 errors.put("fullName", "Vui lòng nhập họ và tên.");
@@ -190,7 +212,23 @@ public class SubmissionService {
         } else {
             // Kiểm tra TẤT CẢ tệp trước khi lưu bất kỳ tệp nào
             try {
-                files.forEach(file -> fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES));
+                files.forEach(
+                        // file -> {
+                        // if (file.getContentType().startsWith("image/")) {
+                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
+                        // MAX_FILE_BYTES_IMAGE);
+                        // } else if (file.getContentType().startsWith("video/")) {
+                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
+                        // MAX_FILE_BYTES_VIDEO);
+                        // } else if (file.getContentType().startsWith("audio/")) {
+                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
+                        // MAX_FILE_BYTES_AUDIO);
+                        // } else if (file.getContentType().startsWith("application/")) {
+                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
+                        // MAX_FILE_BYTES_DOCUMENT);
+                        // }
+                        // }
+                        file -> fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES));
             } catch (AppException ex) {
                 errors.put("files", ex.getMessage());
             }
@@ -205,7 +243,8 @@ public class SubmissionService {
     private EvidenceInfo saveEvidence(Submission submission, User author, MultipartFile file, List<String> storedUrls) {
         FileType fileType = fileTypeOf(file.getContentType());
 
-        // Tên file trên ổ đĩa bắt đầu bằng mã hồ sơ, ví dụ "KB-2026-0007-1a2b3c4d.jpg" (dễ tìm khi cần)
+        // Tên file trên ổ đĩa bắt đầu bằng mã hồ sơ, ví dụ "KB-2026-0007-1a2b3c4d.jpg"
+        // (dễ tìm khi cần)
         String url = fileStorageService.store(file, EVIDENCE_FOLDER, submission.getTrackingCode(),
                 FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES);
         storedUrls.add(url);
@@ -227,7 +266,10 @@ public class SubmissionService {
         return EvidenceInfo.from(evidence, objectMapper); // Cùng cách đọc với màn hình chi tiết hồ sơ
     }
 
-    /** Phân loại tệp theo phần đầu của Content-Type: "image/jpeg" -> IMAGE, "audio/mpeg" -> AUDIO... */
+    /**
+     * Phân loại tệp theo phần đầu của Content-Type: "image/jpeg" -> IMAGE,
+     * "audio/mpeg" -> AUDIO...
+     */
     private static FileType fileTypeOf(String contentType) {
         if (contentType.startsWith("image/")) {
             return FileType.IMAGE;
@@ -252,8 +294,10 @@ public class SubmissionService {
 
     /**
      * Gửi email biên nhận. Trả về false nếu gửi lỗi.
-     * TẠI SAO không báo lỗi cho người dùng? Hồ sơ đã lưu thành công; mã hồ sơ + PIN vẫn hiện trên màn hình,
-     * nên lỗi email không được làm hỏng cả lần gửi (frontend sẽ nhắc người dùng tự lưu lại mã).
+     * TẠI SAO không báo lỗi cho người dùng? Hồ sơ đã lưu thành công; mã hồ sơ + PIN
+     * vẫn hiện trên màn hình,
+     * nên lỗi email không được làm hỏng cả lần gửi (frontend sẽ nhắc người dùng tự
+     * lưu lại mã).
      */
     private boolean sendReceipt(String recipient, Submission submission, String pin) {
         try {
@@ -266,7 +310,10 @@ public class SubmissionService {
         }
     }
 
-    /** Nội dung email biên nhận. htmlEscape: tiêu đề do người dùng nhập, chặn chèn mã HTML vào email. */
+    /**
+     * Nội dung email biên nhận. htmlEscape: tiêu đề do người dùng nhập, chặn chèn
+     * mã HTML vào email.
+     */
     private String buildReceiptEmail(Submission submission, String pin) {
         return """
                 <div style="font-family:Segoe UI,Arial,sans-serif;max-width:520px;margin:auto;padding:24px;

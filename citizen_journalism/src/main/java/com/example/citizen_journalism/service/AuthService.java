@@ -42,7 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
-    /** Thông báo CHUNG khi sai tài khoản hoặc sai mật khẩu (SRS GB-04: không tiết lộ tài khoản có tồn tại hay không). */
+    /** Thông báo CHUNG khi sai tài khoản hoặc sai mật khẩu (không tiết lộ tài khoản có tồn tại hay không). */
     private static final String INVALID_CREDENTIALS = "Tài khoản hoặc mật khẩu không đúng.";
 
     private final UserRepository userRepository;

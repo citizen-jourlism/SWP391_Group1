@@ -147,21 +147,85 @@
   background: var(--gradient-primary);
 }
 
-.admin__nav-item.active svg {
-  color: var(--orange-light);
+
+/* Ô vuông chứa icon của từng mục; mục đang chọn thì ô chuyển sang màu cam */
+.admin__nav-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.2s, color 0.2s;
 }
 
-.admin__nav-item--danger:hover {
-  background: rgba(220, 38, 38, 0.12);
-  color: #fca5a5;
+.admin__nav-item.active .admin__nav-icon {
+  background: var(--gradient-primary);
+  color: #fff;
 }
 
+.admin__nav-item.active .admin__nav-icon svg {
+  color: #fff;
+}
+
+/* Số đếm cạnh mục menu (ví dụ số hồ sơ đang chờ) */
+.admin__count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--orange-strong);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Chân menu: thẻ tài khoản + nút đăng xuất */
 .admin__sidebar-footer {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-top: 16px;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 6px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin__account {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin__account strong {
+  display: block;
+  overflow: hidden;
+  color: #fff;
+  font-size: 13.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin__account small {
+  color: var(--admin-sidebar-text);
+  font-size: 12px;
+}
+
+.admin__logout {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--admin-sidebar-text);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.admin__logout:hover {
+  background: rgba(220, 38, 38, 0.16);
+  color: #fca5a5;
 }
 
 .admin__backdrop {
@@ -632,53 +696,43 @@
   background: var(--success-bg);
 }
 
-/* ---------- Hộp thoại đổi vai trò (ChangeRoleDialog) ---------- */
-.role-options {
+/* ---------- Trang chi tiết tài khoản (AdminUserDetail) ---------- */
+.user-detail__back {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.user-detail__back:hover {
+  color: var(--orange-strong);
+}
+
+/* Danh sách thông tin chỉ xem: nhãn bên trái, giá trị bên phải */
+.user-detail__facts {
   display: grid;
-  gap: 8px;
-  margin-bottom: 18px;
+  margin: 0 0 16px;
 }
 
-.role-option {
+.user-detail__facts > div {
   display: flex;
+  justify-content: space-between;
   gap: 12px;
-  align-items: flex-start;
-  padding: 12px 14px;
-  border: 1.5px solid var(--card-border);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.role-option:hover {
-  border-color: #b6c0d0;
-}
-
-.role-option.is-selected {
-  border-color: var(--orange);
-  background: #fff8f4;
-}
-
-.role-option input {
-  margin-top: 3px;
-  accent-color: var(--orange-strong);
-}
-
-.role-option strong {
-  display: block;
-  color: var(--navy-900);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--card-border);
   font-size: 14px;
 }
 
-.role-option em {
-  color: var(--orange-strong);
-  font-size: 12px;
-  font-style: normal;
+.user-detail__facts dt {
+  color: var(--muted);
 }
 
-.role-option small {
-  color: var(--muted);
-  font-size: 12.5px;
+.user-detail__facts dd {
+  margin: 0;
+  color: var(--navy-900);
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 /* ---------- Thông tin đăng nhập vừa tạo (CreateUserDialog) ---------- */

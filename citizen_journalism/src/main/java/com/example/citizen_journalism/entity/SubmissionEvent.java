@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 /**
- * NHẬT KÝ XỬ LÝ của một hồ sơ (SRS 4.1.2: "Timeline Log" - số bước, thời điểm, người thực hiện, mô tả).
+ * NHẬT KÝ XỬ LÝ của một hồ sơ (số bước, thời điểm, người thực hiện, mô tả).
  * Mỗi lần hồ sơ đổi trạng thái thì thêm 1 dòng (xem SubmissionEventService.record).
  *
  * Người gửi XEM ĐƯỢC toàn bộ bảng này khi tra cứu, nên:
@@ -46,7 +46,7 @@ public class SubmissionEvent extends BaseEntity {
 
     /**
      * Lời nhắn của toà soạn GỬI NGƯỜI DÂN (không bắt buộc), ví dụ khi đề nghị bổ sung:
-     * "Vui lòng gửi thêm ảnh chụp toàn cảnh khu vực". Hiện ở ô "Toà soạn đề nghị bổ sung" (SRS: Editorial Request Note).
+     * "Vui lòng gửi thêm ảnh chụp toàn cảnh khu vực". Hiện ở ô "Toà soạn đề nghị bổ sung".
      */
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;

@@ -5,7 +5,7 @@ import com.example.citizen_journalism.entity.Submission.ReportCategory;
 import com.example.citizen_journalism.entity.Submission.SubmissionStatus;
 import java.time.LocalDateTime;
 
-/** Một dòng trong danh sách "Hồ sơ đã gửi" (GET /api/submissions/mine). Chỉ gồm thông tin ngắn gọn. */
+/** Một dòng trong danh sách "Thông tin đã gửi" (GET /api/submissions/mine). Chỉ gồm thông tin ngắn gọn. */
 public record SubmissionSummary(
         String trackingCode,
         ReportCategory category,

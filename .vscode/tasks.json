@@ -1,0 +1,60 @@
+{
+  // Chạy dự án: nhấn Ctrl + Shift + B (hoặc Terminal > Run Build Task...)
+  // Tắt: bấm biểu tượng thùng rác ở khung terminal, hoặc Ctrl + Shift + P > "Tasks: Terminate Task"
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run All (Backend + Frontend)",
+      "dependsOn": ["Backend", "Frontend"],
+      "dependsOrder": "parallel",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Backend",
+      "type": "shell",
+      "command": ".\\mvnw.cmd spring-boot:run",
+      "options": { "cwd": "${workspaceFolder}/citizen_journalism" },
+      "isBackground": true,
+      "presentation": { "group": "dev", "panel": "dedicated", "reveal": "always", "clear": true },
+      "problemMatcher": {
+        "owner": "backend",
+        "pattern": { "regexp": "^__never_match__$" },
+        "background": {
+          "activatesOnStart": true,
+          "beginsPattern": "Scanning for projects|Restarting",
+          "endsPattern": "Started CitizenJournalismApplication|APPLICATION FAILED TO START|BUILD FAILURE"
+        }
+      }
+    },
+    {
+      "label": "Frontend",
+      "type": "shell",
+      // --open: tự mở http://localhost:5173 khi chạy xong.
+      // BROWSER: chỉ định Opera GX, để VS Code không mở bằng trình duyệt tích hợp của nó.
+      "command": "npm.cmd run dev -- --open",
+      "options": {
+        "cwd": "${workspaceFolder}/citizen_journalism/frontend",
+        "env": { "BROWSER": "${env:LOCALAPPDATA}\\Programs\\Opera GX\\opera.exe" }
+      },
+      "isBackground": true,
+      "presentation": { "group": "dev", "panel": "dedicated", "reveal": "always", "clear": true },
+      "problemMatcher": {
+        "owner": "frontend",
+        "pattern": { "regexp": "^__never_match__$" },
+        "background": {
+          "activatesOnStart": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "Local:|ready in"
+        }
+      }
+    },
+    {
+      "label": "Frontend: npm install",
+      "type": "shell",
+      "command": "npm.cmd install",
+      "options": { "cwd": "${workspaceFolder}/citizen_journalism/frontend" },
+      "problemMatcher": []
+    }
+  ]
+}

@@ -6,7 +6,7 @@ import '../../assets/styles/account.css'
 
 /**
  * KHUNG CHUNG cho các trang nội dung (không phải trang chủ, không phải đăng nhập/đăng ký):
- * Hồ sơ, Đổi mật khẩu, Gửi phản ánh, Hồ sơ đã gửi, Tra cứu hồ sơ (trang này không cần đăng nhập).
+ * Hồ sơ, Đổi mật khẩu, Gửi phản ánh, Thông tin đã gửi, Tra cứu hồ sơ (trang này không cần đăng nhập).
  * CSS: assets/styles/account.css.
  *
  * BỐ CỤC:

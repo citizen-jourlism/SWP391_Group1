@@ -78,7 +78,7 @@ public class Submission extends BaseEntity {
     @Column(name = "reveal_reason", columnDefinition = "TEXT")
     private String revealReason;
 
-    // ===== Các trường của FORM GỬI TIN / KHIẾU NẠI (SRS mục 4.1.1, xem SubmissionService.create) =====
+    // ===== Các trường của FORM GỬI TIN / KHIẾU NẠI (xem SubmissionService.create) =====
 
     /** Loại phản ánh người gửi tự chọn trên form (Tin nóng 24/7, Khiếu nại/Tố cáo...). Quyết định luôn cột "type". */
     @Enumerated(EnumType.STRING)
@@ -147,13 +147,14 @@ public class Submission extends BaseEntity {
     private LocalDateTime pinLockedUntil;
 
     /**
-     * Loại phản ánh trên form (SRS: Tin nóng 24/7, Khiếu nại/Tố cáo, Phóng sự điều tra, Ý kiến chuyên gia).
+     * Loại phản ánh người gửi chọn trên form (Tin nóng 24/7, Khiếu nại/Tố cáo, Phóng sự điều tra).
      *
      * submissionType: quy trình xử lý. Tin nóng đi theo luồng Tin nóng, các loại còn lại đi theo luồng
-     *                 tiếp nhận Khiếu nại (SRS 2.1.3: BTV kiểm tra giá trị báo chí...).
+     *                 tiếp nhận Khiếu nại (BTV kiểm tra giá trị báo chí...).
      * allowedRoles  : vai trò được chọn loại này.
      *   - Người dân (CITIZEN) chỉ gửi Tin nóng hoặc Khiếu nại / Tố cáo.
-     *   - Phóng sự điều tra: cộng tác viên, chuyên gia.  Ý kiến chuyên gia: chỉ chuyên gia.
+     *   - Chuyên gia (EXPERT) gửi Tin nóng, Khiếu nại; bài nghiên cứu của chuyên gia đi riêng (bảng research_articles).
+     *   - Phóng sự điều tra: chỉ cộng tác viên.
      * Muốn đổi quyền thì chỉ sửa ở đây: backend tự chặn (SubmissionService.validate) và frontend tự ẩn
      * các loại không được phép (nhận danh sách qua GET /api/submissions/options).
      */
@@ -162,8 +163,7 @@ public class Submission extends BaseEntity {
     public enum ReportCategory {
         HOT_NEWS(SubmissionType.HOT_NEWS, Set.of(User.Role.CITIZEN, User.Role.CONTRIBUTOR, User.Role.EXPERT)),
         COMPLAINT(SubmissionType.COMPLAINT, Set.of(User.Role.CITIZEN, User.Role.CONTRIBUTOR, User.Role.EXPERT)),
-        INVESTIGATION(SubmissionType.COMPLAINT, Set.of(User.Role.CONTRIBUTOR, User.Role.EXPERT)),
-        EXPERT_OPINION(SubmissionType.COMPLAINT, Set.of(User.Role.EXPERT));
+        INVESTIGATION(SubmissionType.COMPLAINT, Set.of(User.Role.CONTRIBUTOR));
 
         private final SubmissionType submissionType;
         private final Set<User.Role> allowedRoles;

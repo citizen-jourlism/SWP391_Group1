@@ -18,5 +18,8 @@ export const adminService = {
 
   createUser: (payload) => api.post('/admin/users', payload), // { fullName, email, phone, role, password }
   updateStatus: (userId, status) => api.patch(`/admin/users/${userId}/status`, { status }),
-  updateRole: (userId, role) => api.patch(`/admin/users/${userId}/role`, { role }),
+  getUser: (userId) => api.get(`/admin/users/${userId}`),
+  // Trả về mật khẩu tạm trong response.data (chỉ lần này); adminPassword = mật khẩu của chính admin
+  resetPassword: (userId, adminPassword) => api.post(`/admin/users/${userId}/reset-password`, { adminPassword }),
+  updateUser: (userId, payload) => api.put(`/admin/users/${userId}`, payload), // { fullName, phone, citizenId, address, dateOfBirth, role }
 }

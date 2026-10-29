@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * CHI TIẾT 1 ĐƠN cho Biên tập viên xét duyệt (SRS UC Editor 08: "Review the profile of a Citizen requesting to upgrade").
+ * CHI TIẾT 1 ĐƠN cho Biên tập viên xét duyệt.
  * Gồm nội dung đơn + HỒ SƠ người nộp (thông tin liên hệ, giấy tờ, điểm uy tín, số tin đã gửi).
  * Chỉ Biên tập viên xem được (API /api/editor/**).
  */

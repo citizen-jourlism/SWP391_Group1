@@ -55,7 +55,7 @@ import tools.jackson.databind.ObjectMapper;
  *   - review      : chuyển Phó Tổng biên tập phê duyệt, hoặc từ chối (kèm lý do)
  * Cả hai bên xem giấy tờ qua openDocument (giấy tờ tuỳ thân KHÔNG để công khai).
  *
- * ĐIỀU KIỆN ĐĂNG KÝ (SRS chỉ ghi "eligible Citizen", nhóm tự đặt cho hợp lý; ngưỡng chỉnh trong application.properties):
+ * ĐIỀU KIỆN ĐĂNG KÝ (ngưỡng chỉnh trong application.properties):
  *   tài khoản người dân · hồ sơ có CCCD, ngày sinh, địa chỉ · đủ app.contributor.min-age tuổi ·
  *   điểm uy tín >= app.contributor.min-reputation · không có đơn khác đang chờ xét.
  */
@@ -155,7 +155,7 @@ public class ContributorApplicationService {
                 .experience(request.experience().trim())
                 .documents(objectMapper.writeValueAsString(stored))
                 .build());
-        user.setUpgradeStatus(User.UpgradeStatus.PENDING); // Cột tóm tắt trên bảng users (theo thiết kế CSDL trong SRS)
+        user.setUpgradeStatus(User.UpgradeStatus.PENDING); // Cột tóm tắt trạng thái nâng cấp trên bảng users
         return toView(application);
     }
 

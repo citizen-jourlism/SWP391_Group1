@@ -127,7 +127,7 @@
 .category-card__icon--complaint { background: var(--danger-bg); color: var(--danger); }
 .category-card__icon--hot-news { background: #fff1ea; color: var(--orange-strong); }
 .category-card__icon--investigation { background: var(--info-bg); color: var(--blue); }
-.category-card__icon--expert-opinion { background: #f3efff; color: #7c3aed; }
+.category-card__icon--research { background: #f3efff; color: #7c3aed; }
 
 .category-card__text strong {
   display: block;
@@ -141,6 +141,25 @@
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--muted);
+}
+
+/* Thẻ "Bài nghiên cứu" (chỉ chuyên gia): là link sang trang khác nên có mũi tên thay cho dấu tick */
+.category-card--link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.category-card--link:hover {
+  border-color: #a78bfa;
+  background: #faf7ff;
+}
+
+.category-card__arrow {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: #7c3aed;
+  transform: translateY(-50%) rotate(-90deg);
 }
 
 /* Dấu tick tròn ở góc phải trên */

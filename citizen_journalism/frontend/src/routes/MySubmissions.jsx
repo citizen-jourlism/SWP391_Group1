@@ -15,7 +15,7 @@ import '../assets/styles/tracking.css'
 
 /*
  * TRANG "HỒ SƠ ĐÃ GỬI" — /account/submissions, chỉ người dân / CTV / chuyên gia (ProtectedRoute trong App.jsx).
- * Mở từ: menu tài khoản -> "Hồ sơ đã gửi", trang Tra cứu, biên nhận sau khi gửi.
+ * Mở từ: menu tài khoản -> "Thông tin đã gửi", trang Tra cứu, biên nhận sau khi gửi.
  * Dữ liệu: GET /api/submissions/mine?page=&size=10 (mới nhất trước).
  *
  * Mỗi hồ sơ là một thẻ: loại phản ánh, tiêu đề, mã hồ sơ, nhãn trạng thái, thời gian gửi.
@@ -28,7 +28,7 @@ import '../assets/styles/tracking.css'
 const PAGE_SIZE = 10
 
 function MySubmissions() {
-  useDocumentTitle('Hồ sơ đã gửi')
+  useDocumentTitle('Thông tin đã gửi')
   const [page, setPage] = useState(0)
   const [result, setResult] = useState({ page: null, data: null, error: '' })
 
@@ -47,7 +47,7 @@ function MySubmissions() {
   const data = result.data
 
   return (
-    <AccountLayout title="Hồ sơ đã gửi" subtitle="Theo dõi tiến độ xử lý các tin nóng, khiếu nại bạn đã gửi tới toà soạn.">
+    <AccountLayout title="Thông tin đã gửi" subtitle="Theo dõi tiến độ xử lý các tin nóng, khiếu nại bạn đã gửi tới toà soạn.">
       <div className="my-subs__toolbar">
         <p>{data && `Bạn có ${data.totalItems} hồ sơ`}</p>
         <Button to="/submit" className="btn--sm">

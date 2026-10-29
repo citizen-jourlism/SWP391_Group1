@@ -3,7 +3,7 @@ package com.example.citizen_journalism.dto.contributor;
 import java.util.List;
 
 /**
- * KẾT QUẢ KIỂM TRA ĐIỀU KIỆN đăng ký Cộng tác viên (SRS: "eligible Citizen").
+ * KẾT QUẢ KIỂM TRA ĐIỀU KIỆN đăng ký Cộng tác viên.
  * Frontend hiện thành danh sách ✓ / ✗ để người dân biết còn thiếu gì.
  *
  * @param eligible true khi MỌI điều kiện đều đạt

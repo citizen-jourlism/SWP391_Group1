@@ -316,6 +316,18 @@
   border-color: #f3b4b4;
 }
 
+/* ---------- Nhãn nhỏ dạng thẻ (lĩnh vực của đơn CTV, bài nghiên cứu) ---------- */
+.tag {
+  display: inline-flex;
+  white-space: nowrap; /* "Đời sống" không bị gãy thành 2 dòng trong bảng hẹp */
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff1ea;
+  color: var(--orange-strong);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
 /* ---------- Nhãn màu (Badge) ---------- */
 .badge {
   display: inline-flex;

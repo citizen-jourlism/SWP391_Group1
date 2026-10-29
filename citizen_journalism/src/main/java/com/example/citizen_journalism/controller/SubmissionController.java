@@ -33,7 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
  *   POST /api/submissions         -> gửi form (multipart/form-data, gồm 2 phần):
  *                                      - "data" : JSON các ô chữ (CreateSubmissionRequest)
  *                                      - "files": các tệp tư liệu (1..10 tệp)
- *   GET  /api/submissions/mine?page=&size=  -> danh sách "Hồ sơ đã gửi" của tôi (mới nhất trước)
+ *   GET  /api/submissions/mine?page=&size=  -> danh sách "Thông tin đã gửi" của tôi (mới nhất trước)
  *   GET  /api/submissions/mine/{mã hồ sơ}   -> chi tiết + nhật ký xử lý 1 hồ sơ của tôi (không cần PIN)
  *
  * TẠI SAO multipart mà không phải JSON? JSON không chở được file; multipart cho phép gửi

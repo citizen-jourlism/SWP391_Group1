@@ -3,7 +3,7 @@
  * Giá trị (value) khớp với enum ở backend: Submission.ReportCategory, Submission.ReporterRelationship, Evidence.FileType.
  */
 
-/** 4 loại phản ánh theo SRS 4.1.1. `slug` dùng trên đường dẫn, ví dụ /submit?type=hot-news. */
+/** Các loại phản ánh. `slug` dùng trên đường dẫn, ví dụ /submit?type=hot-news. */
 export const REPORT_CATEGORIES = [
   {
     value: 'COMPLAINT',
@@ -25,13 +25,6 @@ export const REPORT_CATEGORIES = [
     label: 'Phóng sự điều tra',
     icon: 'search',
     description: 'Gợi ý vụ việc kéo dài, phức tạp cần toà soạn vào cuộc điều tra.',
-  },
-  {
-    value: 'EXPERT_OPINION',
-    slug: 'expert-opinion',
-    label: 'Ý kiến chuyên gia',
-    icon: 'award',
-    description: 'Góc nhìn, phân tích chuyên môn về một vấn đề dân sinh.',
   },
 ]
 
@@ -71,7 +64,7 @@ export const MB = 1024 * 1024
 
 /**
  * Các GIAI ĐOẠN xử lý một hồ sơ, hiển thị dạng thanh tiến trình (components/submission/ProcessSteps.jsx).
- * Theo SRS 4.1.2: Tiếp nhận -> Sàng lọc -> Biên tập viên -> Xác minh thực địa -> Lãnh đạo duyệt (+ Đăng tải).
+ * Tiếp nhận -> Sàng lọc -> Biên tập viên -> Xác minh thực địa -> Lãnh đạo duyệt (+ Đăng tải).
  */
 export const PROCESS_STAGES = [
   { title: 'Tiếp nhận', description: 'Hồ sơ đã vào hệ thống.' },
@@ -114,6 +107,31 @@ export const ACTOR_LABELS = {
   DEPUTY_EIC: 'Phó Tổng biên tập',
   EIC: 'Tổng biên tập',
 }
+
+/**
+ * Tách lời nhắn "đề nghị bổ sung" của toà soạn thành phần mở đầu + các MỤC đánh số.
+ * Biên tập viên thường viết dạng "1. ...", "2) ..." mỗi mục một dòng; dòng không đánh số nối vào mục trước
+ * (hoặc vào phần mở đầu nếu chưa có mục nào). Không có dòng đánh số -> items rỗng, cả lời nhắn nằm trong intro.
+ * Dùng ở: RequestNoteCard (hiện danh sách mục) và SupplementForm (Chuyên gia trả lời từng mục).
+ *
+ * Ví dụ: "Vui lòng bổ sung:\n1. Địa chỉ\n2. Ảnh hiện trường" -> { intro: 'Vui lòng bổ sung:', items: ['Địa chỉ', 'Ảnh hiện trường'] }
+ */
+export const splitRequestNote = (note = '') => {
+  const intro = []
+  const items = []
+  for (const line of note.split(/\r?\n/)) {
+    const text = line.trim()
+    if (!text) continue
+    const match = text.match(/^(\d+)[.)]\s+(.*)$/)
+    if (match) items.push(match[2])
+    else if (items.length) items[items.length - 1] += `\n${text}`
+    else intro.push(text)
+  }
+  return { intro: intro.join('\n'), items }
+}
+
+/** Giới hạn của form "Bổ sung thông tin" (SRS 4.1.2: ô thông tin bổ sung tối đa 2000 ký tự). */
+export const SUPPLEMENT_LIMITS = { infoMax: 2000, addressMax: 250, maxSources: 10, sourceTitleMax: 250, sourceUrlMax: 500 }
 
 /** Mã hồ sơ dạng KB-2026-0001 (khớp cách backend sinh mã trong SubmissionService.create). */
 export const TRACKING_CODE_REGEX = /^KB-\d{4}-\d{4,}$/i

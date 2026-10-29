@@ -15,7 +15,7 @@ import { formatDate, formatDateTime } from '../../lib/format'
 import { editorService } from '../../services/editorService'
 
 /*
- * XÉT DUYỆT 1 ĐƠN ĐĂNG KÝ CTV — /editor/applications/:id (SRS UC Editor 08).
+ * XÉT DUYỆT 1 ĐƠN ĐĂNG KÝ CTV — /editor/applications/:id.
  * Dữ liệu: GET /api/editor/applications/{id} -> { application, applicant }.
  *
  * BỐ CỤC:

@@ -12,7 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 /**
  * REPOSITORY cho bảng "submissions" (tin nóng, khiếu nại, bài viết...).
- * Dùng ở: AdminService (đếm), SubmissionService (gửi mới), SubmissionTrackingService (tra cứu, "Hồ sơ đã gửi").
+ * Dùng ở: AdminService (đếm), SubmissionService (gửi mới), SubmissionTrackingService (tra cứu, "Thông tin đã gửi").
  * Spring tự viết câu SQL dựa vào TÊN hàm (ví dụ findByTrackingCode -> WHERE tracking_code = ?).
  */
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {

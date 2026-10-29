@@ -7,9 +7,9 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 /**
- * ĐƠN ĐĂNG KÝ LÀM CỘNG TÁC VIÊN (SRS: "Register as a Contributor" + "Track Contributor Application").
+ * ĐƠN ĐĂNG KÝ LÀM CỘNG TÁC VIÊN (nộp đơn + theo dõi đơn).
  *
- * QUY TRÌNH (SRS 2.3 + UC Editor "Review Citizen Upgrade Request", UC Phó TBT "Approve Citizen Upgrade Request"):
+ * QUY TRÌNH 2 cấp duyệt:
  *   1. Người dân nộp đơn                                  -> PENDING_EDITOR
  *   2. Biên tập viên xem hồ sơ: chuyển lên / từ chối        -> PENDING_DEPUTY / REJECTED
  *   3. Phó Tổng biên tập phê duyệt / từ chối               -> APPROVED (đổi vai trò thành CTV) / REJECTED

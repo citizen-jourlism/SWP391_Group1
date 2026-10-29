@@ -23,7 +23,7 @@ public final class ValidationRules {
     public static final String CITIZEN_ID_MESSAGE = "Số CCCD gồm đúng 12 chữ số.";
 
     /**
-     * Giấy tờ tuỳ thân trên form gửi tin / khiếu nại (SRS 4.1.1): CMND cũ 9 số HOẶC CCCD 12 số.
+     * Giấy tờ tuỳ thân trên form gửi tin / khiếu nại: CMND cũ 9 số HOẶC CCCD 12 số.
      * Khác CITIZEN_ID_REGEX ở trên (hồ sơ tài khoản chỉ nhận CCCD 12 số).
      */
     public static final String PERSONAL_ID_REGEX = "^(\\d{9}|\\d{12})$";

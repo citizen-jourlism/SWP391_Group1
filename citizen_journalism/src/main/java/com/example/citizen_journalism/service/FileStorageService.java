@@ -43,7 +43,7 @@ public class FileStorageService {
             "image/gif", "gif");
 
     /**
-     * Các loại TƯ LIỆU / BẰNG CHỨNG cho phép khi gửi tin, khiếu nại (SRS 4.1.1: JPG, PNG, MP4, MP3, PDF).
+     * Các loại TƯ LIỆU / BẰNG CHỨNG cho phép khi gửi tin, khiếu nại: JPG, PNG, MP4, MP3, PDF.
      * MP3 có 2 cách khai báo Content-Type tuỳ trình duyệt ("audio/mpeg" là chuẩn, "audio/mp3" là cách cũ).
      */
     public static final Map<String, String> EVIDENCE_TYPES = Map.of(

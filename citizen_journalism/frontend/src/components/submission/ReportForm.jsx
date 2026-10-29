@@ -14,7 +14,7 @@ import { createValidator, nowLocalIso, rules } from '../../lib/validators'
 import { submissionService } from '../../services/submissionService'
 
 /*
- * FORM GỬI TIN / KHIẾU NẠI — đúng các trường của SRS mục 4.1.1. Nằm trong trang routes/SubmitReport.jsx.
+ * FORM GỬI TIN / KHIẾU NẠI. Nằm trong trang routes/SubmitReport.jsx.
  * CSS: assets/styles/submit.css.
  *
  * 4 PHẦN:

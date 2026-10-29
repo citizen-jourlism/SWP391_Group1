@@ -15,7 +15,7 @@ const FORMAT_LABELS = {
 }
 
 /**
- * KHU TẢI TỆP dùng chung: tư liệu của form gửi tin (SRS 4.1.1) và giấy tờ của đơn đăng ký Cộng tác viên.
+ * KHU TẢI TỆP dùng chung: tư liệu của form gửi tin và giấy tờ của đơn đăng ký Cộng tác viên.
  * Dùng ở: components/submission/ReportForm.jsx, components/contributor/ContributorApplyForm.jsx.
  * CSS: assets/styles/submit.css (mục "Tải tư liệu").
  *

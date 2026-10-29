@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 /**
  * Sinh mã người dùng dạng 2 chữ cái + 4 số theo vai trò, ví dụ CT0001 (Người dân), AD0001 (Admin).
  *
- * TẠI SAO cần? Theo tài liệu SRS, cột users.id là VARCHAR(10) dạng "HE1941", không phải số tự tăng,
+ * TẠI SAO cần? Theo thiết kế CSDL của nhóm, cột users.id là VARCHAR(10) dạng "HE1941", không phải số tự tăng,
  * nên database không tự sinh được -> mình phải tự sinh trước khi lưu.
  * Tiền tố của từng vai trò khai báo trong enum User.Role.
  *

@@ -25,6 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
  *      /api/submissions/**                         -> CITIZEN, CONTRIBUTOR, EXPERT (gửi tin / khiếu nại)
  *      /api/contributor-applications/**            -> CITIZEN, CONTRIBUTOR (đơn đăng ký Cộng tác viên)
  *      /api/editor/**                              -> chỉ EDITOR (bàn làm việc Biên tập viên)
+ *      /api/research/**                            -> chỉ EXPERT (bài nghiên cứu, bản nháp)
  *   3. /api/** còn lại                              -> phải đăng nhập (có token hợp lệ)
  *   4. Mọi thứ khác (file tĩnh...)                  -> mở, TRỪ /uploads/applications/** (giấy tờ tuỳ thân) bị chặn
  * Thêm API mới cần phân quyền theo vai trò: thêm 1 dòng .requestMatchers(...).hasRole(...) TRƯỚC dòng số 3.
@@ -64,6 +65,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/submissions/**").hasAnyRole("CITIZEN", "CONTRIBUTOR", "EXPERT")
                 // Đăng ký / theo dõi đơn Cộng tác viên: người dân (nộp đơn) và CTV (xem lại đơn cũ)
                 .requestMatchers("/api/contributor-applications/**").hasAnyRole("CITIZEN", "CONTRIBUTOR")
+                // Bài nghiên cứu + bản nháp: chỉ Chuyên gia
+                .requestMatchers("/api/research/**", "/api/research").hasRole("EXPERT")
                 // Bàn làm việc Biên tập viên
                 .requestMatchers("/api/editor/**").hasRole("EDITOR")
                 .requestMatchers("/api/**").authenticated()

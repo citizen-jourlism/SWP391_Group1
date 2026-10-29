@@ -17,7 +17,7 @@ import { submissionService } from '../services/submissionService'
 import '../assets/styles/tracking.css'
 
 /*
- * TRANG TRA CỨU HỒ SƠ — đường dẫn /track, KHÔNG cần đăng nhập (SRS 4.1.2: tra cứu bằng Tracking Code + PIN 6 số).
+ * TRANG TRA CỨU HỒ SƠ — đường dẫn /track, KHÔNG cần đăng nhập (tra cứu bằng mã hồ sơ + PIN 6 số).
  * Mở từ: menu "Tra cứu hồ sơ" trên thanh đầu trang, ô tra cứu ở trang chủ (/track?code=KB-2026-0001 -> điền sẵn mã).
  *
  * LUỒNG:
@@ -25,7 +25,7 @@ import '../assets/styles/tracking.css'
  *   2. POST /api/tracking. Đúng -> hiện SubmissionDetail (tiến độ, nhật ký xử lý, nội dung đã gửi).
  *   3. Sai -> báo "Mã hồ sơ hoặc mã PIN không đúng", xoá PIN để nhập lại.
  *      Sai 5 lần liên tiếp -> backend khoá tra cứu hồ sơ đó 15 phút (chống dò PIN).
- * Người dân đã đăng nhập thấy thêm lối tắt sang "Hồ sơ đã gửi" (xem mọi hồ sơ của mình, không cần PIN).
+ * Người dân đã đăng nhập thấy thêm lối tắt sang "Thông tin đã gửi" (xem mọi hồ sơ của mình, không cần PIN).
  */
 
 const validate = createValidator({
@@ -145,7 +145,7 @@ function TrackSubmission() {
               <Link to="/account/submissions" className="track-help__shortcut">
                 <Icon name="fileText" size={20} />
                 <span>
-                  <strong>Xem tất cả hồ sơ của bạn</strong>
+                  <strong>Xem tất cả thông tin bạn đã gửi</strong>
                   <small>Bạn đang đăng nhập, không cần nhập PIN.</small>
                 </span>
                 <Icon name="chevronDown" size={18} className="track-help__arrow" />

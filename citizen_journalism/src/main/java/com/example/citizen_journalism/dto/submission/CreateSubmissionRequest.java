@@ -13,7 +13,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 /**
- * Dữ liệu chữ của FORM GỬI TIN / KHIẾU NẠI (SRS mục 4.1.1). Các TỆP tư liệu gửi riêng ở phần "files"
+ * Dữ liệu chữ của FORM GỬI TIN / KHIẾU NẠI. Các TỆP tư liệu gửi riêng ở phần "files"
  * của request multipart (xem SubmissionController).
  *
  * Quy tắc trong annotation khớp với frontend (src/routes/SubmitReport.jsx), sửa bên này nhớ sửa bên kia.

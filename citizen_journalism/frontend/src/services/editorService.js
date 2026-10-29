@@ -13,6 +13,34 @@ export const editorService = {
   // ----- Hàng đợi tin bài -----
   listSubmissions: (params) => api.get('/editor/submissions', { params: cleanParams(params) }),
   getSubmission: (code) => api.get(`/editor/submissions/${encodeURIComponent(code)}`),
+  /** Hàng đợi gộp: hồ sơ phản ánh + bài nghiên cứu Chuyên gia đã nộp. type: HOT_NEWS | COMPLAINT | INVESTIGATION | RESEARCH */
+  listQueue: (params) => api.get('/editor/queue', { params: cleanParams(params) }),
+  /** Danh sách lĩnh vực cho ô lọc "Lĩnh vực" của hàng đợi. */
+  listQueueFields: () => api.get('/editor/queue/fields'),
+  /** Chi tiết 1 bài nghiên cứu Chuyên gia đã nộp: { article, author }. */
+  getResearch: (id) => api.get(`/editor/research/${id}`),
+  /** Gửi bản chỉnh sửa { title, abstractText, keywords, content } cho Chuyên gia duyệt. */
+  requestRevision: (id, values) => api.post(`/editor/research/${id}/revision-requests`, values),
+  /** Duyệt bài nghiên cứu, chuyển Phó TBT phụ trách lĩnh vực. values = { conflict, mention, note } (điểm do backend tính). */
+  approveResearch: (id, values) => api.post(`/editor/research/${id}/approve`, values),
+  /** Từ chối bài nghiên cứu (bài dừng xử lý), reason bắt buộc. */
+  rejectResearch: (id, reason) => api.post(`/editor/research/${id}/reject`, { reason }),
+  /** Trả lời trong khung trao đổi của 1 yêu cầu chỉnh sửa đang chờ (revisionId = id yêu cầu, không phải id bài). */
+  commentRevision: (revisionId, content) => api.post(`/editor/research/revisions/${revisionId}/comments`, { content }),
+
+  // ----- Biên tập bài viết: bài nghiên cứu đã nộp + tình trạng biên tập -----
+  /** params: { editStatus: NOT_EDITED | PENDING | ACCEPTED | REJECTED, field, q (tìm trong tiêu đề), page, size } */
+  listArticles: (params) => api.get('/editor/articles', { params: cleanParams(params) }),
+
+  // ----- Kiểm tra tin trùng (Check for Duplication) — backend CHƯA có, xem routes/editor/EditorDuplicateCheck.jsx -----
+  getDuplicates: (code) => api.get(`/editor/submissions/${encodeURIComponent(code)}/duplicates`),
+  /** Gộp hồ sơ `code` vào hồ sơ gốc `originalCode` (submissions.duplicate_submission_id = id hồ sơ gốc). */
+  mergeDuplicate: (code, originalCode, note) =>
+    api.post(`/editor/submissions/${encodeURIComponent(code)}/duplicates/merge`, { originalCode, note }),
+  /** Xác nhận không trùng: bỏ qua gợi ý của AI, hồ sơ xử lý như sự việc mới. */
+  dismissDuplicates: (code, note) => api.post(`/editor/submissions/${encodeURIComponent(code)}/duplicates/dismiss`, { note }),
+  /** Hoàn tác gộp: hồ sơ quay lại hàng đợi như trước khi gộp. */
+  unmergeDuplicate: (code) => api.post(`/editor/submissions/${encodeURIComponent(code)}/duplicates/unmerge`),
 
   // ----- Đơn đăng ký Cộng tác viên -----
   listApplications: (params) => api.get('/editor/applications', { params: cleanParams(params) }),

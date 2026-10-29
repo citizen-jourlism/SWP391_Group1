@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import ChangeRoleDialog from '../../components/admin/ChangeRoleDialog'
+import { useNavigate } from 'react-router-dom'
 import CreateUserDialog from '../../components/admin/CreateUserDialog'
 import UserCell from '../../components/admin/UserCell'
 import Alert from '../../components/ui/Alert'
@@ -21,7 +21,8 @@ import { adminService } from '../../services/adminService'
  * CHỨC NĂNG:
  *   - Tìm theo tên / email / mã / SĐT (chờ người dùng ngừng gõ mới tìm, xem useDebouncedValue)
  *   - Lọc theo vai trò, trạng thái; phân trang 10 dòng/trang
- *   - Tạo tài khoản nội bộ (CreateUserDialog), đổi vai trò (ChangeRoleDialog), khoá / mở khoá (ConfirmDialog)
+ *   - Tạo tài khoản nội bộ (CreateUserDialog), khoá / mở khoá (ConfirmDialog)
+ *   - Nút sửa -> trang chi tiết /admin/users/:id (AdminUserDetail: xem đủ thông tin, sửa thông tin + vai trò)
  *   - Hàng của tài khoản quản trị bị khoá thao tác (hệ thống chỉ có 1 admin, không được tự khoá mình)
  *
  * CÁCH TẢI DỮ LIỆU: mọi điều kiện tìm kiếm gom vào `queryKey`. queryKey đổi -> useEffect gọi API.
@@ -33,6 +34,7 @@ const ROLE_FILTERS = Object.entries(ROLE_LABELS).map(([value, label]) => ({ valu
 const STATUS_FILTERS = Object.entries(STATUS_INFO).map(([value, info]) => ({ value, label: info.label }))
 
 function AdminUsers() {
+  const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
@@ -43,7 +45,6 @@ function AdminUsers() {
   const [result, setResult] = useState({ key: null, data: null, error: '' })
   const [notice, setNotice] = useState('')
   const [creating, setCreating] = useState(false)
-  const [roleTarget, setRoleTarget] = useState(null) // Tài khoản đang đổi vai trò
   const [statusTarget, setStatusTarget] = useState(null) // Tài khoản đang khoá / mở khoá
 
   const queryKey = JSON.stringify({ keyword: debouncedKeyword, role, status, page, reloadToken })
@@ -166,7 +167,7 @@ function AdminUsers() {
                       ) : (
                         // Nút dạng icon cho gọn bảng; title = chú thích hiện khi rê chuột, aria-label = tên cho trình đọc màn hình
                         <div className="row-actions">
-                          <button type="button" title="Đổi vai trò" aria-label={`Đổi vai trò ${user.fullName}`} onClick={() => setRoleTarget(user)}>
+                          <button type="button" title="Xem / sửa tài khoản" aria-label={`Xem / sửa ${user.fullName}`} onClick={() => navigate(`/admin/users/${user.id}`)}>
                             <Icon name="edit" size={16} />
                           </button>
                           <button
@@ -196,12 +197,6 @@ function AdminUsers() {
         open={creating}
         onClose={() => setCreating(false)}
         onCreated={(user) => afterChange(`Đã tạo tài khoản ${user.id} - ${user.fullName}.`)}
-      />
-      <ChangeRoleDialog
-        key={roleTarget?.id}
-        user={roleTarget}
-        onClose={() => setRoleTarget(null)}
-        onChanged={(_user, message) => afterChange(message)}
       />
       <ConfirmDialog
         open={Boolean(statusTarget)}

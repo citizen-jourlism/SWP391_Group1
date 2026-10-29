@@ -94,7 +94,7 @@ function SubmissionReceipt({ receipt, onNew }) {
           <Icon name="plus" size={16} />
           Gửi thông tin khác
         </Button>
-        {/* Mở trang theo dõi của chính hồ sơ này (trong "Hồ sơ đã gửi", không cần nhập PIN) */}
+        {/* Mở trang theo dõi của chính hồ sơ này (trong "Thông tin đã gửi", không cần nhập PIN) */}
         <Button to={`/account/submissions/${receipt.trackingCode}`}>
           <Icon name="activity" size={16} />
           Theo dõi hồ sơ

@@ -25,8 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * API ĐĂNG KÝ + THEO DÕI ĐƠN CỘNG TÁC VIÊN của người đang đăng nhập (SRS: Register as a Contributor,
- * Track Contributor Application). Người dân và CTV gọi được (SecurityConfig); chỉ người dân mới nộp được đơn
+ * API ĐĂNG KÝ + THEO DÕI ĐƠN CỘNG TÁC VIÊN của người đang đăng nhập.
+ * Người dân và CTV gọi được (SecurityConfig); chỉ người dân mới nộp được đơn
  * (service kiểm tra điều kiện). Mọi thao tác chỉ trên đơn CỦA CHÍNH MÌNH (mã người dùng lấy từ token).
  *
  *   GET  /api/contributor-applications/me                       -> điều kiện + đơn hiện tại + lịch sử + dữ liệu form

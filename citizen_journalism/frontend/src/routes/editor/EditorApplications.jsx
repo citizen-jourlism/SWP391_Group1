@@ -9,10 +9,10 @@ import { useAsyncData } from '../../hooks/useAsyncData'
 import { APPLICATION_STATUS } from '../../lib/contributor'
 import { formatDateTime } from '../../lib/format'
 import { editorService } from '../../services/editorService'
-import '../../assets/styles/contributor.css' // Nhãn lĩnh vực (.tag)
+import '../../assets/styles/contributor.css' // Hàng nhãn lĩnh vực (.app-facts__tags)
 
 /*
- * DANH SÁCH ĐƠN ĐĂNG KÝ CỘNG TÁC VIÊN — /editor/applications (SRS UC Editor 08: "Review Citizen Upgrade Request").
+ * DANH SÁCH ĐƠN ĐĂNG KÝ CỘNG TÁC VIÊN — /editor/applications.
  * Dữ liệu: GET /api/editor/applications?status=&page=. Bấm 1 đơn -> /editor/applications/:id để xét duyệt.
  *
  * Các thẻ lọc theo trạng thái. Mặc định "Chờ xét" (đơn nộp trước hiện trước, để xét theo thứ tự).

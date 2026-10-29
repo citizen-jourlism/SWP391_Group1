@@ -3,7 +3,7 @@ import Icon from '../../components/ui/Icon'
 
 /**
  * TRANG GIỚI THIỆU CHỨC NĂNG SẮP CÓ trong bàn Biên tập viên (các mục có nhãn "Sắp có" ở menu).
- * Mỗi trang mô tả trước chức năng sẽ làm (theo use case của Editor trong SRS) và các nút thao tác dự kiến
+ * Mỗi trang mô tả trước chức năng sẽ làm và các nút thao tác dự kiến
  * (đang khoá) -> nhóm thống nhất được giao diện trước, sau này chỉ cần nối API.
  *
  * Props: page = khoá trong PLANNED_PAGES (App.jsx truyền vào cho từng đường dẫn).
@@ -21,7 +21,6 @@ const PLANNED_PAGES = {
       'Từ chối nhanh tin rác / nội dung không phù hợp',
     ],
     actions: ['Gộp tin trùng', 'Đánh dấu tin rác'],
-    useCases: 'UC Editor 03, 04, 05',
   },
   assignments: {
     icon: 'mapPin',
@@ -34,7 +33,6 @@ const PLANNED_PAGES = {
       'Xem báo cáo hiện trường và tư liệu Cộng tác viên gửi về',
     ],
     actions: ['Tạo nhiệm vụ', 'Giao cho CTV'],
-    useCases: 'UC Editor 12',
   },
   articles: {
     icon: 'edit',
@@ -47,7 +45,6 @@ const PLANNED_PAGES = {
       'Trình Phó TBT (mức thường) hoặc Tổng biên tập (tin nóng, nhạy cảm)',
     ],
     actions: ['Soạn bài mới', 'Trình duyệt'],
-    useCases: 'UC Editor 06, 11, 13',
   },
   members: {
     icon: 'shield',
@@ -59,7 +56,6 @@ const PLANNED_PAGES = {
       'Cảnh cáo, trừ điểm, gắn cờ hoặc đề xuất khoá tài khoản vi phạm',
     ],
     actions: ['Gửi cảnh cáo', 'Trừ điểm uy tín'],
-    useCases: 'UC Editor 09, 10',
   },
 }
 
@@ -73,7 +69,7 @@ function EditorPlanned({ page }) {
           <Icon name={info.icon} size={28} />
         </span>
         <div>
-          <span className="planned__badge">Đang phát triển · {info.useCases}</span>
+          <span className="planned__badge">Đang phát triển</span>
           <h2>{info.title}</h2>
           <p>{info.description}</p>
         </div>

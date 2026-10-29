@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * Các LĨNH VỰC người đăng ký Cộng tác viên có thể chọn (lĩnh vực am hiểu / muốn đưa tin).
- * 5 lĩnh vực đầu theo chuyên mục trong SRS (bảng categories), thêm vài lĩnh vực dân sinh hay gặp.
+ * 5 lĩnh vực đầu trùng các chuyên mục của toà soạn (bảng categories), thêm vài lĩnh vực dân sinh hay gặp.
  *
  * Nguồn DUY NHẤT: backend dùng để kiểm tra giá trị gửi lên, frontend nhận danh sách qua
  * GET /api/contributor-applications/me (giống cách làm với VietnamProvinces).

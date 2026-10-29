@@ -1,0 +1,98 @@
+/* ===== KIỂM TRA TIN TRÙNG (routes/editor/EditorDuplicateCheck.jsx + components/editor/DuplicateSide.jsx) =====
+ * Màn hình ghép từ class CÓ SẴN của app:
+ *   - Khung, thẻ số liệu, ô lựa chọn, thanh %  : admin.css (.admin-panel, .stat-card, .role-option, .role-bars__*)
+ *   - Bố cục xét duyệt                          : editor.css (.desk-*, .review-grid, .applicant, .review-box)
+ *   - Đầu hồ sơ, thông tin, nội dung            : tracking.css (.detail-head__*, .detail-facts, .detail-content)
+ *   - Danh sách tệp                             : submit.css (.evidence-list); hàng nhãn: contributor.css (.app-facts__tags)
+ *   - Nhãn, thông báo, màn kết quả, ô nhập      : ui.css (.badge, .alert, .result, .field, .btn)
+ * File này CHỈ thêm phần chưa có trong app: tô vàng đoạn giống nhau, 2 cột so sánh, ResultView đặt trong khối trắng.
+ * Màu lấy từ design tokens trong src/index.css.
+ */
+
+/* Tiêu đề hồ sơ: cỡ chữ gần .detail-head h2 (tracking.css) */
+.dup-title {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+/* Ô hồ sơ gợi ý bên trong .role-option */
+.dup-candidate {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dup-candidate .role-bars__track {
+  width: 100%;
+  height: 6px;
+}
+
+/* Đoạn AI thấy giống nhau */
+.dup-mark {
+  padding: 0 2px;
+  border-radius: 3px;
+  background: #fde68a;
+  color: inherit;
+}
+
+/* Hai cột so sánh: hồ sơ đang xét | hồ sơ gợi ý */
+.dup-sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dup-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dup-side + .dup-side {
+  padding-left: 16px;
+  border-left: 1px solid var(--admin-line);
+}
+
+.dup-side h3 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+/* Nhãn "Giống" nằm cuối dòng tệp */
+.dup-side .evidence-list li > .badge {
+  margin-left: auto;
+}
+
+/* ResultView đặt trong khối trắng: thu hẹp lại, nút xếp ngang */
+.dup-result {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px 0;
+}
+
+.dup-result .result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ---------- Màn hình hẹp ---------- */
+@media (max-width: 760px) {
+  .dup-sides {
+    grid-template-columns: 1fr;
+  }
+
+  .dup-side + .dup-side {
+    padding: 16px 0 0;
+    border-top: 1px solid var(--admin-line);
+    border-left: 0;
+  }
+}

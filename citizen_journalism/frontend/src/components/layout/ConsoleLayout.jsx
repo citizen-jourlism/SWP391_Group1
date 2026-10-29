@@ -14,14 +14,15 @@ import '../../assets/styles/admin.css'
  *
  *   ┌────────────┬──────────────────────────────────────────────┐
  *   │ [Logo]     │ ☰  Gốc / Mục        [topbarExtra]  [Tên ▾]   │  <- thanh tiêu đề
- *   │ NHÓM 1     ├──────────────────────────────────────────────┤
- *   │ ▸ Mục      │                                              │
- *   │ NHÓM 2     │   <Outlet /> = nội dung trang con            │
- *   │ ▸ Mục  Sắp │                                              │
- *   │ ⌂ Trang chủ│                                              │
- *   │ ⎋ Đăng xuất│                                              │
+ *   │ [sidebarTop]├─────────────────────────────────────────────┤
+ *   │ NHÓM 1     │                                              │
+ *   │ ▣ Mục   12 │   <Outlet /> = nội dung trang con            │
+ *   │ NHÓM 2     │                                              │
+ *   │ ▣ Mục  Sắp │                                              │
+ *   │ [Ảnh] Tên ⎋│  <- thẻ tài khoản + nút đăng xuất              │
  *   └────────────┴──────────────────────────────────────────────┘
  * Màn hình hẹp (≤ 900px): menu ẩn, bấm ☰ để mở dạng ngăn kéo.
+ * Khu nội bộ KHÔNG có link sang trang người dùng: admin / Biên tập viên chỉ làm việc trong khu của mình.
  *
  * Props:
  *   - theme       : 'admin' (menu tối) | 'editor' (menu sáng, CSS trong editor.css)
@@ -32,11 +33,13 @@ import '../../assets/styles/admin.css'
  *   - navGroups   : [{ label, items: [{ to, end, icon, label, title, soon }] }]
  *                   soon = chức năng chưa làm -> hiện nhãn "Sắp có" (trang vẫn mở được để xem thiết kế)
  *   - topbarExtra : nội dung thêm trên thanh tiêu đề (không bắt buộc)
+ *   - sidebarTop  : khối thêm ngay dưới logo, ví dụ thẻ "Ca trực hôm nay" của Biên tập viên (không bắt buộc)
+ *   - badges      : số đếm hiện cạnh mục menu, dạng { "/editor/queue": 3 } (số 0 thì không hiện)
  *
  * <Outlet />: React Router chèn trang con theo đường dẫn vào đúng chỗ này (route lồng nhau, xem App.jsx).
  * CSS: assets/styles/admin.css (bố cục chung, class "admin__*" giữ tên cũ) + editor.css (theme editor).
  */
-function ConsoleLayout({ theme, homePath, badge, crumbRoot, roleLabel, navGroups, topbarExtra }) {
+function ConsoleLayout({ theme, homePath, badge, crumbRoot, roleLabel, navGroups, topbarExtra, sidebarTop, badges = {} }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -70,6 +73,8 @@ function ConsoleLayout({ theme, homePath, badge, crumbRoot, roleLabel, navGroups
           </span>
         </Link>
 
+        {sidebarTop}
+
         <nav className="admin__nav" aria-label={`Menu ${crumbRoot}`}>
           {navGroups.map((group) => (
             <div key={group.label} className="admin__nav-group">
@@ -77,8 +82,12 @@ function ConsoleLayout({ theme, homePath, badge, crumbRoot, roleLabel, navGroups
               {group.items.map((item) => (
                 // NavLink tự thêm class "active" khi đường dẫn khớp; end: chỉ khớp đúng đường dẫn, không khớp trang con
                 <NavLink key={item.to} to={item.to} end={item.end} className="admin__nav-item" onClick={closeMenu}>
-                  <Icon name={item.icon} size={18} />
+                  {/* Icon nằm trong ô vuông bo góc; mục đang chọn thì ô tô màu (CSS) */}
+                  <span className="admin__nav-icon">
+                    <Icon name={item.icon} size={17} />
+                  </span>
                   <span className="admin__nav-text">{item.label}</span>
+                  {badges[item.to] > 0 && <span className="admin__count">{badges[item.to]}</span>}
                   {item.soon && <span className="admin__soon">Sắp có</span>}
                 </NavLink>
               ))}
@@ -86,14 +95,15 @@ function ConsoleLayout({ theme, homePath, badge, crumbRoot, roleLabel, navGroups
           ))}
         </nav>
 
+        {/* Thẻ tài khoản cuối menu + nút đăng xuất */}
         <div className="admin__sidebar-footer">
-          <Link to="/" className="admin__nav-item">
-            <Icon name="home" size={18} />
-            Về trang người dùng
-          </Link>
-          <button type="button" className="admin__nav-item admin__nav-item--danger" onClick={handleLogout}>
+          <Avatar name={user?.fullName} src={user?.avatarUrl} size={36} />
+          <span className="admin__account">
+            <strong>{user?.fullName}</strong>
+            <small>{roleLabel}</small>
+          </span>
+          <button type="button" className="admin__logout" onClick={handleLogout} aria-label="Đăng xuất" title="Đăng xuất">
             <Icon name="logOut" size={18} />
-            Đăng xuất
           </button>
         </div>
       </aside>

@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * "BIÊN NHẬN" trả về ngay sau khi gửi tin / khiếu nại thành công.
  *
- * - trackingCode + pin: dùng để tra cứu tiến độ (SRS 4.1.2). PIN chỉ xuất hiện DUY NHẤT ở đây
+ * - trackingCode + pin: dùng để tra cứu tiến độ. PIN chỉ xuất hiện DUY NHẤT ở đây
  *   (và trong email biên nhận); DB chỉ lưu bản băm nên sau này không ai xem lại được.
  * - notifiedEmail  : email đã nhận biên nhận (để màn hình báo "Đã gửi mã tới ...").
  * - printedToConsole: true khi máy chủ đang ở chế độ phát triển (email chỉ in ra console, không gửi thật).

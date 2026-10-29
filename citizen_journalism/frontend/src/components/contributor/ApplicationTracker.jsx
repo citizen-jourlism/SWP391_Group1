@@ -11,7 +11,7 @@ import { formatDateTime } from '../../lib/format'
 import { contributorService } from '../../services/contributorService'
 
 /**
- * THEO DÕI ĐƠN ĐĂNG KÝ CTV (SRS: Track Contributor Application) — người dân xem đơn của chính mình.
+ * THEO DÕI ĐƠN ĐĂNG KÝ CTV — người dân xem đơn của chính mình.
  * Dùng ở: ContributorSection (trang Hồ sơ). CSS: assets/styles/contributor.css.
  *
  * Gồm: nhãn trạng thái + câu giải thích, thanh tiến trình 4 bước (Nộp đơn -> BTV -> Phó TBT -> Thành CTV),

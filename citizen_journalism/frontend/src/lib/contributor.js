@@ -3,7 +3,7 @@
  * Giá trị khớp enum ở backend: ContributorApplication.Status, ContributorApplication.Availability.
  */
 
-/** Các bước xét duyệt (SRS 2.3): dùng với components/submission/ProcessSteps (prop stages). */
+/** Các bước xét duyệt: dùng với components/submission/ProcessSteps (prop stages). */
 export const APPLICATION_STAGES = [
   { title: 'Nộp đơn', description: 'Đơn và giấy tờ đã gửi tới toà soạn.' },
   { title: 'Biên tập viên xét duyệt', description: 'Kiểm tra hồ sơ, giấy tờ và mức độ tích cực.' },

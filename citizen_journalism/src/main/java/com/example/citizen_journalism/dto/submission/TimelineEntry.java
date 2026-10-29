@@ -5,7 +5,7 @@ import com.example.citizen_journalism.entity.SubmissionEvent;
 import com.example.citizen_journalism.entity.SubmissionEvent.Actor;
 import java.time.LocalDateTime;
 
-/** Một bước trong "Nhật ký xử lý" của hồ sơ (SRS 4.1.2: Timeline Log). Xem entity SubmissionEvent. */
+/** Một bước trong "Nhật ký xử lý" của hồ sơ. Xem entity SubmissionEvent. */
 public record TimelineEntry(
         SubmissionStatus status,
         Actor actor,

@@ -41,7 +41,7 @@ public class Evidence extends BaseEntity {
     @Column(name = "source_ref", length = 500)
     private String sourceRef;
 
-    /** Phân loại tệp theo SRS: ảnh, video, ghi âm, tài liệu. */
+    /** Phân loại tệp: ảnh, video, ghi âm, tài liệu. */
     public enum FileType {
         IMAGE,
         VIDEO,
