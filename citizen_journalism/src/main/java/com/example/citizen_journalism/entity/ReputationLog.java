@@ -5,7 +5,13 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 @Entity
-@Table(name = "reputation_logs")
+@Table(name = "reputation_logs", indexes = {
+    // 1. Tìm lịch sử theo người dùng (lọc nhanh theo ID và sắp xếp thời gian)
+    @Index(name = "idx_reputation_logs_user_created", columnList = "user_id, created_at"),
+
+    // 2. Thống kê nhanh theo loại lý do
+    @Index(name = "idx_reputation_logs_reason", columnList = "reason")
+})
 @Getter
 @Setter
 @NoArgsConstructor

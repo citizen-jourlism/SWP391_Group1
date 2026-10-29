@@ -60,7 +60,7 @@ function Homepage() {
 			<main className="container page-content">
 				<section className="hero-panel">
 					<div className="hero-badge">KÊNH TIẾP NHẬN &amp; PHẢN HỒI CHÍNH THỨC CỦA TÒA SOẠN</div>
-					<h1>CÔNG TIẾP NHẬN &amp; XÁC THỰC<br /><span>TIN NÓNG DÂN SINH 24/7</span></h1>
+					<h1>CỔNG TIẾP NHẬN &amp; XÁC THỰC<br /><span>TIN NÓNG DÂN SINH 24/7</span></h1>
 					<p>
 						Mỗi người dân là một &quot;mắt tốt&quot; của cộng đồng. Khi phát hiện sự cố, tai nạn,
 						hải quan, hay lộ thông tin sai lệch, hãy đồng hành và gửi thông tin cho đội ngũ

@@ -25,3 +25,38 @@ replay_pid*
 
 # Ignore application.yaml with sensitive config
 citizen_journalism/src/main/resources/application.yaml
+
+# ==========================================
+# Build & Dependency Directories (Maven/Gradle)
+# ==========================================
+target/
+**/target/
+build/
+**/build/
+.mvn/wrapper/maven-wrapper.jar
+
+# ==========================================
+# IDE & Editor Configs (Tránh xung đột giữa các thành viên)
+# ==========================================
+.vscode/
+.launch/
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+nbproject/
+
+# ==========================================
+# AI Tools, Docs & Local Agent Files
+# ==========================================
+.agents/
+CLAUDE.md
+ai-log.md
+docs/
+
+# ==========================================
+# OS Generated Files
+# ==========================================
+.DS_Store
+Thumbs.db
