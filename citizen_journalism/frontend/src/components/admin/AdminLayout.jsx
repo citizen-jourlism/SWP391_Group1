@@ -7,6 +7,7 @@ const NAV_GROUPS = [
     items: [
       { to: '/admin', end: true, icon: 'activity', label: 'Tổng quan', title: 'Tổng quan hệ thống' },
       { to: '/admin/users', icon: 'user', label: 'Tài khoản', title: 'Quản lý tài khoản' },
+      { to: '/admin/audit-history', icon: 'activity', label: 'Lịch sử hoạt động', title: 'Lịch sử hoạt động' },
     ],
   },
 ]

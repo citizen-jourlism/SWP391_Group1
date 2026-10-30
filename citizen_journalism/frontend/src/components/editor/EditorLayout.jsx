@@ -36,6 +36,19 @@ const NAV_GROUPS = [
       { to: '/editor/members', icon: 'shield', label: 'Uy tín & vi phạm', title: 'Uy tín & vi phạm', soon: true },
     ],
   },
+
+{
+  label: 'Quản lý nội dung',
+  items: [
+    {
+      to: '/editor/categories',
+      icon: 'fileText',
+      label: 'Quản lý chuyên mục',
+      title: 'Quản lý chuyên mục',
+    },
+  ],
+},
+
 ]
 
 /**
