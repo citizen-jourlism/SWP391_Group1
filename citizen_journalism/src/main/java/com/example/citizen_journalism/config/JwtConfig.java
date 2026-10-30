@@ -12,6 +12,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 
 /**
  * Cấu hình JWT (JSON Web Token) – "thẻ ra vào" sau khi đăng nhập.
@@ -25,7 +27,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
  *   Đăng nhập đúng -> JwtService dùng JwtEncoder TẠO token -> frontend lưu lại.
  *   Các request sau gửi kèm header "Authorization: Bearer <token>"
  *   -> Spring Security dùng JwtDecoder KIỂM TRA chữ ký + hạn dùng
- *   -> security/ActiveUserJwtConverter đối chiếu tài khoản trong DB (còn hoạt động không, vai trò hiện tại) để phân quyền.
+ *   -> JwtAuthenticationConverter đọc role trong token thành quyền (ROLE_SYSTEM_ADMIN...) để phân quyền.
  *
  * Thuật toán HS256 (HMAC-SHA256): dùng CÙNG MỘT khoá để ký và kiểm tra. Khoá phải dài >= 32 ký tự.
  * Khoá lấy từ biến JWT_SECRET (file .env); không có thì dùng khoá mặc định trong application.properties (chỉ để dev).
@@ -52,5 +54,20 @@ public class JwtConfig {
     @Bean
     public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
         return NimbusJwtDecoder.withSecretKey(jwtSecretKey).macAlgorithm(MacAlgorithm.HS256).build();
+    }
+
+    /**
+     * Chuyển claim "role" trong token (ví dụ "SYSTEM_ADMIN") thành quyền "ROLE_SYSTEM_ADMIN" của Spring.
+     * Nhờ vậy trong SecurityConfig có thể viết .hasRole("SYSTEM_ADMIN") để chặn theo vai trò.
+     */
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
+        authorities.setAuthoritiesClaimName("role");
+        authorities.setAuthorityPrefix("ROLE_");
+
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(authorities);
+        return converter;
     }
 }

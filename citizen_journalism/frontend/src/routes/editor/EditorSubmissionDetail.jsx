@@ -16,7 +16,7 @@ import { reviewStartService } from '../../services/reviewStartService'
  * CHI TIẾT 1 HỒ SƠ TRONG HÀNG ĐỢI — /editor/queue/:code (Biên tập viên).
  * Dữ liệu: GET /api/editor/submissions/{mã}; hiển thị bằng SubmissionDetail (dùng chung với trang người dân theo dõi).
  *
- * Thanh thao tác phía trên: nút "Từ chối" mở /editor/queue/<mã>/reject (EditorRejectSubmission,
+ * Thanh thao tác phía trên: nút "Kiểm tra tin trùng" mở /editor/screening/<mã> (EditorDuplicateCheck). Nút "Từ chối" mở /editor/queue/<mã>/reject (EditorRejectSubmission,
  * chỉ bật khi hồ sơ còn ở bước biên tập). Nút "Yêu cầu bổ sung" mở /editor/queue/<mã>/request-info (EditorRequestInfo,
  * hiện khi hồ sơ Đã tiếp nhận / Đang thẩm định; hồ sơ đang "Cần bổ sung" thì thành "Xem yêu cầu bổ sung").
  * Nút "Duyệt & chuyển Phó TBT" (chỉ với tin nóng Đang thẩm định, tức là đã được tiếp nhận) mở hộp thoại ApproveSubmissionDialog;
@@ -75,6 +75,10 @@ function EditorSubmissionDetail() {
                   Tiếp nhận thẩm định
                 </Button>
               )}
+              <Button to={`/editor/screening/${code}`} variant="secondary" className="btn--sm">
+                <Icon name="copy" size={14} />
+                Kiểm tra tin trùng
+              </Button>
               {PLANNED_ACTIONS.map((action) => (
                 <Button key={action.label} variant="secondary" className="btn--sm" disabled title="Sắp có">
                   <Icon name={action.icon} size={14} />

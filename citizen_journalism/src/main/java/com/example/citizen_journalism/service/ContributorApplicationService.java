@@ -18,7 +18,6 @@ import com.example.citizen_journalism.repository.ContributorApplicationRepositor
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.util.ExpertiseFields;
-import com.example.citizen_journalism.util.Paging;
 import com.example.citizen_journalism.util.VietnamProvinces;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
@@ -39,6 +39,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.HtmlUtils;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
@@ -58,6 +59,7 @@ import tools.jackson.databind.ObjectMapper;
  *   tài khoản người dân · hồ sơ có CCCD, ngày sinh, địa chỉ · đủ app.contributor.min-age tuổi ·
  *   điểm uy tín >= app.contributor.min-reputation · không có đơn khác đang chờ xét.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ContributorApplicationService {
@@ -68,6 +70,8 @@ public class ContributorApplicationService {
 
     /** Thư mục lưu giấy tờ. Bị chặn truy cập trực tiếp qua /uploads/applications/** (SecurityConfig). */
     public static final String DOCUMENT_FOLDER = "applications";
+
+    private static final Set<Status> ACTIVE_STATUSES = EnumSet.of(Status.PENDING_EDITOR, Status.PENDING_DEPUTY);
 
     private final ContributorApplicationRepository applicationRepository;
     private final UserRepository userRepository;
@@ -133,8 +137,7 @@ public class ContributorApplicationService {
             for (MultipartFile file : documents) {
                 String url = fileStorageService.store(file, DOCUMENT_FOLDER, userId,
                         FileStorageService.DOCUMENT_TYPES, MAX_FILE_BYTES);
-                stored.add(new StoredDocument(FileStorageService.originalName(file, "giay-to"), url,
-                        file.getContentType(), file.getSize()));
+                stored.add(new StoredDocument(originalNameOf(file), url, file.getContentType(), file.getSize()));
             }
         } catch (RuntimeException ex) {
             stored.forEach(document -> fileStorageService.delete(document.url()));
@@ -180,15 +183,17 @@ public class ContributorApplicationService {
     public PageResponse<ApplicationListItem> listForEditor(Status status, int page, int size) {
         Set<Status> statuses = status == null ? EnumSet.allOf(Status.class) : EnumSet.of(status);
         // Đơn chờ xét: cũ nhất trước (ai nộp trước xét trước); các danh sách khác: mới nhất trước
-        Sort sort = status == Status.PENDING_EDITOR ? Paging.OLDEST_FIRST : Paging.NEWEST_FIRST;
-        return PageResponse.from(applicationRepository.findByStatusIn(statuses, Paging.of(page, size, sort))
-                .map(this::toListItem));
+        Sort sort = status == Status.PENDING_EDITOR
+                ? Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id"))
+                : Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
+        PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50), sort);
+        return PageResponse.from(applicationRepository.findByStatusIn(statuses, pageable).map(this::toListItem));
     }
 
     /** Vài đơn chờ xét mới nhất + tổng số (cho trang Tổng quan của Biên tập viên). */
     @Transactional(readOnly = true)
     public List<ApplicationListItem> latestPending(int limit) {
-        PageRequest pageable = PageRequest.of(0, limit, Paging.NEWEST_FIRST);
+        PageRequest pageable = PageRequest.of(0, limit, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
         return applicationRepository.findByStatusIn(EnumSet.of(Status.PENDING_EDITOR), pageable).map(this::toListItem).getContent();
     }
 
@@ -357,7 +362,12 @@ public class ContributorApplicationService {
         return value == null || value.isBlank() ? List.of() : Arrays.asList(value.split(","));
     }
 
-    /** Email báo kết quả xét duyệt. Gửi lỗi thì chỉ ghi log (trySend), không làm hỏng thao tác của Biên tập viên. */
+    private static String originalNameOf(MultipartFile file) {
+        String name = blankToNull(file.getOriginalFilename());
+        return name == null ? "giay-to" : name.length() > 150 ? name.substring(0, 150) : name;
+    }
+
+    /** Email báo kết quả xét duyệt. Gửi lỗi thì chỉ ghi log, không làm hỏng thao tác của Biên tập viên. */
     private void notifyApplicant(ContributorApplication application, boolean rejected) {
         User user = application.getApplicant();
         String result = rejected
@@ -365,13 +375,21 @@ public class ContributorApplicationService {
                 : "Đơn đăng ký Cộng tác viên của bạn đã được Biên tập viên <b>chấp thuận</b> và chuyển lên Phó Tổng biên tập phê duyệt.";
         String note = application.getEditorNote() == null ? ""
                 : "<p style=\"padding:12px 16px;background:#f5f7fb;border-radius:8px\">Ghi chú của toà soạn: "
-                + MailService.escape(application.getEditorNote()) + "</p>";
-        String html = MailService.layout("""
+                + HtmlUtils.htmlEscape(application.getEditorNote()) + "</p>";
+        String html = """
+                <div style="font-family:Segoe UI,Arial,sans-serif;max-width:520px;margin:auto;padding:24px;
+                            border:1px solid #dfe5ef;border-radius:12px;color:#172339">
+                  <h2 style="margin:0 0 4px;color:#0d1f35">TIN NÓNG DÂN SINH</h2>
                   <p>Xin chào <b>%s</b>,</p>
                   <p>%s</p>
                   %s
                   <p>Xem chi tiết trong mục <b>Hồ sơ của tôi → Cộng tác viên</b>.</p>
-                """.formatted(MailService.escape(user.getFullName()), result, note));
-        mailService.trySend(user.getEmail(), "[Tin Nóng Dân Sinh] Cập nhật đơn đăng ký Cộng tác viên", html);
+                </div>
+                """.formatted(HtmlUtils.htmlEscape(user.getFullName()), result, note);
+        try {
+            mailService.send(user.getEmail(), "[Tin Nóng Dân Sinh] Cập nhật đơn đăng ký Cộng tác viên", html);
+        } catch (AppException ex) {
+            log.warn("Cannot notify applicant {}", user.getId());
+        }
     }
 }

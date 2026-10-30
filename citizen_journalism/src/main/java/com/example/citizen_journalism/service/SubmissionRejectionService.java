@@ -52,7 +52,7 @@ public class SubmissionRejectionService {
     private final ReputationLogRepository reputationLogRepository;
     private final SubmissionEventService eventService;
     private final SubmissionTrackingService trackingService;
-    private final MailService mailService;
+    private final NotificationMailService notificationMailService;
 
     /** Dữ liệu màn Từ chối hồ sơ: chi tiết hồ sơ, người gửi, sàng lọc AI, lần từ chối đã lưu (nếu có). */
     @Transactional(readOnly = true)
@@ -153,7 +153,7 @@ public class SubmissionRejectionService {
                 ? "<p style=\"color:#b45309\">Điểm uy tín của bạn bị trừ " + SPAM_PENALTY
                 + " điểm do hồ sơ là tin rác, quảng cáo.</p>"
                 : "";
-        String html = MailService.layout("""
+        String html = NotificationMailService.layout("""
                   <p>Xin chào <b>%s</b>,</p>
                   <p>Toà soạn <b>không tiếp nhận</b> hồ sơ <b>%s</b> (%s).</p>
                   <p>Lý do: <b>%s</b></p>
@@ -161,13 +161,13 @@ public class SubmissionRejectionService {
                   %s
                   <p>Bạn có thể xem chi tiết trong mục <b>Thông tin đã gửi</b> hoặc tra cứu bằng mã hồ sơ + mã PIN.</p>
                 """.formatted(
-                MailService.escape(submission.getAuthor().getFullName()),
-                MailService.escape(submission.getTrackingCode()),
-                MailService.escape(submission.getTitle()),
-                MailService.escape(reason.getLabel()),
-                MailService.escape(feedback),
+                NotificationMailService.escape(submission.getAuthor().getFullName()),
+                NotificationMailService.escape(submission.getTrackingCode()),
+                NotificationMailService.escape(submission.getTitle()),
+                NotificationMailService.escape(reason.getLabel()),
+                NotificationMailService.escape(feedback),
                 penalty));
-        mailService.trySend(contactEmailOf(submission),
+        notificationMailService.trySend(contactEmailOf(submission),
                 "[Tin Nóng Dân Sinh] Hồ sơ " + submission.getTrackingCode() + " không được tiếp nhận", html);
     }
 }

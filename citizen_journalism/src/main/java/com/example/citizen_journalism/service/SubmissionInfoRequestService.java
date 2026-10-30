@@ -52,7 +52,7 @@ public class SubmissionInfoRequestService {
     private final EditorialReviewRepository reviewRepository;
     private final SubmissionEventService eventService;
     private final SubmissionTrackingService trackingService;
-    private final MailService mailService;
+    private final NotificationMailService notificationMailService;
 
     /** Dữ liệu màn Yêu cầu bổ sung: chi tiết hồ sơ, người gửi, yêu cầu đang chờ (nếu có). */
     @Transactional(readOnly = true)
@@ -166,18 +166,18 @@ public class SubmissionInfoRequestService {
     }
 
     private void notifyReporter(Submission submission, String note) {
-        String html = MailService.layout("""
+        String html = NotificationMailService.layout("""
                   <p>Xin chào <b>%s</b>,</p>
                   <p>Toà soạn đề nghị bạn <b>bổ sung thông tin</b> cho hồ sơ <b>%s</b> (%s).</p>
                   <p style="padding:12px 16px;background:#f5f7fb;border-radius:8px;white-space:pre-line">%s</p>
                   <p>Bạn vui lòng đăng nhập, vào mục <b>Thông tin đã gửi</b>, mở hồ sơ và bấm <b>Bổ sung ngay</b>.
                   Sau khi bạn bổ sung, toà soạn sẽ tiếp tục thẩm định hồ sơ.</p>
                 """.formatted(
-                MailService.escape(submission.getAuthor().getFullName()),
-                MailService.escape(submission.getTrackingCode()),
-                MailService.escape(submission.getTitle()),
-                MailService.escape(note)));
-        mailService.trySend(contactEmailOf(submission),
+                NotificationMailService.escape(submission.getAuthor().getFullName()),
+                NotificationMailService.escape(submission.getTrackingCode()),
+                NotificationMailService.escape(submission.getTitle()),
+                NotificationMailService.escape(note)));
+        notificationMailService.trySend(contactEmailOf(submission),
                 "[Tin Nóng Dân Sinh] Hồ sơ " + submission.getTrackingCode() + " cần bổ sung thông tin", html);
     }
 }

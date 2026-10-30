@@ -17,8 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Lưu file người dùng tải lên vào THƯ MỤC TRÊN MÁY (mặc định: citizen_journalism/uploads/).
- * Dùng chung cho: ảnh đại diện (UserService), tư liệu/bằng chứng khi gửi tin, khiếu nại (SubmissionService),
- * giấy tờ đơn Cộng tác viên (ContributorApplicationService), hình ảnh bài nghiên cứu (ResearchArticleService).
+ * Dùng chung cho: ảnh đại diện (UserService), tư liệu/bằng chứng khi gửi tin, khiếu nại (SubmissionService).
  *
  * File được truy cập lại qua đường dẫn web "/uploads/..." (xem config/WebConfig.java).
  * Thư mục uploads/ đã được .gitignore bỏ qua -> ảnh của người dùng không bị đẩy lên GitHub.
@@ -147,21 +146,6 @@ public class FileStorageService {
         }
         Path target = root.resolve(url.substring(URL_PREFIX.length())).normalize();
         return target.startsWith(root) ? target : null;
-    }
-
-    /**
-     * Tên GỐC của tệp người dùng chọn (chỉ để HIỂN THỊ, ví dụ "anh-hien-truong.jpg"), cắt còn tối đa 150 ký tự.
-     * Không dùng tên này để lưu trên ổ đĩa (xem store()).
-     *
-     * @param fallback tên thay thế khi trình duyệt không gửi tên tệp, ví dụ "tep-dinh-kem"
-     */
-    public static String originalName(MultipartFile file, String fallback) {
-        String name = file.getOriginalFilename();
-        if (name == null || name.isBlank()) {
-            return fallback;
-        }
-        name = name.trim();
-        return name.length() > 150 ? name.substring(0, 150) : name;
     }
 
     /** Thư mục gốc (dùng trong WebConfig để phục vụ file qua đường dẫn /uploads/**). */

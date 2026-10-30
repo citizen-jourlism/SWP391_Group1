@@ -16,8 +16,8 @@ import com.example.citizen_journalism.exception.AppException;
 import com.example.citizen_journalism.exception.ErrorCode;
 import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.security.JwtService;
-import com.example.citizen_journalism.util.TimeUtils;
 import com.example.citizen_journalism.util.UserIdGenerator;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -141,8 +141,9 @@ public class AuthService {
 
         LocalDateTime now = LocalDateTime.now();
         if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(now)) {
-            throw AppException.tooManyRequests("Bạn đã nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau "
-                    + TimeUtils.minutesUntil(now, user.getLockedUntil()) + " phút.");
+            long minutesLeft = Math.max(1, Duration.between(now, user.getLockedUntil()).toMinutes() + 1);
+            throw AppException.tooManyRequests(
+                    "Bạn đã nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau " + minutesLeft + " phút.");
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
