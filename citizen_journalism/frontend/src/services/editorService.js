@@ -1,8 +1,5 @@
 import api from '../lib/api'
-
-/** Bỏ các tham số rỗng ('' / null) trước khi gửi, để backend hiểu là "không lọc". */
-const cleanParams = (params) =>
-  Object.fromEntries(Object.entries(params).filter(([, value]) => value !== '' && value != null))
+import { cleanParams } from '../lib/payload'
 
 /**
  * API BÀN LÀM VIỆC BIÊN TẬP VIÊN (backend: EditorController.java, chỉ vai trò EDITOR).

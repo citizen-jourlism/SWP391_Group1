@@ -1,4 +1,5 @@
 import api from '../lib/api'
+import { toMultipart } from '../lib/payload'
 
 /**
  * Các lời gọi API GỬI TIN / KHIẾU NẠI và THEO DÕI HỒ SƠ
@@ -18,38 +19,28 @@ export const submissionService = {
   getOptions: () => api.get('/submissions/options'),
 
   /**
-   * Gửi form dạng multipart/form-data gồm 2 phần (khớp @RequestPart ở backend):
-   *   - "data" : các ô chữ, đóng gói thành JSON. Bọc trong Blob type 'application/json' để backend
-   *              biết phần này là JSON và tự đổi thành CreateSubmissionRequest.
-   *   - "files": mỗi tệp một lần append cùng tên "files" -> backend nhận được List<MultipartFile>.
+   * Gửi form dạng multipart/form-data: phần "data" (JSON các ô chữ, backend đổi thành CreateSubmissionRequest)
+   * + phần "files" (backend nhận List<MultipartFile>). Cách đóng gói: toMultipart trong lib/payload.js.
    *
    * @param data        object các ô chữ (đã qua toPayload)
    * @param files       mảng File người dùng chọn
    * @param onProgress  hàm nhận % đã tải lên (0–100), để hiện thanh tiến trình
    */
-  create: (data, files, onProgress) => {
-    const formData = new FormData()
-    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }))
-    files.forEach((file) => formData.append('files', file))
-    return api.post('/submissions', formData, {
+  create: (data, files, onProgress) =>
+    api.post('/submissions', toMultipart(data, files), {
       // Tệp có thể lớn (tối đa 50MB/tệp): bỏ giới hạn 15 giây mặc định trong lib/api.js
       timeout: 0,
       onUploadProgress: (event) => event.total && onProgress?.(Math.round((event.loaded / event.total) * 100)),
-    })
-  },
+    }),
 
   /**
    * BỔ SUNG THÔNG TIN cho hồ sơ của tôi đang ở trạng thái "Cần bổ sung" (NEED_MORE_INFO).
    * Cùng kiểu multipart với create: "data" = JSON { additionalInfo, address, sources: [{ title, url }] },
    * "files" = các tệp tư liệu bổ sung. Backend nhận xong chuyển hồ sơ về "Đang thẩm định" và ghi 1 bước nhật ký.
    */
-  supplement: (trackingCode, data, files, onProgress) => {
-    const formData = new FormData()
-    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }))
-    files.forEach((file) => formData.append('files', file))
-    return api.post(`/submissions/mine/${encodeURIComponent(trackingCode)}/supplement`, formData, {
+  supplement: (trackingCode, data, files, onProgress) =>
+    api.post(`/submissions/mine/${encodeURIComponent(trackingCode)}/supplement`, toMultipart(data, files), {
       timeout: 0,
       onUploadProgress: (event) => event.total && onProgress?.(Math.round((event.loaded / event.total) * 100)),
-    })
-  },
+    }),
 }

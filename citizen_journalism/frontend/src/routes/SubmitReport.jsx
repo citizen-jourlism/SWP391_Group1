@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import AccountLayout from '../components/layout/AccountLayout'
 import ReportForm from '../components/submission/ReportForm'
@@ -6,6 +6,7 @@ import SubmissionReceipt from '../components/submission/SubmissionReceipt'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
+import { useAsyncData } from '../hooks/useAsyncData'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { categoryFromSlug } from '../lib/submission'
 import { submissionService } from '../services/submissionService'
@@ -36,27 +37,18 @@ const TIPS = [
 function SubmitReport() {
   useDocumentTitle('Gửi thông tin')
   const [searchParams] = useSearchParams()
-  const [data, setData] = useState(null) // { options, profile }
-  const [loadError, setLoadError] = useState('')
-  const [reloadToken, setReloadToken] = useState(0) // Tăng lên khi bấm "Thử lại"
   const [receipt, setReceipt] = useState(null)
   const [formKey, setFormKey] = useState(0)
 
-  useEffect(() => {
-    let cancelled = false
-    // Promise.all: gọi 2 API song song, chờ cả 2 xong (nhanh hơn gọi lần lượt)
-    Promise.all([submissionService.getOptions(), userService.getProfile()])
-      .then(([options, profile]) => !cancelled && setData({ options: options.data, profile: profile.data }))
-      .catch((error) => !cancelled && setLoadError(error.message))
-    return () => {
-      cancelled = true
-    }
-  }, [reloadToken])
-
-  const retry = () => {
-    setLoadError('')
-    setReloadToken((value) => value + 1)
-  }
+  // Promise.all: gọi 2 API song song, chờ cả 2 xong (nhanh hơn gọi lần lượt). data = { options, profile }.
+  // reload = nút "Thử lại" khi tải lỗi.
+  const { data, error: loadError, loading, reload } = useAsyncData(
+    () =>
+      Promise.all([submissionService.getOptions(), userService.getProfile()]).then(([options, profile]) => ({
+        data: { options: options.data, profile: profile.data },
+      })),
+    'submit-form',
+  )
 
   const handleSubmitted = (result) => {
     setReceipt(result)
@@ -83,11 +75,11 @@ function SubmitReport() {
       ) : (
         <div className="submit-layout">
           <div className="submit-layout__main">
-            {loadError ? (
+            {loadError && !loading ? (
               <Alert type="error" title="Không tải được biểu mẫu">
                 {loadError}
                 <div className="alert__actions">
-                  <Button variant="secondary" onClick={retry}>
+                  <Button variant="secondary" onClick={reload}>
                     <Icon name="refresh" size={16} />
                     Thử lại
                   </Button>

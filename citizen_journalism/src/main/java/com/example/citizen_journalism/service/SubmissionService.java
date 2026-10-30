@@ -23,14 +23,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.unit.DataSize;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.HtmlUtils;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -54,7 +52,6 @@ import tools.jackson.databind.ObjectMapper;
  * giải mật khi có căn cứ (chức năng sau). Email biên nhận khi đó gửi về email
  * TÀI KHOẢN của người gửi.
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubmissionService {
@@ -249,9 +246,8 @@ public class SubmissionService {
                 FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES);
         storedUrls.add(url);
 
-        String originalName = originalNameOf(file);
         Map<String, Object> metadata = new LinkedHashMap<>();
-        metadata.put("originalName", originalName);
+        metadata.put("originalName", FileStorageService.originalName(file, "tep-dinh-kem"));
         metadata.put("size", file.getSize());
         metadata.put("contentType", file.getContentType());
 
@@ -283,15 +279,6 @@ public class SubmissionService {
         return FileType.DOCUMENT;
     }
 
-    /** Tên gốc của tệp (chỉ để hiển thị), cắt bớt nếu quá dài. */
-    private static String originalNameOf(MultipartFile file) {
-        String name = blankToNull(file.getOriginalFilename());
-        if (name == null) {
-            return "tep-dinh-kem";
-        }
-        return name.length() > 150 ? name.substring(0, 150) : name;
-    }
-
     /**
      * Gửi email biên nhận. Trả về false nếu gửi lỗi.
      * TẠI SAO không báo lỗi cho người dùng? Hồ sơ đã lưu thành công; mã hồ sơ + PIN
@@ -300,25 +287,13 @@ public class SubmissionService {
      * lưu lại mã).
      */
     private boolean sendReceipt(String recipient, Submission submission, String pin) {
-        try {
-            mailService.send(recipient, "[Tin Nóng Dân Sinh] Biên nhận hồ sơ " + submission.getTrackingCode(),
-                    buildReceiptEmail(submission, pin));
-            return true;
-        } catch (AppException ex) {
-            log.warn("Cannot send receipt for {}", submission.getTrackingCode());
-            return false;
-        }
+        return mailService.trySend(recipient, "[Tin Nóng Dân Sinh] Biên nhận hồ sơ " + submission.getTrackingCode(),
+                buildReceiptEmail(submission, pin));
     }
 
-    /**
-     * Nội dung email biên nhận. htmlEscape: tiêu đề do người dùng nhập, chặn chèn
-     * mã HTML vào email.
-     */
+    /** Nội dung email biên nhận. MailService.escape: tiêu đề do người dùng nhập, chặn chèn mã HTML vào email. */
     private String buildReceiptEmail(Submission submission, String pin) {
-        return """
-                <div style="font-family:Segoe UI,Arial,sans-serif;max-width:520px;margin:auto;padding:24px;
-                            border:1px solid #dfe5ef;border-radius:12px;color:#172339">
-                  <h2 style="margin:0 0 4px;color:#0d1f35">TIN NÓNG DÂN SINH</h2>
+        return MailService.layout("""
                   <p>Toà soạn đã tiếp nhận phản ánh của bạn:</p>
                   <p style="padding:12px 16px;background:#f5f7fb;border-radius:8px"><b>%s</b></p>
                   <table style="margin:16px 0;font-size:15px">
@@ -329,7 +304,6 @@ public class SubmissionService {
                   </table>
                   <p>Dùng <b>mã hồ sơ + mã PIN</b> để tra cứu tiến độ xử lý. Vui lòng giữ bí mật mã PIN.</p>
                   <p style="color:#7a8190;font-size:12px">Đây là email tự động, vui lòng không trả lời.</p>
-                </div>
-                """.formatted(HtmlUtils.htmlEscape(submission.getTitle()), submission.getTrackingCode(), pin);
+                """.formatted(MailService.escape(submission.getTitle()), submission.getTrackingCode(), pin));
     }
 }

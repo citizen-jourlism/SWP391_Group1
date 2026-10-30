@@ -1,5 +1,6 @@
 package com.example.citizen_journalism.config;
 
+import com.example.citizen_journalism.security.ActiveUserJwtConverter;
 import com.example.citizen_journalism.security.RestAuthenticationHandler;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
@@ -49,7 +49,7 @@ public class SecurityConfig {
             "/api/tracking"); // Tra cứu hồ sơ bằng mã + PIN (TrackingController)
 
     private final RestAuthenticationHandler restAuthenticationHandler;
-    private final JwtAuthenticationConverter jwtAuthenticationConverter;
+    private final ActiveUserJwtConverter activeUserJwtConverter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -74,10 +74,11 @@ public class SecurityConfig {
                 .requestMatchers("/uploads/applications/**").denyAll()
                 .anyRequest().permitAll()
             )
-            // Bật chế độ "resource server": tự đọc + kiểm tra JWT ở mỗi request.
+            // Bật chế độ "resource server": tự đọc + kiểm tra JWT ở mỗi request,
+            // rồi đối chiếu tài khoản trong DB (bị khoá / đổi vai trò thì có hiệu lực ngay, xem ActiveUserJwtConverter).
             .oauth2ResourceServer(oauth2 -> oauth2
                 .bearerTokenResolver(bearerTokenResolver())
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(activeUserJwtConverter))
                 .authenticationEntryPoint(restAuthenticationHandler) // token sai/hết hạn -> 401 JSON
             )
             .exceptionHandling(errors -> errors

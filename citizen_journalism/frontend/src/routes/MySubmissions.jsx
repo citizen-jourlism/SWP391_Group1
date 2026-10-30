@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import AccountLayout from '../components/layout/AccountLayout'
 import Alert from '../components/ui/Alert'
@@ -6,6 +6,7 @@ import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import Pagination from '../components/ui/Pagination'
+import { useAsyncData } from '../hooks/useAsyncData'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { formatDateTime } from '../lib/format'
 import { CATEGORY_BY_VALUE, SUBMISSION_STATUS } from '../lib/submission'
@@ -21,8 +22,8 @@ import '../assets/styles/tracking.css'
  * Mỗi hồ sơ là một thẻ: loại phản ánh, tiêu đề, mã hồ sơ, nhãn trạng thái, thời gian gửi.
  * Bấm vào thẻ -> /account/submissions/<mã> (MySubmissionDetail) xem tiến độ, KHÔNG cần nhập PIN.
  *
- * CÁCH TẢI (giống trang admin): kết quả lưu kèm số trang của nó (`result.page`).
- * Số trang hiện tại khác số trang của kết quả = đang tải trang mới -> làm mờ danh sách cũ thay vì xoá trắng.
+ * CÁCH TẢI: hook useAsyncData với key = số trang. Đổi trang -> tự tải lại; trong lúc chờ vẫn giữ
+ * danh sách cũ (làm mờ, loading = true) thay vì xoá trắng.
  */
 
 const PAGE_SIZE = 10
@@ -30,21 +31,7 @@ const PAGE_SIZE = 10
 function MySubmissions() {
   useDocumentTitle('Thông tin đã gửi')
   const [page, setPage] = useState(0)
-  const [result, setResult] = useState({ page: null, data: null, error: '' })
-
-  useEffect(() => {
-    let cancelled = false // Bỏ qua kết quả cũ nếu người dùng đã chuyển trang trong lúc chờ
-    submissionService
-      .listMine(page, PAGE_SIZE)
-      .then((response) => !cancelled && setResult({ page, data: response.data, error: '' }))
-      .catch((error) => !cancelled && setResult({ page, data: null, error: error.message }))
-    return () => {
-      cancelled = true
-    }
-  }, [page])
-
-  const loading = result.page !== page
-  const data = result.data
+  const { data, error, loading } = useAsyncData(() => submissionService.listMine(page, PAGE_SIZE), page)
 
   return (
     <AccountLayout title="Thông tin đã gửi" subtitle="Theo dõi tiến độ xử lý các tin nóng, khiếu nại bạn đã gửi tới toà soạn.">
@@ -56,7 +43,7 @@ function MySubmissions() {
         </Button>
       </div>
 
-      <Alert type="error">{result.error}</Alert>
+      <Alert type="error">{error}</Alert>
 
       {!data && loading && (
         <div className="my-subs">

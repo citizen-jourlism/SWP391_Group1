@@ -12,10 +12,11 @@ import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 /**
  * Gửi email HTML. Đây là nơi DUY NHẤT trong dự án gửi mail, mọi chức năng khác
- * (OTP, thông báo kết quả duyệt bài, khoá tài khoản...) đều gọi qua đây.
+ * (OTP, biên nhận hồ sơ, kết quả xét đơn Cộng tác viên...) đều gọi qua đây.
  *
  * HAI CHẾ ĐỘ (bật/tắt bằng biến môi trường MAIL_ENABLED, xem application.properties):
  *   - MAIL_ENABLED=false (mặc định khi code): KHÔNG gửi thật, chỉ in nội dung email ra console
@@ -43,6 +44,48 @@ public class MailService {
      */
     public boolean isLiveDelivery() {
         return enabled && mailSenderProvider.getIfAvailable() != null;
+    }
+
+    /**
+     * KHUNG CHUNG của mọi email (tên toà soạn, viền, font chữ). Các chức năng chỉ cần viết phần nội dung riêng,
+     * nhờ vậy email nào cũng cùng một kiểu và không phải chép lại đoạn HTML khung ở nhiều nơi.
+     *
+     * @param body nội dung riêng của email. Chữ do người dùng nhập (họ tên, tiêu đề...) phải được bọc escape()
+     *             trước, để không ai chèn được mã HTML vào email.
+     */
+    public static String layout(String body) {
+        return """
+                <div style="font-family:Segoe UI,Arial,sans-serif;max-width:520px;margin:auto;padding:24px;
+                            border:1px solid #dfe5ef;border-radius:12px;color:#172339">
+                  <h2 style="margin:0 0 4px;color:#0d1f35">TIN NÓNG DÂN SINH</h2>
+                %s
+                </div>
+                """.formatted(body);
+    }
+
+    /**
+     * "Vô hiệu hoá" mã HTML trong chữ do người dùng nhập trước khi đặt vào email:
+     * nếu ai đó cố gõ thẻ HTML (ví dụ đường link lừa đảo) thì chỉ hiện ra như chữ thường, không chạy được.
+     * "UTF-8": chỉ đổi các ký tự đặc biệt của HTML (< > & " '), giữ nguyên chữ có dấu tiếng Việt cho dễ đọc.
+     */
+    public static String escape(String text) {
+        return HtmlUtils.htmlEscape(text, "UTF-8");
+    }
+
+    /**
+     * Gửi email nhưng KHÔNG ném lỗi: gửi hỏng thì chỉ ghi log và trả về false.
+     * Dùng cho email THÔNG BÁO (biên nhận hồ sơ, kết quả xét đơn...): thao tác chính đã lưu thành công rồi,
+     * không được báo lỗi chỉ vì máy chủ mail đang trục trặc.
+     * Email OTP thì dùng send(): gửi lỗi phải báo ngay để người dùng bấm gửi lại.
+     */
+    public boolean trySend(String to, String subject, String html) {
+        try {
+            send(to, subject, html);
+            return true;
+        } catch (AppException ex) {
+            log.warn("Cannot send mail \"{}\" to {}", subject, to);
+            return false;
+        }
     }
 
     /**

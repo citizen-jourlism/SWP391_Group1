@@ -13,6 +13,7 @@ import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.exception.AppException;
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
+import com.example.citizen_journalism.util.Paging;
 import com.example.citizen_journalism.util.UserIdGenerator;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -23,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,8 +44,6 @@ import org.springframework.web.util.HtmlUtils;
 @Service
 @RequiredArgsConstructor
 public class AdminService {
-
-    private static final int MAX_PAGE_SIZE = 50;
 
     private final UserRepository userRepository;
     private final SubmissionRepository submissionRepository;
@@ -81,15 +78,12 @@ public class AdminService {
 
     /**
      * Tìm kiếm + lọc + phân trang, mới nhất lên trước.
-     * @param page trang (bắt đầu từ 0); size số dòng mỗi trang (tối đa MAX_PAGE_SIZE để tránh tải quá nhiều)
+     * @param page trang (bắt đầu từ 0); size số dòng mỗi trang (Paging tự giới hạn để tránh tải quá nhiều)
      */
     @Transactional(readOnly = true)
     public PageResponse<AdminUserItem> searchUsers(String keyword, User.Role role, User.Status status, int page, int size) {
-        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE); // giới hạn trong khoảng 1..MAX_PAGE_SIZE
-        PageRequest pageRequest = PageRequest.of(Math.max(page, 0), safeSize,
-                Sort.by(Sort.Direction.DESC, "createdAt"));
-        return PageResponse.from(userRepository.search(blankToNull(keyword), role, status, pageRequest)
-                .map(AdminUserItem::from));
+        return PageResponse.from(userRepository.search(blankToNull(keyword), role, status,
+                Paging.of(page, size, Paging.NEWEST_FIRST)).map(AdminUserItem::from));
     }
 
     // =========================== TẠO / SỬA TÀI KHOẢN ===========================
