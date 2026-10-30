@@ -3,6 +3,7 @@ package com.example.citizen_journalism.controller;
 import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.assignment.AssignContributorRequest;
+import com.example.citizen_journalism.dto.assignment.AssignmentHistoryEntry;
 import com.example.citizen_journalism.dto.assignment.AssignmentReasonRequest;
 import com.example.citizen_journalism.dto.assignment.AssignmentView;
 import com.example.citizen_journalism.dto.assignment.ContributorCandidate;
@@ -31,7 +32,8 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /api/editor/assignments/provinces            -> danh sách tỉnh/thành cho bộ lọc khu vực
  *   GET  /api/editor/assignments/candidates?code=...  -> danh sách CTV để chọn (lọc khu vực, tìm kiếm, điểm, sắp xếp)
  *   GET  /api/editor/assignments/latest?code=...      -> nhiệm vụ mới nhất của 1 hồ sơ (data = null nếu chưa giao)
- *   GET  /api/editor/assignments                      -> danh sách nhiệm vụ đã giao
+ *   GET  /api/editor/assignments/history?code=...     -> lịch sử nhiệm vụ của 1 hồ sơ
+ *   GET  /api/editor/assignments                      -> danh sách nhiệm vụ, mỗi hồ sơ 1 dòng
  *   POST /api/editor/assignments                      -> giao nhiệm vụ
  *   POST /api/editor/assignments/{id}/cancel          -> thu hồi nhiệm vụ (bắt buộc lý do)
  */
@@ -62,6 +64,11 @@ public class FieldAssignmentController {
         return ApiResponse.ok("OK", assignmentService.getLatest(code));
     }
 
+    @GetMapping("/history")
+    public ApiResponse<List<AssignmentHistoryEntry>> history(@RequestParam String code) {
+        return ApiResponse.ok("OK", assignmentService.getHistory(code));
+    }
+
     @GetMapping
     public ApiResponse<PageResponse<AssignmentView>> list(
             @RequestParam(required = false) FieldAssignment.AssignmentStatus status,
@@ -78,7 +85,8 @@ public class FieldAssignmentController {
     }
 
     @PostMapping("/{id}/cancel")
-    public ApiResponse<AssignmentView> cancel(@PathVariable Long id, @Valid @RequestBody AssignmentReasonRequest request) {
-        return ApiResponse.ok("Đã thu hồi nhiệm vụ.", assignmentService.cancel(id, request.reason()));
+    public ApiResponse<AssignmentView> cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                              @Valid @RequestBody AssignmentReasonRequest request) {
+        return ApiResponse.ok("Đã thu hồi nhiệm vụ.", assignmentService.cancel(jwt.getSubject(), id, request.reason()));
     }
 }

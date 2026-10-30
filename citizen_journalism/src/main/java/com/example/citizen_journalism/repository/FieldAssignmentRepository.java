@@ -27,9 +27,27 @@ public interface FieldAssignmentRepository extends JpaRepository<FieldAssignment
     @EntityGraph(attributePaths = {"submission", "contributor"})
     Optional<FieldAssignment> findTopBySubmissionTrackingCodeOrderByCreatedAtDescIdDesc(String trackingCode);
 
-    /** Danh sách nhiệm vụ cho Biên tập viên, lọc theo các trạng thái, có phân trang. */
+    /**
+     * Danh sách cho Biên tập viên: MỖI HỒ SƠ 1 DÒNG là nhiệm vụ mới nhất (trạng thái hiện tại của hồ sơ),
+     * lọc theo các trạng thái, có phân trang. Các nhiệm vụ cũ hơn xem ở lịch sử.
+     * Câu đếm tổng số dòng viết riêng vì Spring không tự suy ra được từ câu có truy vấn con.
+     */
     @EntityGraph(attributePaths = {"submission", "contributor"})
-    Page<FieldAssignment> findByStatusIn(Collection<FieldAssignment.AssignmentStatus> statuses, Pageable pageable);
+    @Query(value = """
+            select a from FieldAssignment a
+            where a.status in :statuses
+              and a.id = (select max(b.id) from FieldAssignment b where b.submission = a.submission)
+            """, countQuery = """
+            select count(a) from FieldAssignment a
+            where a.status in :statuses
+              and a.id = (select max(b.id) from FieldAssignment b where b.submission = a.submission)
+            """)
+    Page<FieldAssignment> findLatestPerSubmission(@Param("statuses") Collection<FieldAssignment.AssignmentStatus> statuses,
+                                                  Pageable pageable);
+
+    /** Mọi nhiệm vụ của 1 hồ sơ từ cũ đến mới, cho lịch sử nhiệm vụ. */
+    @EntityGraph(attributePaths = {"contributor", "createdBy", "cancelledBy"})
+    List<FieldAssignment> findBySubmissionIdOrderByIdAsc(Long submissionId);
 
     /** Danh sách nhiệm vụ của 1 Cộng tác viên, lọc theo các trạng thái, có phân trang. */
     @EntityGraph(attributePaths = {"submission"})

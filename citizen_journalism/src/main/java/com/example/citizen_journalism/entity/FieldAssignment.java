@@ -74,11 +74,17 @@ public class FieldAssignment extends BaseEntity {
     @Column(name = "cancel_reason", columnDefinition = "TEXT")
     private String cancelReason;
 
-    /** Kết thúc nhiệm vụ ở trạng thái CANCELLED, ghi lại ai huỷ và lý do. */
-    public void cancel(CancelType type, String reason) {
+    /** Người từ chối / huỷ / thu hồi, hiện trong lịch sử nhiệm vụ. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cancelled_by")
+    private User cancelledBy;
+
+    /** Kết thúc nhiệm vụ ở trạng thái CANCELLED, ghi lại kiểu huỷ, lý do và người huỷ. */
+    public void cancel(CancelType type, String reason, User actor) {
         status = AssignmentStatus.CANCELLED;
         cancelType = type;
         cancelReason = reason;
+        cancelledBy = actor;
     }
 
     public enum AssignmentMode {

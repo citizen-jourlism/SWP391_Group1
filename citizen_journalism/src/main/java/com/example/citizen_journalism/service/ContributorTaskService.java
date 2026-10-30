@@ -93,7 +93,7 @@ public class ContributorTaskService {
     @Transactional
     public ContributorTaskDetail decline(String contributorId, Long taskId, String reason) {
         FieldAssignment task = findWaitingTask(contributorId, taskId);
-        task.cancel(CancelType.DECLINED, reason.trim());
+        task.cancel(CancelType.DECLINED, reason.trim(), task.getContributor());
         notifyEditor(task, "từ chối");
         return toDetail(task);
     }
@@ -105,7 +105,7 @@ public class ContributorTaskService {
         if (task.getStatus() != AssignmentStatus.ACCEPTED) {
             throw AppException.conflict("Chỉ huỷ được nhiệm vụ đang thực hiện.");
         }
-        task.cancel(CancelType.CONTRIBUTOR_CANCELLED, reason.trim());
+        task.cancel(CancelType.CONTRIBUTOR_CANCELLED, reason.trim(), task.getContributor());
         notifyEditor(task, "huỷ");
         return toDetail(task);
     }

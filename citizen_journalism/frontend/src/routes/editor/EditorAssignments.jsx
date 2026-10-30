@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import AssignmentHistoryDialog from '../../components/editor/AssignmentHistoryDialog'
 import Alert from '../../components/ui/Alert'
 import Avatar from '../../components/ui/Avatar'
 import Badge from '../../components/ui/Badge'
@@ -7,16 +8,17 @@ import Icon from '../../components/ui/Icon'
 import Pagination from '../../components/ui/Pagination'
 import SelectField from '../../components/ui/SelectField'
 import { useAsyncData } from '../../hooks/useAsyncData'
-import { assignmentBadge, ASSIGNMENT_STATUS, isOverdue } from '../../lib/assignment'
+import { assignmentBadge, ASSIGNMENT_STATUS, canReassign, isOverdue } from '../../lib/assignment'
 import { formatDateTime } from '../../lib/format'
 import { editorService } from '../../services/editorService'
 import '../../assets/styles/assignment.css'
 
 /*
- * DANH SÁCH NHIỆM VỤ XÁC MINH — /editor/assignments (menu "Giao nhiệm vụ").
+ * DANH SÁCH NHIỆM VỤ — /editor/assignments.
  * Dữ liệu: GET /api/editor/assignments?status=&page=&size= (FieldAssignmentController), mới nhất trước.
+ * MỖI HỒ SƠ 1 DÒNG với trạng thái HIỆN TẠI (nhiệm vụ mới nhất); các lần giao trước xem bằng nút "Lịch sử".
  * Việc GIAO diễn ra ở từng hồ sơ: hàng đợi -> mở hồ sơ -> "Giao CTV xác minh" (EditorAssignContributor).
- * Nút "Mở" quay về hồ sơ, nơi hiện chi tiết nhiệm vụ.
+ * CTV từ chối / huỷ hoặc nhiệm vụ bị thu hồi: có nút "Giao CTV khác" ngay cạnh trạng thái.
  */
 
 const PAGE_SIZE = 10
@@ -25,6 +27,7 @@ const STATUS_OPTIONS = Object.entries(ASSIGNMENT_STATUS).map(([value, info]) => 
 function EditorAssignments() {
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(0)
+  const [historyCode, setHistoryCode] = useState(null) // Mã hồ sơ đang mở lịch sử
   const { data, error, loading } = useAsyncData(
     () => editorService.listAssignments({ status, page, size: PAGE_SIZE }),
     `${status}|${page}`,
@@ -43,7 +46,7 @@ function EditorAssignments() {
           }}
           aria-label="Lọc theo trạng thái"
         />
-        {data && <span className="desk-toolbar__count">{data.totalItems} nhiệm vụ</span>}
+        {data && <span className="desk-toolbar__count">{data.totalItems} hồ sơ</span>}
       </div>
 
       <Alert type="error">{error}</Alert>
@@ -103,13 +106,25 @@ function EditorAssignments() {
                     {isOverdue(item) && <small className="assign-overdue">Quá hạn</small>}
                   </td>
                   <td>
-                    <Badge tone={badge.tone}>{badge.label}</Badge>
+                    <span className="assign-status">
+                      <Badge tone={badge.tone}>{badge.label}</Badge>
+                      {canReassign(item) && (
+                        <Link to={`/editor/queue/${item.trackingCode}/assign`} className="assign-reassign">
+                          Giao CTV khác
+                        </Link>
+                      )}
+                    </span>
                   </td>
                   <td className="data-table__actions">
-                    <Link to={`/editor/queue/${item.trackingCode}`} className="desk-open">
-                      Mở
-                      <Icon name="chevronDown" size={14} />
-                    </Link>
+                    <span className="assign-row-actions">
+                      <button type="button" className="assign-history-open" onClick={() => setHistoryCode(item.trackingCode)}>
+                        Lịch sử
+                      </button>
+                      <Link to={`/editor/queue/${item.trackingCode}`} className="desk-open">
+                        Mở
+                        <Icon name="chevronDown" size={14} />
+                      </Link>
+                    </span>
                   </td>
                 </tr>
               )
@@ -119,6 +134,7 @@ function EditorAssignments() {
       </div>
 
       {data && <Pagination {...data} onChange={setPage} />}
+      {historyCode && <AssignmentHistoryDialog code={historyCode} onClose={() => setHistoryCode(null)} />}
     </section>
   )
 }

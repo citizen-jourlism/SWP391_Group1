@@ -45,6 +45,9 @@ export const editorService = {
   listCandidates: (params) => api.get('/editor/assignments/candidates', { params: cleanParams(params) }),
   /** Nhiệm vụ mới nhất của 1 hồ sơ; data = null nếu hồ sơ chưa từng được giao. */
   getLatestAssignment: (code) => api.get('/editor/assignments/latest', { params: { code } }),
+  /** Lịch sử nhiệm vụ của 1 hồ sơ, xem components/editor/AssignmentHistoryDialog.jsx. */
+  getAssignmentHistory: (code) => api.get('/editor/assignments/history', { params: { code } }),
+  /** Mỗi hồ sơ 1 dòng, là nhiệm vụ mới nhất. params: { status, page, size } */
   listAssignments: (params) => api.get('/editor/assignments', { params: cleanParams(params) }),
   /** payload: { trackingCode, contributorId, deadline, note } */
   assign: (payload) => api.post('/editor/assignments', payload),

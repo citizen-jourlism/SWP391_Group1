@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+import AssignmentHistoryDialog from '../../components/editor/AssignmentHistoryDialog'
 import { ReasonDialog } from '../../components/research/ResearchEditorial'
 import SubmissionDetail from '../../components/submission/SubmissionDetail'
 import Alert from '../../components/ui/Alert'
@@ -12,6 +13,7 @@ import {
   ACTIVE_ASSIGNMENT_STATUSES,
   ASSIGNABLE_SUBMISSION_STATUSES,
   assignmentBadge,
+  canReassign,
   isOverdue,
 } from '../../lib/assignment'
 import { formatDateTime } from '../../lib/format'
@@ -24,9 +26,10 @@ import '../../assets/styles/assignment.css'
  *
  * Thanh thao tác phía trên:
  *   - "Kiểm tra tin trùng" mở /editor/screening/<mã> (EditorDuplicateCheck).
- *   - "Giao CTV xác minh" mở /editor/queue/<mã>/assign (EditorAssignContributor); ẩn khi hồ sơ đã xử lý xong
- *     hoặc đang có nhiệm vụ. Hồ sơ từng được giao thì có thêm ô nhiệm vụ ngay dưới thanh này,
- *     kèm nút "Thu hồi" khi nhiệm vụ còn hiệu lực. CTV từ chối / huỷ hoặc thu hồi xong thì giao lại được.
+ *   - "Giao CTV xác minh" mở /editor/queue/<mã>/assign (EditorAssignContributor), chỉ hiện khi hồ sơ chưa từng được giao.
+ *     Hồ sơ từng được giao thì có ô nhiệm vụ ngay dưới thanh này: nút "Thu hồi" khi nhiệm vụ còn hiệu lực,
+ *     nút "Giao CTV khác" khi CTV từ chối / huỷ hoặc nhiệm vụ đã bị thu hồi.
+ *   - "Lịch sử" mở AssignmentHistoryDialog: giao cho ai, ai nhận, ai từ chối, lý do...
  *   - Các nút còn lại (tiếp nhận thẩm định, yêu cầu bổ sung, từ chối) đã ĐẶT SẴN nhưng đang KHOÁ:
  *     backend xử lý tin sẽ làm ở bản sau.
  */
@@ -41,9 +44,12 @@ function EditorSubmissionDetail() {
   const { code } = useParams()
   const { state } = useLocation() // state.notice: thông báo từ trang chọn CTV sau khi giao xong
   const { data, error } = useAsyncData(() => editorService.getSubmission(code), code)
-  const { data: assignment, setData: setAssignment } = useAsyncData(() => editorService.getLatestAssignment(code), `assignment|${code}`)
-  const canAssign =
-    ASSIGNABLE_SUBMISSION_STATUSES.includes(data?.status) && !ACTIVE_ASSIGNMENT_STATUSES.includes(assignment?.status)
+  const { data: assignment, setData: setAssignment, loading: assignmentLoading } = useAsyncData(
+    () => editorService.getLatestAssignment(code),
+    `assignment|${code}`,
+  )
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const canAssignFirst = !assignment && !assignmentLoading && ASSIGNABLE_SUBMISSION_STATUSES.includes(data?.status)
 
   return (
     <div className="desk-detail">
@@ -54,7 +60,7 @@ function EditorSubmissionDetail() {
 
       {error && <Alert type="error">{error}</Alert>}
       {/* Thu hồi xong thì thông báo "đã giao" không còn đúng nữa */}
-      <Alert type="success">{!canAssign && state?.notice}</Alert>
+      <Alert type="success">{ACTIVE_ASSIGNMENT_STATUSES.includes(assignment?.status) && state?.notice}</Alert>
       {!data && !error && <div className="skeleton skeleton--page" />}
 
       {data && (
@@ -69,7 +75,7 @@ function EditorSubmissionDetail() {
                 <Icon name="copy" size={14} />
                 Kiểm tra tin trùng
               </Button>
-              {canAssign && (
+              {canAssignFirst && (
                 <Button to={`/editor/queue/${code}/assign`} variant="secondary" className="btn--sm">
                   <Icon name="mapPin" size={14} />
                   Giao CTV xác minh
@@ -87,12 +93,18 @@ function EditorSubmissionDetail() {
                   {action.label}
                 </Button>
               ))}
+              <Button variant="secondary" className="btn--sm" onClick={() => setHistoryOpen(true)}>
+                <Icon name="clock" size={14} />
+                Lịch sử
+              </Button>
             </div>
           </section>
           {assignment && <CurrentAssignment assignment={assignment} onCancelled={setAssignment} />}
           <SubmissionDetail detail={data} />
         </>
       )}
+
+      {historyOpen && <AssignmentHistoryDialog code={code} onClose={() => setHistoryOpen(false)} />}
     </div>
   )
 }
@@ -121,8 +133,14 @@ function CurrentAssignment({ assignment, onCancelled }) {
           Thu hồi
         </Button>
       )}
+      {canReassign(assignment) && (
+        <Button to={`/editor/queue/${assignment.trackingCode}/assign`} className="btn--sm">
+          <Icon name="mapPin" size={14} />
+          Giao CTV khác
+        </Button>
+      )}
       {assignment.note && <p className="assign-current__note">{assignment.note}</p>}
-      {assignment.cancelReason && <p className="assign-current__note">Lý do huỷ: {assignment.cancelReason}</p>}
+      {assignment.cancelReason && <p className="assign-current__note">Lý do: {assignment.cancelReason}</p>}
 
       <ReasonDialog
         open={revoking}

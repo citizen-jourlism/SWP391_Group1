@@ -29,7 +29,7 @@ import '../../assets/styles/submit.css' // Màu icon theo loại phản ánh (.c
  * CHỌN CỘNG TÁC VIÊN ĐỂ GIAO NHIỆM VỤ — /editor/queue/:code/assign (mở từ nút "Giao CTV xác minh" của hồ sơ).
  * Giao diện như màn chọn quán trên ứng dụng giao đồ ăn:
  *   - Mỗi CTV là 1 thẻ: điểm hiệu suất, khu vực, số việc đang làm.
- *   - Bộ lọc khu vực MẶC ĐỊNH là nơi xảy ra vụ việc; có thêm ô tìm kiếm, lọc điểm, sắp xếp.
+ *   - Thanh lọc ngang: ô tìm kiếm, khu vực (MẶC ĐỊNH là nơi xảy ra vụ việc), điểm hiệu suất, sắp xếp.
  *   - Chọn 1 thẻ -> thanh "giỏ hàng" dưới đáy hiện ra để nhập hạn hoàn thành, chỉ dẫn rồi bấm giao.
  * Luồng: EditorAssignContributor -> editorService -> FieldAssignmentController -> FieldAssignmentService.
  * Giao xong quay về trang hồ sơ (EditorSubmissionDetail), trang đó hiện nhiệm vụ vừa giao.
@@ -97,7 +97,7 @@ function EditorAssignContributor() {
 function ContributorPicker({ code, incidentProvince }) {
   const [province, setProvince] = useState(incidentProvince ?? '')
   const [keyword, setKeyword] = useState('')
-  const [minScore, setMinScore] = useState(0)
+  const [minScore, setMinScore] = useState('')
   const [sort, setSort] = useState('RECOMMENDED')
   const [selected, setSelected] = useState(null)
   const searchText = useDebouncedValue(keyword.trim())
@@ -130,26 +130,18 @@ function ContributorPicker({ code, incidentProvince }) {
           aria-label="Lọc theo khu vực"
         />
         <SelectField
+          options={SCORE_FILTERS}
+          placeholder="Mọi mức điểm"
+          value={minScore}
+          onChange={(event) => setMinScore(event.target.value)}
+          aria-label="Lọc theo điểm hiệu suất"
+        />
+        <SelectField
           options={SORT_OPTIONS}
           value={sort}
           onChange={(event) => setSort(event.target.value)}
           aria-label="Sắp xếp"
         />
-        <div className="assign-chips" role="group" aria-label="Lọc theo điểm hiệu suất">
-          <span>Điểm hiệu suất</span>
-          {SCORE_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              type="button"
-              className={minScore === filter.value ? 'is-active' : ''}
-              aria-pressed={minScore === filter.value}
-              onClick={() => setMinScore(filter.value)}
-            >
-              {filter.value > 0 && <Icon name="star" size={12} />}
-              {filter.label}
-            </button>
-          ))}
-        </div>
       </section>
 
       <Alert type="error">{error}</Alert>

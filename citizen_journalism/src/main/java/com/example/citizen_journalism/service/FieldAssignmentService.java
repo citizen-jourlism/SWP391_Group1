@@ -4,6 +4,8 @@ import static com.example.citizen_journalism.util.TextUtils.blankToNull;
 
 import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.assignment.AssignContributorRequest;
+import com.example.citizen_journalism.dto.assignment.AssignmentHistoryEntry;
+import com.example.citizen_journalism.dto.assignment.AssignmentHistoryEntry.Type;
 import com.example.citizen_journalism.dto.assignment.AssignmentView;
 import com.example.citizen_journalism.dto.assignment.ContributorCandidate;
 import com.example.citizen_journalism.entity.FieldAssignment;
@@ -19,6 +21,7 @@ import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.util.Paging;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -36,7 +39,8 @@ import org.springframework.transaction.annotation.Transactional;
  *   - getCandidates : danh sách CTV để chọn, kiểu màn hình chọn quán: lọc theo khu vực, địa chỉ / tên, điểm hiệu suất
  *                     và sắp xếp. Mặc định ưu tiên CTV cùng khu vực với nơi xảy ra vụ việc.
  *   - assign        : giao đích danh 1 CTV, kèm hạn hoàn thành và chỉ dẫn; hồ sơ chuyển sang IN_REVIEW (Đang thẩm định).
- *   - list / getLatest : theo dõi các nhiệm vụ đã giao.
+ *   - list / getLatest : theo dõi các nhiệm vụ đã giao (mỗi hồ sơ 1 dòng, là nhiệm vụ mới nhất).
+ *   - getHistory    : toàn bộ diễn biến nhiệm vụ của 1 hồ sơ: giao cho ai, ai nhận, ai từ chối, lý do.
  *   - cancel        : thu hồi nhiệm vụ đang hiệu lực (ví dụ CTV không phản hồi) để giao cho người khác.
  * Phần CTV nhận / từ chối / huỷ nằm ở ContributorTaskService.
  *
@@ -50,7 +54,8 @@ public class FieldAssignmentService {
     /** Cách sắp xếp danh sách CTV (frontend gửi lên qua tham số sort). */
     public enum CandidateSort {
         RECOMMENDED, // Phù hợp nhất: cùng khu vực trước, rồi điểm cao, rồi ít việc
-        SCORE,       // Điểm hiệu suất cao nhất
+        SCORE_DESC,  // Điểm hiệu suất từ cao đến thấp
+        SCORE_ASC,   // Điểm hiệu suất từ thấp đến cao
         WORKLOAD     // Ít nhiệm vụ đang làm nhất
     }
 
@@ -131,22 +136,23 @@ public class FieldAssignmentService {
 
     /** Thu hồi nhiệm vụ đang hiệu lực. Hồ sơ giữ nguyên trạng thái để Biên tập viên giao lại. CTV nhận email. */
     @Transactional
-    public AssignmentView cancel(Long assignmentId, String reason) {
+    public AssignmentView cancel(String editorId, Long assignmentId, String reason) {
+        User editor = userRepository.getActiveById(editorId);
         FieldAssignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy nhiệm vụ."));
         if (!ACTIVE_STATUSES.contains(assignment.getStatus())) {
             throw AppException.conflict("Nhiệm vụ này đã kết thúc, không thể thu hồi.");
         }
-        assignment.cancel(FieldAssignment.CancelType.EDITOR_CANCELLED, reason.trim());
+        assignment.cancel(FieldAssignment.CancelType.EDITOR_CANCELLED, reason.trim(), editor);
         notifyCancelled(assignment);
         return AssignmentView.from(assignment);
     }
 
-    /** Danh sách nhiệm vụ, mới nhất trước. status = null: mọi trạng thái. */
+    /** Danh sách nhiệm vụ, mỗi hồ sơ 1 dòng, mới nhất trước. status = null: mọi trạng thái. */
     @Transactional(readOnly = true)
     public PageResponse<AssignmentView> list(AssignmentStatus status, int page, int size) {
         Set<AssignmentStatus> statuses = status == null ? EnumSet.allOf(AssignmentStatus.class) : EnumSet.of(status);
-        return PageResponse.from(assignmentRepository.findByStatusIn(statuses, Paging.of(page, size, Paging.NEWEST_FIRST))
+        return PageResponse.from(assignmentRepository.findLatestPerSubmission(statuses, Paging.of(page, size, Paging.NEWEST_FIRST))
                 .map(AssignmentView::from));
     }
 
@@ -158,7 +164,40 @@ public class FieldAssignmentService {
                 .orElse(null);
     }
 
+    /** Lịch sử của 1 hồ sơ theo thứ tự thời gian: lúc gửi tới, rồi từng bước của mọi nhiệm vụ đã giao. */
+    @Transactional(readOnly = true)
+    public List<AssignmentHistoryEntry> getHistory(String trackingCode) {
+        Submission submission = findSubmission(trackingCode);
+        List<AssignmentHistoryEntry> entries = new ArrayList<>();
+        entries.add(new AssignmentHistoryEntry(Type.SUBMITTED, submission.getCreatedAt(), null, null, null, null));
+        assignmentRepository.findBySubmissionIdOrderByIdAsc(submission.getId())
+                .forEach(assignment -> addHistory(entries, assignment));
+        entries.sort(Comparator.comparing(AssignmentHistoryEntry::at));
+        return entries;
+    }
+
     // ================================ HÀM PHỤ ================================
+
+    /**
+     * Thêm các bước của 1 nhiệm vụ: giao việc, CTV nhận (nếu có), rồi kết thúc (nếu có).
+     * Lúc kết thúc lấy từ updatedAt vì nhiệm vụ đã kết thúc thì không còn bị sửa nữa.
+     */
+    private static void addHistory(List<AssignmentHistoryEntry> entries, FieldAssignment assignment) {
+        String contributor = assignment.getContributor().getFullName();
+        entries.add(new AssignmentHistoryEntry(Type.ASSIGNED, assignment.getCreatedAt(), assignment.getCreatedBy().getFullName(),
+                contributor, assignment.getDeadline(), assignment.getNote()));
+        if (assignment.getClaimedAt() != null) {
+            entries.add(new AssignmentHistoryEntry(Type.ACCEPTED, assignment.getClaimedAt(), contributor, contributor, null, null));
+        }
+        if (assignment.getCancelType() != null) {
+            User actor = assignment.getCancelledBy() != null ? assignment.getCancelledBy() : assignment.getCreatedBy();
+            entries.add(new AssignmentHistoryEntry(Type.valueOf(assignment.getCancelType().name()), assignment.getUpdatedAt(),
+                    actor.getFullName(), contributor, null, assignment.getCancelReason()));
+        }
+        if (assignment.getStatus() == AssignmentStatus.COMPLETED) {
+            entries.add(new AssignmentHistoryEntry(Type.COMPLETED, assignment.getUpdatedAt(), contributor, contributor, null, null));
+        }
+    }
 
     private Submission findSubmission(String trackingCode) {
         return submissionRepository.findByTrackingCode(normalize(trackingCode))
@@ -194,7 +233,8 @@ public class FieldAssignmentService {
         Comparator<ContributorCandidate> byScore = Comparator.comparingInt(ContributorCandidate::performanceScore).reversed();
         Comparator<ContributorCandidate> byWorkload = Comparator.comparingLong(ContributorCandidate::activeTasks);
         return switch (sort) {
-            case SCORE -> byScore.thenComparing(byWorkload);
+            case SCORE_DESC -> byScore.thenComparing(byWorkload);
+            case SCORE_ASC -> Comparator.comparingInt(ContributorCandidate::performanceScore).thenComparing(byWorkload);
             case WORKLOAD -> byWorkload.thenComparing(byScore);
             case RECOMMENDED -> Comparator.comparing(ContributorCandidate::sameArea).reversed()
                     .thenComparing(byScore).thenComparing(byWorkload);
