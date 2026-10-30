@@ -33,6 +33,9 @@ import EditorPlanned from './routes/editor/EditorPlanned.jsx'
 import EditorQueue from './routes/editor/EditorQueue.jsx'
 import EditorResearchDetail from './routes/editor/EditorResearchDetail.jsx'
 import EditorSubmissionDetail from './routes/editor/EditorSubmissionDetail.jsx'
+import AuditLogs from './routes/admin/AuditLogs'
+import EditorCategories from './routes/editor/EditorCategories.jsx'
+import Notifications from './routes/Notifications.jsx'
 
 /**
  * Component gốc của ứng dụng: khai báo BẢN ĐỒ ĐƯỜNG DẪN (routing).
@@ -66,6 +69,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+  path="/account/notifications"
+  element={
+    <ProtectedRoute>
+      <Notifications />
+    </ProtectedRoute>
+  }
+/>
           <Route
             path="/account/change-password"
             element={
@@ -156,6 +167,7 @@ function App() {
           >
             <Route index element={<AdminOverview />} />           {/* /admin       : Tổng quan */}
             <Route path="users" element={<AdminUsers />} />       {/* /admin/users : Quản lý tài khoản */}
+            <Route path="audit-history" element={<AuditLogs />} />
             <Route path="users/:id" element={<AdminUserDetail />} /> {/* /admin/users/CT0001 : Xem / sửa một tài khoản */}
           </Route>
 
@@ -174,6 +186,7 @@ function App() {
             <Route path="queue/research/:id" element={<EditorResearchDetail />} />     {/* Chi tiết 1 bài nghiên cứu */}
             <Route path="applications" element={<EditorApplications />} />              {/* Đơn đăng ký CTV */}
             <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
+            <Route path="categories" element={<EditorCategories />} />
             <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
             {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
             <Route path="screening" element={<EditorPlanned page="screening" />} />

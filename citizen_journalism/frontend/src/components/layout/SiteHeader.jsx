@@ -7,6 +7,7 @@ import Icon from '../ui/Icon'
 import Logo from '../ui/Logo'
 import UserMenu from './UserMenu'
 import '../../assets/styles/site-header.css'
+import NotificationDropdown from './NotificationDropdown.jsx'
 
 /**
  * THANH ĐẦU TRANG DÙNG CHUNG cho trang chủ (routes/Homepage.jsx) và các trang người dùng (AccountLayout).
@@ -161,16 +162,23 @@ function SiteHeader() {
               </Link>
             )}
             {primaryAction}
-            {ready && user && <UserMenu />}
-            <button
-              type="button"
-              className="site-header__burger"
-              onClick={() => setMenuOpen((value) => !value)}
-              aria-expanded={menuOpen}
-              aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
-            >
-              <Icon name={menuOpen ? 'x' : 'menu'} size={22} />
-            </button>
+
+{ready && user && <NotificationDropdown />}
+
+{ready && user && <UserMenu />}
+
+<button
+  type="button"
+  className="site-header__burger"
+  onClick={() => setMenuOpen((value) => !value)}
+  aria-expanded={menuOpen}
+  aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
+>
+  <Icon name={menuOpen ? 'x' : 'menu'} size={22} />
+</button>
+
+
+
           </div>
         </div>
       </div>
