@@ -81,13 +81,9 @@
   margin-top: 14px;
 }
 
-/* Chữ của mục chiếm phần còn lại, đẩy nhãn "Sắp có" sang phải; luôn 1 dòng (dài quá thì "...") */
+/* Chữ của mục chiếm phần còn lại, đẩy nhãn "Sắp có" sang phải */
 .admin__nav-text {
   flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Nhãn "Sắp có" cho chức năng chưa làm */
@@ -114,9 +110,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 9px 8px;
+  padding: 11px 12px;
   border: 0;
   border-radius: 10px;
   background: transparent;
@@ -700,53 +696,43 @@
   background: var(--success-bg);
 }
 
-/* ---------- Hộp thoại đổi vai trò (ChangeRoleDialog) ---------- */
-.role-options {
+/* ---------- Trang chi tiết tài khoản (AdminUserDetail) ---------- */
+.user-detail__back {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.user-detail__back:hover {
+  color: var(--orange-strong);
+}
+
+/* Danh sách thông tin chỉ xem: nhãn bên trái, giá trị bên phải */
+.user-detail__facts {
   display: grid;
-  gap: 8px;
-  margin-bottom: 18px;
+  margin: 0 0 16px;
 }
 
-.role-option {
+.user-detail__facts > div {
   display: flex;
+  justify-content: space-between;
   gap: 12px;
-  align-items: flex-start;
-  padding: 12px 14px;
-  border: 1.5px solid var(--card-border);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.role-option:hover {
-  border-color: #b6c0d0;
-}
-
-.role-option.is-selected {
-  border-color: var(--orange);
-  background: #fff8f4;
-}
-
-.role-option input {
-  margin-top: 3px;
-  accent-color: var(--orange-strong);
-}
-
-.role-option strong {
-  display: block;
-  color: var(--navy-900);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--card-border);
   font-size: 14px;
 }
 
-.role-option em {
-  color: var(--orange-strong);
-  font-size: 12px;
-  font-style: normal;
+.user-detail__facts dt {
+  color: var(--muted);
 }
 
-.role-option small {
-  color: var(--muted);
-  font-size: 12.5px;
+.user-detail__facts dd {
+  margin: 0;
+  color: var(--navy-900);
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 /* ---------- Thông tin đăng nhập vừa tạo (CreateUserDialog) ---------- */

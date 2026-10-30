@@ -5,6 +5,7 @@ import static com.example.citizen_journalism.util.TextUtils.normalizeEmail;
 
 import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.admin.AdminStats;
+import com.example.citizen_journalism.dto.admin.AdminUpdateUserRequest;
 import com.example.citizen_journalism.dto.admin.AdminUserItem;
 import com.example.citizen_journalism.dto.admin.CreateUserRequest;
 import com.example.citizen_journalism.entity.Submission;
@@ -12,35 +13,48 @@ import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.exception.AppException;
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
-import com.example.citizen_journalism.util.Paging;
 import com.example.citizen_journalism.util.UserIdGenerator;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
 
 /**
  * Nghiệp vụ của QUẢN TRỊ HỆ THỐNG (SYSTEM_ADMIN) – được AdminController gọi.
  * Chỉ admin mới gọi được (SecurityConfig chặn /api/admin/** theo vai trò).
  *
- * Gồm: số liệu tổng quan, tìm kiếm/lọc người dùng, tạo tài khoản nội bộ, khoá/mở khoá, đổi vai trò.
+ * Gồm: số liệu tổng quan, tìm kiếm/lọc người dùng, tạo tài khoản nội bộ, khoá/mở khoá, xem chi tiết + sửa thông tin / vai trò, đặt lại mật khẩu.
  *
  * QUY TẮC "CHỈ CÓ MỘT ADMIN" (theo yêu cầu nhóm):
  *   - Không tạo được tài khoản SYSTEM_ADMIN mới, không đổi vai trò ai thành SYSTEM_ADMIN.
  *   - Không khoá / đổi vai trò được chính tài khoản SYSTEM_ADMIN (tránh tự khoá mình -> mất quyền quản trị).
  * Tài khoản admin duy nhất được tạo tự động lúc khởi động (config/AdminAccountInitializer).
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminService {
+
+    private static final int MAX_PAGE_SIZE = 50;
 
     private final UserRepository userRepository;
     private final SubmissionRepository submissionRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserIdGenerator userIdGenerator;
+    private final MailService mailService;
+
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     // ============================== SỐ LIỆU TỔNG QUAN ==============================
 
@@ -67,12 +81,15 @@ public class AdminService {
 
     /**
      * Tìm kiếm + lọc + phân trang, mới nhất lên trước.
-     * @param page trang (bắt đầu từ 0); size số dòng mỗi trang (Paging tự giới hạn để tránh tải quá nhiều)
+     * @param page trang (bắt đầu từ 0); size số dòng mỗi trang (tối đa MAX_PAGE_SIZE để tránh tải quá nhiều)
      */
     @Transactional(readOnly = true)
     public PageResponse<AdminUserItem> searchUsers(String keyword, User.Role role, User.Status status, int page, int size) {
-        return PageResponse.from(userRepository.search(blankToNull(keyword), role, status,
-                Paging.of(page, size, Paging.NEWEST_FIRST)).map(AdminUserItem::from));
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE); // giới hạn trong khoảng 1..MAX_PAGE_SIZE
+        PageRequest pageRequest = PageRequest.of(Math.max(page, 0), safeSize,
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        return PageResponse.from(userRepository.search(blankToNull(keyword), role, status, pageRequest)
+                .map(AdminUserItem::from));
     }
 
     // =========================== TẠO / SỬA TÀI KHOẢN ===========================
@@ -120,19 +137,104 @@ public class AdminService {
         return AdminUserItem.from(user);
     }
 
+    /** Chi tiết một tài khoản (trang /admin/users/:id). Xem được cả tài khoản admin, chỉ là không sửa được. */
+    @Transactional(readOnly = true)
+    public AdminUserItem getUser(String userId) {
+        return AdminUserItem.from(userRepository.findById(userId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tài khoản " + userId + ".")));
+    }
+
     /**
-     * Đổi vai trò (ví dụ Người dân -> Cộng tác viên). Mã người dùng giữ nguyên (CT0001 vẫn là CT0001)
-     * vì mã là định danh cố định, đã được dùng ở các bảng khác.
+     * Sửa thông tin cá nhân + vai trò trong MỘT lần lưu (cùng transaction: lỗi thì không đổi gì cả).
+     * Đổi vai trò: mã người dùng giữ nguyên (CT0001 vẫn là CT0001) vì mã là định danh cố định, đã được dùng ở các bảng khác;
+     * vai trò mới có hiệu lực khi người đó đăng nhập lại (vai trò nằm trong token).
      */
     @Transactional
-    public AdminUserItem updateRole(String userId, User.Role role) {
-        rejectAdminRole(role);
+    public AdminUserItem updateUser(String userId, AdminUpdateUserRequest request) {
+        rejectAdminRole(request.role());
         User user = findManageableUser(userId);
-        user.setRole(role);
+
+        String citizenId = blankToNull(request.citizenId());
+        if (citizenId != null && userRepository.existsByCitizenIdAndIdNot(citizenId, userId)) {
+            // invalidFields: lỗi hiện ngay dưới ô CCCD trên form
+            throw AppException.invalidFields(Map.of("citizenId", "Số CCCD này đã được đăng ký cho một tài khoản khác."));
+        }
+
+        user.setFullName(request.fullName().trim());
+        user.setPhone(request.phone().trim());
+        user.setCitizenId(citizenId);
+        user.setAddress(blankToNull(request.address()));
+        user.setDateOfBirth(request.dateOfBirth());
+        user.setRole(request.role());
+        // Không cần save(): user đang được JPA quản lý trong transaction, tự ghi xuống DB khi hàm kết thúc.
         return AdminUserItem.from(user);
     }
 
+    /**
+     * Đặt lại mật khẩu cho người dùng quên mật khẩu mà không tự lấy lại được (ví dụ mất quyền vào email).
+     * Admin phải nhập lại mật khẩu CỦA MÌNH; sai thì không đổi gì. Đúng thì sinh mật khẩu tạm ngẫu nhiên,
+     * lưu bản băm, trả bản gốc về cho admin chuyển trực tiếp cho người dùng (chỉ thấy được lần này).
+     */
+    @Transactional
+    public String resetPassword(String adminId, String userId, String adminPassword) {
+        User admin = userRepository.getActiveById(adminId);
+        if (!passwordEncoder.matches(adminPassword, admin.getPasswordHash())) {
+            throw AppException.invalidFields(Map.of("adminPassword", "Mật khẩu không đúng."));
+        }
+        User user = findManageableUser(userId);
+        if (user.getStatus() == User.Status.PENDING_OTP) {
+            throw AppException.badRequest("Tài khoản chưa xác thực email, người dùng nên đăng ký lại.");
+        }
+
+        String temporaryPassword = generateTemporaryPassword();
+        user.setPasswordHash(passwordEncoder.encode(temporaryPassword));
+        // Gỡ khoá TẠM do nhập sai mật khẩu để người dùng đăng nhập được ngay.
+        // Không đổi status: tài khoản bị admin khoá (LOCKED) vẫn phải mở khoá bằng nút riêng.
+        user.setFailedLoginAttempts(0);
+        user.setLockedUntil(null);
+        notifyPasswordReset(user);
+        return temporaryPassword;
+    }
+
     // ================================= HÀM PHỤ =================================
+
+    /**
+     * Mật khẩu tạm 12 ký tự, luôn có chữ HOA, chữ thường, số và ký tự đặc biệt (đạt quy tắc @StrongPassword).
+     * SecureRandom: bộ sinh ngẫu nhiên an toàn, khó đoán hơn Random. Bỏ ký tự dễ nhầm 0/O, 1/l/I để người nhận gõ đúng.
+     */
+    private static String generateTemporaryPassword() {
+        String[] groups = {"ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789", "!@#$%&*"};
+        String all = String.join("", groups);
+        List<Character> chars = new ArrayList<>();
+        for (String group : groups) {
+            chars.add(group.charAt(RANDOM.nextInt(group.length()))); // Mỗi nhóm ít nhất 1 ký tự
+        }
+        while (chars.size() < 12) {
+            chars.add(all.charAt(RANDOM.nextInt(all.length())));
+        }
+        Collections.shuffle(chars, RANDOM); // Trộn để ký tự bắt buộc không luôn nằm ở đầu
+        StringBuilder password = new StringBuilder();
+        chars.forEach(password::append);
+        return password.toString();
+    }
+
+    /**
+     * Báo cho người dùng biết mật khẩu vừa bị đặt lại (KHÔNG gửi mật khẩu). Nếu chính chủ vẫn dùng email
+     * thì sẽ phát hiện được trường hợp người khác giả danh xin đặt lại. Gửi lỗi thì chỉ ghi log, không huỷ việc đặt lại.
+     */
+    private void notifyPasswordReset(User user) {
+        String html = """
+                <p>Xin chào %s,</p>
+                <p>Mật khẩu tài khoản Tin Nóng Dân Sinh của bạn vừa được <strong>quản trị viên đặt lại</strong> theo yêu cầu hỗ trợ.</p>
+                <p>Hãy đăng nhập bằng mật khẩu tạm được cung cấp và đổi mật khẩu ngay.
+                Nếu bạn không yêu cầu việc này, vui lòng liên hệ toà soạn.</p>
+                """.formatted(HtmlUtils.htmlEscape(user.getFullName()));
+        try {
+            mailService.send(user.getEmail(), "[Tin Nóng Dân Sinh] Mật khẩu của bạn đã được đặt lại", html);
+        } catch (AppException ex) {
+            log.warn("Cannot send password reset notice to {}", user.getId());
+        }
+    }
 
     /** Tìm người dùng để thao tác; KHÔNG cho thao tác lên tài khoản quản trị. */
     private User findManageableUser(String userId) {

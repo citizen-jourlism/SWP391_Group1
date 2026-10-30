@@ -26,7 +26,7 @@ const NAV_GROUPS = [
     label: 'Xác minh & biên tập',
     items: [
       { to: '/editor/assignments', icon: 'mapPin', label: 'Giao nhiệm vụ', title: 'Nhiệm vụ xác minh hiện trường', soon: true },
-      { to: '/editor/articles', icon: 'edit', label: 'Biên tập bài viết', title: 'Biên tập bài viết', soon: true },
+      { to: '/editor/articles', icon: 'edit', label: 'Biên tập bài viết', title: 'Biên tập bài viết' },
     ],
   },
   {

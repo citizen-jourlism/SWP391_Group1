@@ -22,10 +22,14 @@ import lombok.*;
 @Builder
 public class EditoralReview extends BaseEntity {
 
+    // Dòng của hồ sơ phản ánh có submission; dòng của bài nghiên cứu có researchArticle (đúng 1 trong 2)
     @ManyToOne(fetch = FetchType.LAZY)
-    @NotNull(message = "Submission is required")
-    @JoinColumn(name = "submission_id", nullable = false)
+    @JoinColumn(name = "submission_id")
     private Submission submission;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "research_article_id")
+    private ResearchArticle researchArticle;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @NotNull(message = "Reviewer is required")
@@ -48,6 +52,11 @@ public class EditoralReview extends BaseEntity {
     @Column(name = "content_snapshot", columnDefinition = "LONGTEXT")
     private String contentSnapshot;
 
+    /** Chỉ dùng cho action = REQUEST_EDIT: chờ tác giả phản hồi / đã đồng ý / đã từ chối. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", columnDefinition = "VARCHAR(20)")
+    private RequestStatus status;
+
     public enum ReviewRole {
         EDITOR,
         DEPUTY_EIC,
@@ -61,6 +70,12 @@ public class EditoralReview extends BaseEntity {
         REQUEST_EDIT,
         ESCALATE,
         RETRACT
+    }
+
+    public enum RequestStatus {
+        PENDING,
+        ACCEPTED,
+        REJECTED
     }
 
 }

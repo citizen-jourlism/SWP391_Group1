@@ -21,6 +21,9 @@ public interface ContributorApplicationRepository extends JpaRepository<Contribu
     /** Mọi đơn của 1 người, mới nhất trước (đơn đầu tiên = đơn hiện tại, còn lại là lịch sử). */
     List<ContributorApplication> findByApplicantIdOrderByCreatedAtDescIdDesc(String applicantId);
 
+    /** Người này có đơn nào đang ở các trạng thái này không (dùng để chặn nộp 2 đơn cùng lúc). */
+    boolean existsByApplicantIdAndStatusIn(String applicantId, Collection<ContributorApplication.Status> statuses);
+
     long countByStatus(ContributorApplication.Status status);
 
     /** Danh sách cho Biên tập viên, lọc theo các trạng thái, có phân trang. */

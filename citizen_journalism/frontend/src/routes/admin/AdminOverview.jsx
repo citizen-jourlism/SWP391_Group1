@@ -1,10 +1,10 @@
+import { useCallback, useEffect, useState } from 'react'
 import RoleDistribution from '../../components/admin/RoleDistribution'
 import StatCard from '../../components/admin/StatCard'
 import UserCell from '../../components/admin/UserCell'
 import Alert from '../../components/ui/Alert'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
-import { useAsyncData } from '../../hooks/useAsyncData'
 import { formatDateTime } from '../../lib/format'
 import { ROLE_LABELS, ROLE_TONES } from '../../lib/roles'
 import { adminService } from '../../services/adminService'
@@ -18,14 +18,32 @@ import { adminService } from '../../services/adminService'
  *   - Biểu đồ phân bố theo vai trò  |  Tin/bài + danh sách 5 tài khoản mới đăng ký
  */
 function AdminOverview() {
-  const { data: stats, error, loading, reload } = useAsyncData(() => adminService.getStats(), 'admin-stats')
+  const [stats, setStats] = useState(null)
+  const [error, setError] = useState('')
 
-  if (error && !loading) {
+  const fetchStats = useCallback(() => {
+    adminService
+      .getStats()
+      .then((response) => setStats(response.data))
+      .catch((err) => setError(err.message))
+  }, [])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
+
+  if (error) {
     return (
       <Alert type="error">
         {error}
         <div className="alert__actions">
-          <Button variant="secondary" onClick={reload}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setError('')
+              fetchStats()
+            }}
+          >
             Thử lại
           </Button>
         </div>

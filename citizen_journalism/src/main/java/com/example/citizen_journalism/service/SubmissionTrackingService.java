@@ -12,13 +12,15 @@ import com.example.citizen_journalism.exception.AppException;
 import com.example.citizen_journalism.repository.EvidenceRepository;
 import com.example.citizen_journalism.repository.SubmissionEventRepository;
 import com.example.citizen_journalism.repository.SubmissionRepository;
-import com.example.citizen_journalism.util.Paging;
-import com.example.citizen_journalism.util.TimeUtils;
+import com.example.citizen_journalism.repository.UserRepository;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,10 +44,12 @@ import tools.jackson.databind.ObjectMapper;
 public class SubmissionTrackingService {
 
     private static final String INVALID_MESSAGE = "Mã hồ sơ hoặc mã PIN không đúng.";
+    private static final int MAX_PAGE_SIZE = 50;
 
     private final SubmissionRepository submissionRepository;
     private final EvidenceRepository evidenceRepository;
     private final SubmissionEventRepository eventRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
 
@@ -72,7 +76,7 @@ public class SubmissionTrackingService {
         LocalDateTime lockedUntil = submission.getPinLockedUntil();
         if (lockedUntil != null && now.isBefore(lockedUntil)) {
             throw AppException.tooManyRequests("Bạn đã nhập sai mã PIN quá nhiều lần. Vui lòng thử lại sau "
-                    + TimeUtils.minutesUntil(now, lockedUntil) + " phút.");
+                    + minutesUntil(now, lockedUntil) + " phút.");
         }
 
         if (!passwordEncoder.matches(request.pin(), submission.getPinHash())) {
@@ -96,20 +100,20 @@ public class SubmissionTrackingService {
 
     // ============================ 2. HỒ SƠ CỦA TÔI ============================
 
-    /**
-     * Danh sách hồ sơ của người đang đăng nhập, mới nhất lên đầu.
-     * (Tài khoản bị khoá giữa chừng đã bị chặn từ trước, ở security/ActiveUserJwtConverter.)
-     */
+    /** Danh sách hồ sơ của người đang đăng nhập, mới nhất lên đầu. */
     @Transactional(readOnly = true)
     public PageResponse<SubmissionSummary> listMine(String userId, int page, int size) {
+        userRepository.getActiveById(userId); // Tài khoản bị khoá giữa chừng -> báo đăng nhập lại
+        PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE),
+                Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
         // page.map(...): đổi từng Submission trong trang thành SubmissionSummary, giữ nguyên thông tin phân trang
-        return PageResponse.from(submissionRepository.findByAuthorId(userId, Paging.of(page, size, Paging.NEWEST_FIRST))
-                .map(SubmissionSummary::from));
+        return PageResponse.from(submissionRepository.findByAuthorId(userId, pageable).map(SubmissionSummary::from));
     }
 
     /** Chi tiết 1 hồ sơ của người đang đăng nhập. Hồ sơ của người khác -> báo không tìm thấy. */
     @Transactional(readOnly = true)
     public SubmissionDetail getMine(String userId, String trackingCode) {
+        userRepository.getActiveById(userId);
         return submissionRepository.findByTrackingCodeAndAuthorId(trackingCode.trim().toUpperCase(Locale.ROOT), userId)
                 .map(this::toDetail)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy hồ sơ."));
@@ -155,5 +159,10 @@ public class SubmissionTrackingService {
                 requestNote,
                 evidences,
                 events.stream().map(TimelineEntry::from).toList());
+    }
+
+    /** Số phút (làm tròn lên) từ bây giờ tới lúc hết khoá, ví dụ còn 4 phút 10 giây -> 5. */
+    private static long minutesUntil(LocalDateTime now, LocalDateTime until) {
+        return Math.max(1, (Duration.between(now, until).getSeconds() + 59) / 60);
     }
 }
