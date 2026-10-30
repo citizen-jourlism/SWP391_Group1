@@ -10,9 +10,7 @@ import com.example.citizen_journalism.dto.admin.CreateUserRequest;
 import com.example.citizen_journalism.dto.admin.UpdateStatusRequest;
 import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.service.AdminService;
-import com.example.citizen_journalism.util.VietnamProvinces;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -48,12 +46,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
 
     private final AdminService adminService;
-
-    /** Danh sách tỉnh/thành cho ô "Khu vực tác nghiệp" của Cộng tác viên. */
-    @GetMapping("/provinces")
-    public ApiResponse<List<String>> provinces() {
-        return ApiResponse.ok("OK", VietnamProvinces.ALL);
-    }
 
     @GetMapping("/stats")
     public ApiResponse<AdminStats> stats() {

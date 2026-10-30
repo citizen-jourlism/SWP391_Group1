@@ -40,8 +40,7 @@ export const editorService = {
   unmergeDuplicate: (code) => api.post(`/editor/submissions/${encodeURIComponent(code)}/duplicates/unmerge`),
 
   // ----- Giao nhiệm vụ xác minh hiện trường (backend: FieldAssignmentController) -----
-  listAssignmentProvinces: () => api.get('/editor/assignments/provinces'),
-  /** Cộng tác viên để chọn. params: { code, province, q, minScore, sort: RECOMMENDED | SCORE | WORKLOAD } */
+  /** Cộng tác viên để chọn. params: { code, province, ward, q, minScore, sort: RECOMMENDED | SCORE_DESC | SCORE_ASC | WORKLOAD } */
   listCandidates: (params) => api.get('/editor/assignments/candidates', { params: cleanParams(params) }),
   /** Nhiệm vụ mới nhất của 1 hồ sơ; data = null nếu hồ sơ chưa từng được giao. */
   getLatestAssignment: (code) => api.get('/editor/assignments/latest', { params: { code } }),

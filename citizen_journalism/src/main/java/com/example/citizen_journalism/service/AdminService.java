@@ -17,7 +17,6 @@ import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.util.Paging;
 import com.example.citizen_journalism.util.UserIdGenerator;
-import com.example.citizen_journalism.util.VietnamProvinces;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -50,6 +49,7 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final ContributorApplicationRepository applicationRepository;
+    private final LocationService locationService;
     private final SubmissionRepository submissionRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserIdGenerator userIdGenerator;
@@ -158,13 +158,18 @@ public class AdminService {
             throw AppException.invalidFields(Map.of("citizenId", "Số CCCD này đã được đăng ký cho một tài khoản khác."));
         }
 
+        String province = blankToNull(request.province());
+        String ward = blankToNull(request.ward());
+        locationService.checkAddress(province, ward);
+
         user.setFullName(request.fullName().trim());
         user.setPhone(request.phone().trim());
         user.setCitizenId(citizenId);
+        user.setProvince(province != null ? province : defaultProvince(user, request.role()));
+        user.setWard(ward);
         user.setAddress(blankToNull(request.address()));
         user.setDateOfBirth(request.dateOfBirth());
         user.setRole(request.role());
-        user.setWorkingProvince(workingProvinceOf(user, request));
         // Không cần save(): user đang được JPA quản lý trong transaction, tự ghi xuống DB khi hàm kết thúc.
         return AdminUserItem.from(user);
     }
@@ -198,19 +203,12 @@ public class AdminService {
     // ================================= HÀM PHỤ =================================
 
     /**
-     * Khu vực tác nghiệp sau khi sửa tài khoản. Chỉ Cộng tác viên mới có; admin bỏ trống thì lấy khu vực
-     * ghi trong đơn đăng ký CTV gần nhất (nếu có), để CTV mới được nâng cấp xuất hiện ngay ở đúng khu vực.
+     * Tỉnh khi admin bỏ trống ô tỉnh: Cộng tác viên lấy theo đơn đăng ký CTV gần nhất (nếu có),
+     * để CTV mới được nâng cấp xuất hiện ngay ở đúng khu vực khi giao nhiệm vụ.
      */
-    private String workingProvinceOf(User user, AdminUpdateUserRequest request) {
-        if (request.role() != User.Role.CONTRIBUTOR) {
+    private String defaultProvince(User user, User.Role role) {
+        if (role != User.Role.CONTRIBUTOR) {
             return null;
-        }
-        String province = blankToNull(request.workingProvince());
-        if (province != null && !VietnamProvinces.isValid(province)) {
-            throw AppException.invalidFields(Map.of("workingProvince", "Tỉnh/thành phố không hợp lệ."));
-        }
-        if (province != null) {
-            return province;
         }
         return applicationRepository.findByApplicantIdOrderByCreatedAtDescIdDesc(user.getId()).stream()
                 .findFirst().map(ContributorApplication::getProvince).orElse(null);

@@ -97,10 +97,6 @@ public class User {
     @Column(name = "performance_score")
     private Integer performanceScore;
 
-    /** Khu vực tác nghiệp của Cộng tác viên (một giá trị trong util/VietnamProvinces), dùng để ghép CTV với nơi xảy ra vụ việc. */
-    @Column(name = "working_province", length = 50)
-    private String workingProvince;
-
     /** Điểm thưởng tích luỹ (đổi quà sau này). Mặc định 0, người dùng chỉ được xem. */
     @Column(name = "reward_points", nullable = false, columnDefinition = "int default 0")
     @Builder.Default
@@ -112,6 +108,15 @@ public class User {
     @Column(name = "citizen_id", unique = true, length = 20)
     private String citizenId;
 
+    /** Tỉnh/thành phố (một giá trị trong util/VietnamProvinces). Với CTV đây là khu vực dùng để ghép với nơi xảy ra vụ việc. */
+    @Column(name = "province", length = 50)
+    private String province;
+
+    /** Phường/xã, phải thuộc đúng tỉnh ở trên (LocationService). */
+    @Column(name = "ward", length = 100)
+    private String ward;
+
+    /** Phần còn lại của địa chỉ: số nhà, ngõ, đường. */
     @Column(name = "address", length = 255)
     private String address;
 

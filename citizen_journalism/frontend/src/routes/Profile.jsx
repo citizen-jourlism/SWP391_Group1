@@ -4,6 +4,7 @@ import AvatarUploader from '../components/profile/AvatarUploader'
 import ChangeEmailDialog from '../components/profile/ChangeEmailDialog'
 import ContributorSection from '../components/contributor/ContributorSection'
 import Alert from '../components/ui/Alert'
+import AddressFields from '../components/ui/AddressFields'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import TextField from '../components/ui/TextField'
@@ -36,6 +37,8 @@ const toFormValues = (profile) => ({
   fullName: profile.fullName ?? '',
   phone: profile.phone ?? '',
   citizenId: profile.citizenId ?? '',
+  province: profile.province ?? '',
+  ward: profile.ward ?? '',
   address: profile.address ?? '',
   dateOfBirth: profile.dateOfBirth ?? '',
 })
@@ -234,16 +237,8 @@ function ProfileForm({ profile, onSaved, onEditEmail, onChange }) {
         />
       </div>
 
-      <div className="form__row">
-        <TextField label="Ngày sinh" icon="calendar" type="date" max={todayIso()} {...field('dateOfBirth')} />
-        <TextField
-          label="Địa chỉ"
-          icon="mapPin"
-          placeholder="Số nhà, đường, phường/xã, tỉnh/thành"
-          autoComplete="street-address"
-          {...field('address')}
-        />
-      </div>
+      <TextField label="Ngày sinh" icon="calendar" type="date" max={todayIso()} {...field('dateOfBirth')} />
+      <AddressFields form={form} field={field} />
 
       <div className="form__actions">
         <Button variant="secondary" onClick={() => form.reset()} disabled={!form.isDirty || form.submitting}>

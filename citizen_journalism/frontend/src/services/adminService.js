@@ -19,6 +19,5 @@ export const adminService = {
   getUser: (userId) => api.get(`/admin/users/${userId}`),
   // Trả về mật khẩu tạm trong response.data (chỉ lần này); adminPassword = mật khẩu của chính admin
   resetPassword: (userId, adminPassword) => api.post(`/admin/users/${userId}/reset-password`, { adminPassword }),
-  updateUser: (userId, payload) => api.put(`/admin/users/${userId}`, payload), // { fullName, phone, citizenId, address, dateOfBirth, role, workingProvince }
-  listProvinces: () => api.get('/admin/provinces'), // Cho ô "Khu vực tác nghiệp" của Cộng tác viên
+  updateUser: (userId, payload) => api.put(`/admin/users/${userId}`, payload), // { fullName, phone, citizenId, province, ward, address, dateOfBirth, role }
 }

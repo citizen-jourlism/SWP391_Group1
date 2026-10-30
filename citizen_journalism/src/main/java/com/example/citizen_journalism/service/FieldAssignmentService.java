@@ -37,7 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * GIAO NHIỆM VỤ XÁC MINH HIỆN TRƯỜNG cho Cộng tác viên (FieldAssignmentController, frontend /editor/assignments...).
  *
- *   - getCandidates : danh sách CTV để chọn, kiểu màn hình chọn quán: lọc theo khu vực, địa chỉ / tên, điểm hiệu suất
+ *   - getCandidates : danh sách CTV để chọn: lọc theo tỉnh, phường/xã, địa chỉ / tên, điểm hiệu suất
  *                     và sắp xếp. Mặc định ưu tiên CTV cùng khu vực với nơi xảy ra vụ việc.
  *   - assign        : giao đích danh 1 CTV, kèm hạn hoàn thành và chỉ dẫn; hồ sơ chuyển sang IN_REVIEW (Đang thẩm định).
  *   - list / getLatest : theo dõi các nhiệm vụ đã giao (mỗi hồ sơ 1 dòng, là nhiệm vụ mới nhất).
@@ -83,15 +83,17 @@ public class FieldAssignmentService {
      * Danh sách CTV để chọn.
      *
      * @param trackingCode hồ sơ cần giao (lấy khu vực vụ việc để đánh dấu CTV cùng khu vực)
-     * @param province     lọc đúng khu vực tác nghiệp; null = mọi khu vực
-     * @param keyword      tìm theo họ tên / địa chỉ / khu vực; null = không tìm
+     * @param province     lọc đúng tỉnh của CTV; null = mọi tỉnh
+     * @param ward         lọc đúng phường/xã của CTV; null = mọi phường/xã
+     * @param keyword      tìm theo họ tên / địa chỉ; null = không tìm
      * @param minScore     điểm hiệu suất tối thiểu
      */
     @Transactional(readOnly = true)
-    public List<ContributorCandidate> getCandidates(String trackingCode, String province, String keyword, int minScore,
-                                                    CandidateSort sort) {
+    public List<ContributorCandidate> getCandidates(String trackingCode, String province, String ward, String keyword,
+                                                    int minScore, CandidateSort sort) {
         Submission submission = findSubmission(trackingCode);
-        List<User> contributors = userRepository.findContributorCandidates(blankToNull(province), blankToNull(keyword), minScore);
+        List<User> contributors = userRepository.findContributorCandidates(
+                blankToNull(province), blankToNull(ward), blankToNull(keyword), minScore);
         Map<String, Map<AssignmentStatus, Long>> workload = workloadOf(contributors);
 
         return contributors.stream()
@@ -237,10 +239,10 @@ public class FieldAssignmentService {
 
     private static ContributorCandidate toCandidate(User user, String incidentProvince, Map<AssignmentStatus, Long> tasks) {
         long active = ACTIVE_STATUSES.stream().mapToLong(status -> tasks.getOrDefault(status, 0L)).sum();
-        return new ContributorCandidate(user.getId(), user.getFullName(), user.getAvatarUrl(), user.getWorkingProvince(),
-                user.getAddress(), user.performanceScoreOrDefault(), active,
+        return new ContributorCandidate(user.getId(), user.getFullName(), user.getAvatarUrl(), user.getProvince(),
+                user.getWard(), user.getAddress(), user.performanceScoreOrDefault(), active,
                 tasks.getOrDefault(AssignmentStatus.COMPLETED, 0L),
-                incidentProvince != null && incidentProvince.equals(user.getWorkingProvince()));
+                incidentProvince != null && incidentProvince.equals(user.getProvince()));
     }
 
     /** Thứ tự danh sách. reversed(): điểm cao trước; cùng khu vực (true) trước. */

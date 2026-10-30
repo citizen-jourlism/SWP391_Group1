@@ -11,7 +11,6 @@ import com.example.citizen_journalism.dto.assignment.FieldReportView;
 import com.example.citizen_journalism.entity.FieldAssignment;
 import com.example.citizen_journalism.service.FieldAssignmentService;
 import com.example.citizen_journalism.service.FieldAssignmentService.CandidateSort;
-import com.example.citizen_journalism.util.VietnamProvinces;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -30,8 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * API GIAO NHIỆM VỤ XÁC MINH HIỆN TRƯỜNG của Biên tập viên (SecurityConfig: /api/editor/** chỉ vai trò EDITOR).
  *
- *   GET  /api/editor/assignments/provinces            -> danh sách tỉnh/thành cho bộ lọc khu vực
- *   GET  /api/editor/assignments/candidates?code=...  -> danh sách CTV để chọn (lọc khu vực, tìm kiếm, điểm, sắp xếp)
+ *   GET  /api/editor/assignments/candidates?code=...  -> danh sách CTV để chọn (lọc tỉnh, phường/xã, tìm kiếm, điểm, sắp xếp)
  *   GET  /api/editor/assignments/latest?code=...      -> nhiệm vụ mới nhất của 1 hồ sơ (data = null nếu chưa giao)
  *   GET  /api/editor/assignments/history?code=...     -> lịch sử nhiệm vụ của 1 hồ sơ
  *   GET  /api/editor/assignments/{id}/report          -> báo cáo hiện trường của 1 nhiệm vụ
@@ -46,19 +44,15 @@ public class FieldAssignmentController {
 
     private final FieldAssignmentService assignmentService;
 
-    @GetMapping("/provinces")
-    public ApiResponse<List<String>> provinces() {
-        return ApiResponse.ok("OK", VietnamProvinces.ALL);
-    }
-
     @GetMapping("/candidates")
     public ApiResponse<List<ContributorCandidate>> candidates(
             @RequestParam String code,
             @RequestParam(required = false) String province,
+            @RequestParam(required = false) String ward,
             @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int minScore,
             @RequestParam(defaultValue = "RECOMMENDED") CandidateSort sort) {
-        return ApiResponse.ok("OK", assignmentService.getCandidates(code, province, q, minScore, sort));
+        return ApiResponse.ok("OK", assignmentService.getCandidates(code, province, ward, q, minScore, sort));
     }
 
     @GetMapping("/latest")

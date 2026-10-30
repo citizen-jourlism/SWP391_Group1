@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ResetPasswordDialog from '../../components/admin/ResetPasswordDialog'
 import UserCell from '../../components/admin/UserCell'
+import AddressFields from '../../components/ui/AddressFields'
 import Alert from '../../components/ui/Alert'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
@@ -22,7 +23,7 @@ import { adminService } from '../../services/adminService'
  * Mở từ nút sửa ở bảng /admin/users. Luồng: AdminUserDetail -> adminService -> AdminController -> AdminService.
  *
  *   - Cột trái : form sửa họ tên, SĐT, CCCD, ngày sinh, địa chỉ và VAI TRÒ  (PUT /api/admin/users/{id}).
- *                Cộng tác viên có thêm ô khu vực tác nghiệp, dùng để ghép với nơi xảy ra vụ việc khi giao nhiệm vụ.
+ *                Với Cộng tác viên, tỉnh + phường/xã dùng để ghép với nơi xảy ra vụ việc khi giao nhiệm vụ.
  *   - Cột phải : mọi thông tin còn lại, chỉ xem (email, tên đăng nhập, trạng thái, điểm...). Không có mật khẩu.
  * Bấm "Lưu thay đổi": kiểm tra form -> hiện hộp thoại xác nhận -> bấm xác nhận mới gọi API.
  * Tài khoản quản trị: chỉ xem, không có form (backend cũng chặn sửa).
@@ -51,10 +52,11 @@ const toFormValues = (user) => ({
   fullName: user.fullName ?? '',
   phone: user.phone ?? '',
   citizenId: user.citizenId ?? '',
+  province: user.province ?? '',
+  ward: user.ward ?? '',
   address: user.address ?? '',
   dateOfBirth: user.dateOfBirth ?? '',
   role: user.role,
-  workingProvince: user.workingProvince ?? '',
 })
 
 function AdminUserDetail() {
@@ -87,7 +89,6 @@ function AdminUserDetail() {
     ['Trạng thái', <Badge key="status" tone={statusInfo?.tone}>{statusInfo?.label ?? user.status}</Badge>],
     // Cộng tác viên dùng điểm hiệu suất thay cho điểm uy tín
     isContributor ? ['Điểm hiệu suất', user.performanceScore ?? 0] : ['Điểm uy tín', isNewsroom ? '—' : (user.reputationScore ?? 0)],
-    ['Khu vực tác nghiệp', (isContributor && user.workingProvince) || '—'],
     ['Điểm thưởng', isNewsroom ? '—' : user.rewardPoints],
     ['Nâng cấp Cộng tác viên', isNewsroom ? '—' : (UPGRADE_LABELS[user.upgradeStatus] ?? '—')],
     ['Lĩnh vực am hiểu', (EXPERTISE_ROLES.includes(user.role) && user.expertiseFields) || '—'],
@@ -156,8 +157,6 @@ function UserEditForm({ user, onSaved }) {
   const [confirming, setConfirming] = useState(false)
   const [notice, setNotice] = useState('')
   const roleChanged = form.values.role !== user.role
-  const { data: provinces } = useAsyncData(() => adminService.listProvinces(), 'provinces')
-  const provinceOptions = (provinces ?? []).map((name) => ({ value: name, label: name }))
 
   // Gọi API. Lỗi (ví dụ CCCD trùng) được useForm gắn vào đúng ô / hộp lỗi đầu form.
   const save = form.handleSubmit(async (values) => {
@@ -197,15 +196,7 @@ function UserEditForm({ user, onSaved }) {
           <TextField label="Ngày sinh" icon="calendar" type="date" max={todayIso()} {...form.field('dateOfBirth')} />
           <SelectField label="Vai trò" options={ROLE_OPTIONS} required {...form.field('role')} />
         </div>
-        <TextField label="Địa chỉ" icon="mapPin" {...form.field('address')} />
-        {form.values.role === 'CONTRIBUTOR' && (
-          <SelectField
-            label="Khu vực tác nghiệp"
-            options={provinceOptions}
-            placeholder="Theo đơn đăng ký Cộng tác viên"
-            {...form.field('workingProvince')}
-          />
-        )}
+        <AddressFields form={form} />
 
         <div className="modal__actions">
           <Button variant="secondary" onClick={() => form.reset()} disabled={!form.isDirty || form.submitting}>

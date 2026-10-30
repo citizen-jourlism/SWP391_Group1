@@ -16,13 +16,14 @@ public record UserProfile(
         String email,
         String phone,
         String citizenId,
+        String province,
+        String ward,
         String address,
         LocalDate dateOfBirth,   // Gửi về dạng "2001-05-20"
         String avatarUrl,
         User.Role role,
         Integer reputationScore,
         Integer performanceScore, // Chỉ Cộng tác viên có; thay cho điểm uy tín của vai trò này
-        String workingProvince,   // Khu vực tác nghiệp của Cộng tác viên
         int rewardPoints,
         LocalDateTime createdAt  // Ngày tham gia
 ) {
@@ -34,13 +35,14 @@ public record UserProfile(
                 user.getEmail(),
                 user.getPhone(),
                 user.getCitizenId(),
+                user.getProvince(),
+                user.getWard(),
                 user.getAddress(),
                 user.getDateOfBirth(),
                 user.getAvatarUrl(),
                 user.getRole(),
                 user.getReputationScore(),
                 user.getRole() == User.Role.CONTRIBUTOR ? user.performanceScoreOrDefault() : null,
-                user.getWorkingProvince(),
                 user.getRewardPoints(),
                 user.getCreatedAt());
     }

@@ -10,6 +10,7 @@ import TextField from '../../components/ui/TextField'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { useForm } from '../../hooks/useForm'
+import { useLocationOptions } from '../../hooks/useLocationOptions'
 import {
   ACTIVE_ASSIGNMENT_STATUSES,
   ASSIGNABLE_SUBMISSION_STATUSES,
@@ -28,9 +29,9 @@ import '../../assets/styles/submit.css' // Màu icon theo loại phản ánh (.c
 /*
  * CHỌN CỘNG TÁC VIÊN ĐỂ GIAO NHIỆM VỤ — /editor/queue/:code/assign (mở từ nút "Giao CTV xác minh" của hồ sơ).
  * Giao diện như màn chọn quán trên ứng dụng giao đồ ăn:
- *   - Mỗi CTV là 1 thẻ: điểm hiệu suất, khu vực, số việc đang làm.
- *   - Thanh lọc ngang: ô tìm kiếm, khu vực (MẶC ĐỊNH là nơi xảy ra vụ việc), điểm hiệu suất, sắp xếp.
- *   - Chọn 1 thẻ -> thanh "giỏ hàng" dưới đáy hiện ra để nhập hạn hoàn thành, chỉ dẫn rồi bấm giao.
+ *   - Danh sách dọc, mỗi CTV là 1 hàng ngang: khu vực, số việc đang làm, điểm hiệu suất.
+ *   - Thanh lọc ngang: ô tìm kiếm, tỉnh (MẶC ĐỊNH là nơi xảy ra vụ việc), phường/xã, điểm hiệu suất, sắp xếp.
+ *   - Chọn 1 hàng -> thanh "giỏ hàng" dưới đáy hiện ra để nhập hạn hoàn thành, chỉ dẫn rồi bấm giao.
  * Luồng: EditorAssignContributor -> editorService -> FieldAssignmentController -> FieldAssignmentService.
  * Giao xong quay về trang hồ sơ (EditorSubmissionDetail), trang đó hiện nhiệm vụ vừa giao.
  */
@@ -96,18 +97,24 @@ function EditorAssignContributor() {
 /** Phần chọn CTV: tách riêng để bộ lọc khu vực nhận đúng tỉnh của vụ việc SAU khi tải xong hồ sơ. */
 function ContributorPicker({ code, incidentProvince }) {
   const [province, setProvince] = useState(incidentProvince ?? '')
+  const [ward, setWard] = useState('')
   const [keyword, setKeyword] = useState('')
   const [minScore, setMinScore] = useState('')
   const [sort, setSort] = useState('RECOMMENDED')
   const [selected, setSelected] = useState(null)
   const searchText = useDebouncedValue(keyword.trim())
 
-  const { data: provinces } = useAsyncData(() => editorService.listAssignmentProvinces(), 'assignment-provinces')
-  const provinceOptions = (provinces ?? []).map((name) => ({ value: name, label: name }))
+  const { provinceOptions, wardOptions } = useLocationOptions(province)
   const { data: candidates, error, loading } = useAsyncData(
-    () => editorService.listCandidates({ code, province, q: searchText, minScore, sort }),
-    `${province}|${searchText}|${minScore}|${sort}`,
+    () => editorService.listCandidates({ code, province, ward, q: searchText, minScore, sort }),
+    `${province}|${ward}|${searchText}|${minScore}|${sort}`,
   )
+
+  /** Đổi tỉnh thì bỏ phường/xã đang lọc, vì mỗi tỉnh có danh sách phường/xã riêng. */
+  const changeProvince = (value) => {
+    setProvince(value)
+    setWard('')
+  }
 
   return (
     <>
@@ -118,16 +125,24 @@ function ContributorPicker({ code, incidentProvince }) {
             type="search"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
-            placeholder="Tìm theo tên hoặc địa chỉ Cộng tác viên"
+            placeholder="Tìm tên, địa chỉ"
             aria-label="Tìm Cộng tác viên"
           />
         </label>
         <SelectField
           options={provinceOptions}
-          placeholder="Mọi khu vực"
+          placeholder="Mọi tỉnh/thành phố"
           value={province}
-          onChange={(event) => setProvince(event.target.value)}
-          aria-label="Lọc theo khu vực"
+          onChange={(event) => changeProvince(event.target.value)}
+          aria-label="Lọc theo tỉnh/thành phố"
+        />
+        <SelectField
+          options={wardOptions}
+          placeholder="Mọi phường/xã"
+          value={ward}
+          disabled={!province}
+          onChange={(event) => setWard(event.target.value)}
+          aria-label="Lọc theo phường/xã"
         />
         <SelectField
           options={SCORE_FILTERS}
@@ -147,9 +162,9 @@ function ContributorPicker({ code, incidentProvince }) {
       <Alert type="error">{error}</Alert>
 
       {!candidates && !error && (
-        <div className="assign-grid">
-          {Array.from({ length: 6 }, (_, index) => (
-            <div key={index} className="skeleton skeleton--card" />
+        <div className="assign-list">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div key={index} className="skeleton skeleton--row" />
           ))}
         </div>
       )}
@@ -160,7 +175,7 @@ function ContributorPicker({ code, incidentProvince }) {
           <strong>Không có Cộng tác viên phù hợp</strong>
           <p>Thử giảm điểm tối thiểu hoặc mở rộng ra các khu vực khác.</p>
           {province && (
-            <Button variant="secondary" className="btn--sm" onClick={() => setProvince('')}>
+            <Button variant="secondary" className="btn--sm" onClick={() => changeProvince('')}>
               Xem mọi khu vực
             </Button>
           )}
@@ -170,16 +185,17 @@ function ContributorPicker({ code, incidentProvince }) {
       {candidates?.length > 0 && (
         <>
           <p className="assign-count">{candidates.length} Cộng tác viên phù hợp</p>
-          <div className={`assign-grid ${loading ? 'is-loading' : ''}`}>
+          <ul className={`assign-list ${loading ? 'is-loading' : ''}`}>
             {candidates.map((candidate) => (
-              <ContributorCard
-                key={candidate.id}
-                candidate={candidate}
-                selected={selected?.id === candidate.id}
-                onSelect={() => setSelected(selected?.id === candidate.id ? null : candidate)}
-              />
+              <li key={candidate.id}>
+                <ContributorRow
+                  candidate={candidate}
+                  selected={selected?.id === candidate.id}
+                  onSelect={() => setSelected(selected?.id === candidate.id ? null : candidate)}
+                />
+              </li>
             ))}
-          </div>
+          </ul>
         </>
       )}
 
@@ -188,41 +204,43 @@ function ContributorPicker({ code, incidentProvince }) {
   )
 }
 
-/** Thẻ 1 Cộng tác viên. Bấm lần nữa để bỏ chọn. */
-function ContributorCard({ candidate, selected, onSelect }) {
+/** Một hàng Cộng tác viên trong danh sách. Bấm lần nữa để bỏ chọn. */
+function ContributorRow({ candidate, selected, onSelect }) {
+  const area = [candidate.ward, candidate.province].filter(Boolean).join(', ')
+
   return (
     <button
       type="button"
-      className={`assign-card ${selected ? 'is-selected' : ''}`}
+      className={`assign-row ${selected ? 'is-selected' : ''}`}
       aria-pressed={selected}
       aria-label={`Chọn ${candidate.fullName}, điểm hiệu suất ${candidate.performanceScore}`}
       onClick={onSelect}
     >
-      <span className="assign-card__cover">
-        <Avatar name={candidate.fullName} src={candidate.avatarUrl} size={60} />
-        <span className="assign-card__score" title="Điểm hiệu suất">
-          <Icon name="star" size={13} />
-          {candidate.performanceScore}
-        </span>
-        {selected && (
-          <span className="assign-card__check">
-            <Icon name="check" size={14} strokeWidth={3} />
-          </span>
-        )}
-      </span>
-      <span className="assign-card__body">
-        <strong>{candidate.fullName}</strong>
-        <span className="assign-card__line">
-          <Icon name="mapPin" size={13} />
-          {candidate.workingProvince ?? 'Chưa cập nhật khu vực'}
-        </span>
-        {candidate.address && <span className="assign-card__address">{candidate.address}</span>}
-        <span className="assign-card__meta">
+      <Avatar name={candidate.fullName} src={candidate.avatarUrl} size={48} />
+      <span className="assign-row__main">
+        <span className="assign-row__name">
+          <strong>{candidate.fullName}</strong>
           {candidate.sameArea && <Badge tone="green">Cùng khu vực</Badge>}
-          <span>{candidate.activeTasks} việc đang làm</span>
-          <span>{candidate.completedTasks} đã xong</span>
+        </span>
+        <span className="assign-row__area">
+          <Icon name="mapPin" size={13} />
+          {area || 'Chưa cập nhật khu vực'}
+        </span>
+        {candidate.address && <small>{candidate.address}</small>}
+      </span>
+      <span className="assign-row__stats">
+        <span>
+          <b>{candidate.activeTasks}</b> đang làm
+        </span>
+        <span>
+          <b>{candidate.completedTasks}</b> đã xong
         </span>
       </span>
+      <span className="assign-row__score" title="Điểm hiệu suất">
+        <Icon name="star" size={14} />
+        {candidate.performanceScore}
+      </span>
+      <span className="assign-row__check">{selected && <Icon name="check" size={14} strokeWidth={3} />}</span>
     </button>
   )
 }

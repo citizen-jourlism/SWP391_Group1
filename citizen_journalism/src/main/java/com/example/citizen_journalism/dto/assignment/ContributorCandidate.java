@@ -6,13 +6,14 @@ package com.example.citizen_journalism.dto.assignment;
  * @param performanceScore điểm hiệu suất
  * @param activeTasks      số nhiệm vụ đang nhận (chờ phản hồi + đang làm)
  * @param completedTasks   số nhiệm vụ đã hoàn thành
- * @param sameArea         khu vực tác nghiệp trùng nơi xảy ra vụ việc
+ * @param sameArea         tỉnh của CTV trùng nơi xảy ra vụ việc
  */
 public record ContributorCandidate(
         String id,
         String fullName,
         String avatarUrl,
-        String workingProvince,
+        String province,
+        String ward,
         String address,
         int performanceScore,
         long activeTasks,
