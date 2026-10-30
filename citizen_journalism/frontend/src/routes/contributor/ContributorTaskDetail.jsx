@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
+import FieldReportCard from '../../components/contributor/FieldReportCard'
 import AccountLayout from '../../components/layout/AccountLayout'
 import { ReasonDialog } from '../../components/research/ResearchEditorial'
 import EvidenceList from '../../components/submission/EvidenceList'
@@ -22,7 +23,8 @@ import '../../assets/styles/tracking.css' // Thẻ, đầu hồ sơ, thông tin 
  * Luồng: ContributorTaskDetail -> contributorTaskService -> ContributorTaskController -> ContributorTaskService.
  *
  *   - Chờ phản hồi: nút "Nhận nhiệm vụ" và "Từ chối" (bắt buộc lý do). Quá hạn thì không nhận được nữa.
- *   - Đang làm    : nút "Huỷ nhiệm vụ" (bắt buộc lý do).
+ *   - Đang làm    : nút "Viết báo cáo" (mở ContributorTaskReport) và "Huỷ nhiệm vụ" (bắt buộc lý do).
+ *   - Hoàn thành  : xem lại báo cáo đã nộp.
  *   - Đã huỷ      : hiện ai huỷ và lý do.
  * Nội dung chi tiết + tư liệu chỉ có sau khi nhận (backend không gửi trước đó) để bảo vệ nguồn tin.
  * Các API thao tác trả về nhiệm vụ mới nhất -> cập nhật thẳng vào trang, không cần tải lại.
@@ -32,8 +34,9 @@ function ContributorTaskDetail() {
   useDocumentTitle('Chi tiết nhiệm vụ')
   const { id } = useParams()
   const { data: task, error, setData } = useAsyncData(() => contributorTaskService.get(id), id)
+  const { state } = useLocation() // state.notice: thông báo từ trang viết báo cáo sau khi nộp xong
   const [dialog, setDialog] = useState(null) // Hộp thoại đang mở: 'accept' | 'decline' | 'cancel'
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState(state?.notice ?? '')
 
   const applyResult = (response) => {
     setData(response.data)
@@ -89,6 +92,8 @@ function ContributorTaskDetail() {
               </p>
             )}
           </section>
+
+          {task.report && <FieldReportCard report={task.report} />}
         </div>
       )}
 
@@ -170,6 +175,10 @@ function TaskHead({ task, onOpenDialog }) {
 
       {task.status === 'ACCEPTED' && (
         <div className="task-actions">
+          <Button to={`/contributor/tasks/${task.id}/report`}>
+            <Icon name="edit" size={16} />
+            Viết báo cáo
+          </Button>
           <Button variant="secondary" onClick={() => onOpenDialog('cancel')}>
             <Icon name="x" size={16} />
             Huỷ nhiệm vụ

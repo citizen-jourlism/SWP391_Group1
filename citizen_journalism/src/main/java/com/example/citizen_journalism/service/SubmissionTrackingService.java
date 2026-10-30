@@ -103,7 +103,8 @@ public class SubmissionTrackingService {
     @Transactional(readOnly = true)
     public PageResponse<SubmissionSummary> listMine(String userId, int page, int size) {
         // page.map(...): đổi từng Submission trong trang thành SubmissionSummary, giữ nguyên thông tin phân trang
-        return PageResponse.from(submissionRepository.findByAuthorId(userId, Paging.of(page, size, Paging.NEWEST_FIRST))
+        return PageResponse.from(submissionRepository.findByAuthorIdAndTypeNot(
+                        userId, Submission.SubmissionType.CONTRIBUTOR_POST, Paging.of(page, size, Paging.NEWEST_FIRST))
                 .map(SubmissionSummary::from));
     }
 

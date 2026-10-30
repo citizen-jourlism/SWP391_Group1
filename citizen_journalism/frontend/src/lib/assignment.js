@@ -55,6 +55,23 @@ export const HISTORY_STEPS = {
   COMPLETED: { icon: 'check', tone: 'green', title: (entry) => `${entry.contributorName} nộp báo cáo hiện trường` },
 }
 
+/** Kết luận xác minh trong báo cáo hiện trường (khớp FieldReport.Conclusion ở backend). */
+export const REPORT_CONCLUSIONS = [
+  { value: 'VERIFIED_TRUE', label: 'Đúng sự thật', description: 'Thông tin được xác minh đầy đủ.', tone: 'green' },
+  { value: 'PARTIALLY_TRUE', label: 'Đúng một phần', description: 'Có căn cứ nhưng chưa đúng hoàn toàn.', tone: 'orange' },
+  { value: 'UNFOUNDED', label: 'Không có căn cứ', description: 'Không xác minh được hoặc thông tin sai.', tone: 'red' },
+]
+
+/** Đề xuất của CTV trong báo cáo hiện trường (khớp FieldReport.Recommendation ở backend). */
+export const REPORT_RECOMMENDATIONS = [
+  { value: 'PUBLISH', label: 'Đăng bài', description: 'Đủ căn cứ để biên tập và đăng.', tone: 'green' },
+  { value: 'FURTHER_CHECK', label: 'Điều tra thêm', description: 'Cần xác minh thêm trước khi đăng.', tone: 'orange' },
+  { value: 'DROP_CASE', label: 'Dừng xử lý', description: 'Không nên tiếp tục theo vụ việc.', tone: 'neutral' },
+]
+
+export const REPORT_CONCLUSION_BY_VALUE = Object.fromEntries(REPORT_CONCLUSIONS.map((item) => [item.value, item]))
+export const REPORT_RECOMMENDATION_BY_VALUE = Object.fromEntries(REPORT_RECOMMENDATIONS.map((item) => [item.value, item]))
+
 /** Lọc theo điểm hiệu suất tối thiểu. */
 export const SCORE_FILTERS = [
   { value: '50', label: 'Từ 50 điểm' },

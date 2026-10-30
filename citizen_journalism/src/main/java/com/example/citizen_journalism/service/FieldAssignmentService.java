@@ -8,6 +8,7 @@ import com.example.citizen_journalism.dto.assignment.AssignmentHistoryEntry;
 import com.example.citizen_journalism.dto.assignment.AssignmentHistoryEntry.Type;
 import com.example.citizen_journalism.dto.assignment.AssignmentView;
 import com.example.citizen_journalism.dto.assignment.ContributorCandidate;
+import com.example.citizen_journalism.dto.assignment.FieldReportView;
 import com.example.citizen_journalism.entity.FieldAssignment;
 import com.example.citizen_journalism.entity.FieldAssignment.AssignmentStatus;
 import com.example.citizen_journalism.entity.Submission;
@@ -41,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
  *   - assign        : giao đích danh 1 CTV, kèm hạn hoàn thành và chỉ dẫn; hồ sơ chuyển sang IN_REVIEW (Đang thẩm định).
  *   - list / getLatest : theo dõi các nhiệm vụ đã giao (mỗi hồ sơ 1 dòng, là nhiệm vụ mới nhất).
  *   - getHistory    : toàn bộ diễn biến nhiệm vụ của 1 hồ sơ: giao cho ai, ai nhận, ai từ chối, lý do.
+ *   - getReport     : xem báo cáo hiện trường CTV đã nộp.
  *   - cancel        : thu hồi nhiệm vụ đang hiệu lực (ví dụ CTV không phản hồi) để giao cho người khác.
  * Phần CTV nhận / từ chối / huỷ nằm ở ContributorTaskService.
  *
@@ -74,6 +76,7 @@ public class FieldAssignmentService {
     private final SubmissionRepository submissionRepository;
     private final UserRepository userRepository;
     private final SubmissionEventService submissionEventService;
+    private final FieldReportService fieldReportService;
     private final MailService mailService;
 
     /**
@@ -162,6 +165,18 @@ public class FieldAssignmentService {
         return assignmentRepository.findTopBySubmissionTrackingCodeOrderByCreatedAtDescIdDesc(normalize(trackingCode))
                 .map(AssignmentView::from)
                 .orElse(null);
+    }
+
+    /** Báo cáo hiện trường của 1 nhiệm vụ. */
+    @Transactional(readOnly = true)
+    public FieldReportView getReport(Long assignmentId) {
+        FieldAssignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy nhiệm vụ."));
+        FieldReportView report = fieldReportService.getView(assignment);
+        if (report == null) {
+            throw AppException.notFound("Nhiệm vụ này chưa có báo cáo.");
+        }
+        return report;
     }
 
     /** Lịch sử của 1 hồ sơ theo thứ tự thời gian: lúc gửi tới, rồi từng bước của mọi nhiệm vụ đã giao. */

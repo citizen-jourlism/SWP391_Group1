@@ -550,3 +550,161 @@
 .task-locked svg {
   flex-shrink: 0;
 }
+
+/* ---------- Báo cáo hiện trường ---------- */
+.report-form-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-form-page .detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-form-page h3 {
+  margin: 0;
+}
+
+.report-form-page .field,
+.report-form-page .field__hint {
+  margin: 0;
+}
+
+.report-form-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.report-deadline {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--info-bg);
+  color: var(--info);
+  font-size: 13.5px;
+}
+
+.report-deadline svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.report-choices {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.report-choices legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.report-choices__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.report-choices__list label {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.report-choices__list label:hover {
+  border-color: var(--orange);
+}
+
+.report-choices__list label.is-selected {
+  border-color: var(--orange);
+  background: #fff8f4;
+}
+
+/* Ẩn nút tròn mặc định nhưng vẫn giữ được thao tác bằng bàn phím */
+.report-choices__list input {
+  position: absolute;
+  opacity: 0;
+}
+
+.report-choices__list label:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.report-choices__list strong {
+  color: var(--navy-900);
+  font-size: 14px;
+}
+
+.report-choices__list small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.report-choices .field__error {
+  margin-top: 6px;
+}
+
+.report-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.report-card__head h3 {
+  margin: 0;
+}
+
+.report-card__head small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.report-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  margin: 14px 0 0;
+}
+
+.report-card__facts dt {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.report-card__facts dd {
+  margin: 0;
+}
+
+.report-card h4 svg {
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+
+@media (max-width: 760px) {
+  .report-choices__list {
+    grid-template-columns: 1fr;
+  }
+
+  .report-form-page__actions .btn {
+    flex: 1;
+  }
+}

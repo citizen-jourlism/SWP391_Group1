@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+import FieldReportCard from '../../components/contributor/FieldReportCard'
 import AssignmentHistoryDialog from '../../components/editor/AssignmentHistoryDialog'
 import { ReasonDialog } from '../../components/research/ResearchEditorial'
 import SubmissionDetail from '../../components/submission/SubmissionDetail'
@@ -30,6 +31,7 @@ import '../../assets/styles/assignment.css'
  *     Hồ sơ từng được giao thì có ô nhiệm vụ ngay dưới thanh này: nút "Thu hồi" khi nhiệm vụ còn hiệu lực,
  *     nút "Giao CTV khác" khi CTV từ chối / huỷ hoặc nhiệm vụ đã bị thu hồi.
  *   - "Lịch sử" mở AssignmentHistoryDialog: giao cho ai, ai nhận, ai từ chối, lý do...
+ * Nhiệm vụ đã hoàn thành thì hiện báo cáo hiện trường CTV nộp (FieldReportCard) ngay dưới ô nhiệm vụ.
  *   - Các nút còn lại (tiếp nhận thẩm định, yêu cầu bổ sung, từ chối) đã ĐẶT SẴN nhưng đang KHOÁ:
  *     backend xử lý tin sẽ làm ở bản sau.
  */
@@ -100,6 +102,7 @@ function EditorSubmissionDetail() {
             </div>
           </section>
           {assignment && <CurrentAssignment assignment={assignment} onCancelled={setAssignment} />}
+          {assignment?.status === 'COMPLETED' && <AssignmentReport assignmentId={assignment.id} />}
           <SubmissionDetail detail={data} />
         </>
       )}
@@ -153,6 +156,13 @@ function CurrentAssignment({ assignment, onCancelled }) {
       />
     </section>
   )
+}
+
+/** Báo cáo hiện trường của nhiệm vụ đã hoàn thành. */
+function AssignmentReport({ assignmentId }) {
+  const { data: report, error } = useAsyncData(() => editorService.getAssignmentReport(assignmentId), assignmentId)
+  if (error) return <Alert type="error">{error}</Alert>
+  return report ? <FieldReportCard report={report} /> : <div className="skeleton skeleton--card" />
 }
 
 export default EditorSubmissionDetail

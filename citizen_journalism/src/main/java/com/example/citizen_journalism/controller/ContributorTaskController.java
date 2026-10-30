@@ -5,9 +5,11 @@ import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.assignment.AssignmentReasonRequest;
 import com.example.citizen_journalism.dto.assignment.ContributorTaskDetail;
 import com.example.citizen_journalism.dto.assignment.ContributorTaskItem;
+import com.example.citizen_journalism.dto.assignment.SubmitFieldReportRequest;
 import com.example.citizen_journalism.entity.FieldAssignment.AssignmentStatus;
 import com.example.citizen_journalism.service.ContributorTaskService;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,7 +20,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * API NHIỆM VỤ CỦA CỘNG TÁC VIÊN (SecurityConfig: /api/contributor/** chỉ vai trò CONTRIBUTOR).
@@ -30,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   POST /api/contributor/tasks/{id}/accept  -> nhận nhiệm vụ
  *   POST /api/contributor/tasks/{id}/decline -> từ chối nhiệm vụ đang chờ phản hồi (bắt buộc lý do)
  *   POST /api/contributor/tasks/{id}/cancel  -> huỷ nhiệm vụ đã nhận (bắt buộc lý do)
+ *   POST /api/contributor/tasks/{id}/report  -> nộp báo cáo hiện trường (multipart: "data" + "files")
  */
 @RestController
 @RequestMapping("/api/contributor/tasks")
@@ -72,5 +77,13 @@ public class ContributorTaskController {
     public ApiResponse<ContributorTaskDetail> cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
                                                      @Valid @RequestBody AssignmentReasonRequest request) {
         return ApiResponse.ok("Bạn đã huỷ nhiệm vụ.", taskService.cancel(jwt.getSubject(), id, request.reason()));
+    }
+
+    /** required = false cho "files": thiếu tệp thì service báo lỗi tiếng Việt ngay dưới ô tệp. */
+    @PostMapping("/{id}/report")
+    public ApiResponse<ContributorTaskDetail> submitReport(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                                           @Valid @RequestPart("data") SubmitFieldReportRequest request,
+                                                           @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+        return ApiResponse.ok("Đã nộp báo cáo hiện trường.", taskService.submitReport(jwt.getSubject(), id, request, files));
     }
 }

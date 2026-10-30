@@ -13,6 +13,7 @@ import java.util.List;
  *
  * @param content   nội dung chi tiết; null cho tới khi CTV nhận nhiệm vụ
  * @param evidences tư liệu người gửi nộp; rỗng cho tới khi CTV nhận nhiệm vụ
+ * @param report    báo cáo CTV đã nộp; null nếu chưa nộp
  */
 public record ContributorTaskDetail(
         Long id,
@@ -31,9 +32,11 @@ public record ContributorTaskDetail(
         LocalDateTime claimedAt,
         LocalDateTime createdAt,
         String content,
-        List<EvidenceInfo> evidences) {
+        List<EvidenceInfo> evidences,
+        FieldReportView report) {
 
-    public static ContributorTaskDetail from(FieldAssignment task, String content, List<EvidenceInfo> evidences) {
+    public static ContributorTaskDetail from(FieldAssignment task, String content, List<EvidenceInfo> evidences,
+                                             FieldReportView report) {
         Submission submission = task.getSubmission();
         return new ContributorTaskDetail(
                 task.getId(),
@@ -52,6 +55,7 @@ public record ContributorTaskDetail(
                 task.getClaimedAt(),
                 task.getCreatedAt(),
                 content,
-                evidences);
+                evidences,
+                report);
     }
 }

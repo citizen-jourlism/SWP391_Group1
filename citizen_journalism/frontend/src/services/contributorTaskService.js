@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import { cleanParams } from '../lib/payload'
+import { cleanParams, toMultipart } from '../lib/payload'
 
 /**
  * API NHIỆM VỤ XÁC MINH của Cộng tác viên đang đăng nhập (backend: ContributorTaskController.java).
@@ -13,4 +13,6 @@ export const contributorTaskService = {
   accept: (id) => api.post(`/contributor/tasks/${id}/accept`),
   decline: (id, reason) => api.post(`/contributor/tasks/${id}/decline`, { reason }),
   cancel: (id, reason) => api.post(`/contributor/tasks/${id}/cancel`, { reason }),
+  /** Nộp báo cáo: multipart gồm "data" (JSON các ô chữ) + "files" (tư liệu). timeout 0: tệp lớn có thể tải lên lâu. */
+  submitReport: (id, data, files) => api.post(`/contributor/tasks/${id}/report`, toMultipart(data, files), { timeout: 0 }),
 }

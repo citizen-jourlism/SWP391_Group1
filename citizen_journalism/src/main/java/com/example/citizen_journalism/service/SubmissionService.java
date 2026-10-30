@@ -139,16 +139,7 @@ public class SubmissionService {
                 "Gửi hồ sơ thành công, toà soạn đã tiếp nhận.", null);
 
         // ----- 3. Lưu tệp tư liệu -----
-        List<String> storedUrls = new ArrayList<>();
-        List<EvidenceInfo> evidences;
-        try {
-            evidences = evidenceFiles.stream().map(file -> saveEvidence(submission, author, file, storedUrls)).toList();
-        } catch (RuntimeException ex) {
-            // Lỗi giữa chừng: DB tự huỷ (rollback) nhờ @Transactional, còn file đã ghi ra ổ
-            // đĩa thì phải tự xoá.
-            storedUrls.forEach(fileStorageService::delete);
-            throw ex;
-        }
+        List<EvidenceInfo> evidences = saveEvidences(submission, author, submission.getTrackingCode(), evidenceFiles);
 
         // ----- 4. Gửi email biên nhận -----
         String recipient = anonymous ? author.getEmail() : submission.getContactEmail();
@@ -166,6 +157,58 @@ public class SubmissionService {
                 notifiedEmail,
                 !mailService.isLiveDelivery(),
                 evidences);
+    }
+
+    /**
+     * Lưu các tệp tư liệu của 1 hồ sơ. Dùng chung cho form gửi tin và báo cáo hiện trường (FieldReportService).
+     *
+     * @param namePrefix phần đầu tên file trên ổ đĩa, ví dụ "KB-2026-0007"
+     */
+    public List<EvidenceInfo> saveEvidences(Submission submission, User author, String namePrefix, List<MultipartFile> files) {
+        List<String> storedUrls = new ArrayList<>();
+        try {
+            return files.stream().map(file -> saveEvidence(submission, author, namePrefix, file, storedUrls)).toList();
+        } catch (RuntimeException ex) {
+            // Lỗi giữa chừng: DB tự huỷ (rollback) nhờ @Transactional, còn file đã ghi ra ổ
+            // đĩa thì phải tự xoá.
+            storedUrls.forEach(fileStorageService::delete);
+            throw ex;
+        }
+    }
+
+    /**
+     * Kiểm tra danh sách tệp tư liệu: ít nhất 1 tệp, không quá số lượng, đúng định dạng và dung lượng.
+     * Lỗi ghi vào errors (khoá "files"), nơi gọi quyết định khi nào ném lỗi.
+     */
+    public void checkEvidenceFiles(List<MultipartFile> files, Map<String, String> errors) {
+        if (files.isEmpty()) {
+            errors.put("files", "Vui lòng đính kèm ít nhất 1 tệp tư liệu.");
+        } else if (files.size() > MAX_FILES) {
+            errors.put("files", "Chỉ được đính kèm tối đa " + MAX_FILES + " tệp.");
+        } else {
+            // Kiểm tra TẤT CẢ tệp trước khi lưu bất kỳ tệp nào
+            try {
+                files.forEach(
+                        // file -> {
+                        // if (file.getContentType().startsWith("image/")) {
+                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
+                        // MAX_FILE_BYTES_IMAGE);
+                        // } else if (file.getContentType().startsWith("video/")) {
+                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
+                        // MAX_FILE_BYTES_VIDEO);
+                        // } else if (file.getContentType().startsWith("audio/")) {
+                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
+                        // MAX_FILE_BYTES_AUDIO);
+                        // } else if (file.getContentType().startsWith("application/")) {
+                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
+                        // MAX_FILE_BYTES_DOCUMENT);
+                        // }
+                        // }
+                        file -> fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES));
+            } catch (AppException ex) {
+                errors.put("files", ex.getMessage());
+            }
+        }
     }
 
     // ================================ HÀM PHỤ ================================
@@ -202,34 +245,7 @@ public class SubmissionService {
             }
         }
 
-        if (files.isEmpty()) {
-            errors.put("files", "Vui lòng đính kèm ít nhất 1 tệp tư liệu.");
-        } else if (files.size() > MAX_FILES) {
-            errors.put("files", "Chỉ được đính kèm tối đa " + MAX_FILES + " tệp.");
-        } else {
-            // Kiểm tra TẤT CẢ tệp trước khi lưu bất kỳ tệp nào
-            try {
-                files.forEach(
-                        // file -> {
-                        // if (file.getContentType().startsWith("image/")) {
-                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
-                        // MAX_FILE_BYTES_IMAGE);
-                        // } else if (file.getContentType().startsWith("video/")) {
-                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
-                        // MAX_FILE_BYTES_VIDEO);
-                        // } else if (file.getContentType().startsWith("audio/")) {
-                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
-                        // MAX_FILE_BYTES_AUDIO);
-                        // } else if (file.getContentType().startsWith("application/")) {
-                        // fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES,
-                        // MAX_FILE_BYTES_DOCUMENT);
-                        // }
-                        // }
-                        file -> fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES));
-            } catch (AppException ex) {
-                errors.put("files", ex.getMessage());
-            }
-        }
+        checkEvidenceFiles(files, errors);
 
         if (!errors.isEmpty()) {
             throw AppException.invalidFields(errors);
@@ -237,12 +253,13 @@ public class SubmissionService {
     }
 
     /** Lưu 1 tệp: ghi file ra ổ đĩa rồi thêm 1 dòng vào bảng evidences. */
-    private EvidenceInfo saveEvidence(Submission submission, User author, MultipartFile file, List<String> storedUrls) {
+    private EvidenceInfo saveEvidence(Submission submission, User author, String namePrefix, MultipartFile file,
+                                      List<String> storedUrls) {
         FileType fileType = fileTypeOf(file.getContentType());
 
         // Tên file trên ổ đĩa bắt đầu bằng mã hồ sơ, ví dụ "KB-2026-0007-1a2b3c4d.jpg"
         // (dễ tìm khi cần)
-        String url = fileStorageService.store(file, EVIDENCE_FOLDER, submission.getTrackingCode(),
+        String url = fileStorageService.store(file, EVIDENCE_FOLDER, namePrefix,
                 FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES);
         storedUrls.add(url);
 

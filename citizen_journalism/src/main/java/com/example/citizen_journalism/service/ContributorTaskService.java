@@ -3,6 +3,7 @@ package com.example.citizen_journalism.service;
 import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.assignment.ContributorTaskDetail;
 import com.example.citizen_journalism.dto.assignment.ContributorTaskItem;
+import com.example.citizen_journalism.dto.assignment.SubmitFieldReportRequest;
 import com.example.citizen_journalism.dto.submission.EvidenceInfo;
 import com.example.citizen_journalism.entity.FieldAssignment;
 import com.example.citizen_journalism.entity.FieldAssignment.AssignmentStatus;
@@ -23,14 +24,16 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
 
 /**
  * NHIỆM VỤ XÁC MINH phía CỘNG TÁC VIÊN (ContributorTaskController, frontend /contributor/tasks).
  * Biên tập viên giao việc ở FieldAssignmentService; từ đó nhiệm vụ đi tiếp ở đây:
  *
- *   ASSIGNED (chờ phản hồi) --nhận----> ACCEPTED (đang làm) --huỷ--> CANCELLED
- *            |
+ *   ASSIGNED (chờ phản hồi) --nhận----> ACCEPTED (đang làm) --nộp báo cáo--> COMPLETED
+ *            |                                   |
+ *            |                                   +--------huỷ--> CANCELLED
  *            +-------------từ chối----> CANCELLED
  *
  * Từ chối và huỷ đều bắt buộc có lý do, Biên tập viên nhận email để giao cho người khác.
@@ -47,6 +50,7 @@ public class ContributorTaskService {
     private final FieldAssignmentRepository assignmentRepository;
     private final EvidenceRepository evidenceRepository;
     private final SubmissionEventService submissionEventService;
+    private final FieldReportService fieldReportService;
     private final MailService mailService;
     private final ObjectMapper objectMapper;
 
@@ -110,6 +114,27 @@ public class ContributorTaskService {
         return toDetail(task);
     }
 
+    /**
+     * Nộp báo cáo hiện trường, kết thúc nhiệm vụ. Trễ hạn vẫn nộp được nhưng bị trừ điểm (FieldReportService).
+     * Hồ sơ gốc giữ nguyên trạng thái để Biên tập viên xem báo cáo rồi xử lý tiếp.
+     */
+    @Transactional
+    public ContributorTaskDetail submitReport(String contributorId, Long taskId, SubmitFieldReportRequest request,
+                                              List<MultipartFile> files) {
+        FieldAssignment task = findTask(contributorId, taskId);
+        if (task.getStatus() != AssignmentStatus.ACCEPTED) {
+            throw AppException.conflict("Chỉ nộp báo cáo cho nhiệm vụ đang thực hiện.");
+        }
+        fieldReportService.create(task, request, files);
+        task.setStatus(AssignmentStatus.COMPLETED);
+
+        Submission submission = task.getSubmission();
+        submissionEventService.record(submission, submission.getStatus(), SubmissionEvent.Actor.CONTRIBUTOR,
+                "Cộng tác viên đã nộp báo cáo xác minh hiện trường.", null);
+        notifyReportSubmitted(task);
+        return toDetail(task);
+    }
+
     // ================================ HÀM PHỤ ================================
 
     private FieldAssignment findTask(String contributorId, Long taskId) {
@@ -128,13 +153,26 @@ public class ContributorTaskService {
 
     private ContributorTaskDetail toDetail(FieldAssignment task) {
         if (!CONTENT_VISIBLE_STATUSES.contains(task.getStatus())) {
-            return ContributorTaskDetail.from(task, null, List.of());
+            return ContributorTaskDetail.from(task, null, List.of(), null);
         }
         Submission submission = task.getSubmission();
         List<EvidenceInfo> evidences = evidenceRepository.findBySubmissionOrderByIdAsc(submission).stream()
                 .map(evidence -> EvidenceInfo.from(evidence, objectMapper))
                 .toList();
-        return ContributorTaskDetail.from(task, submission.getContent(), evidences);
+        return ContributorTaskDetail.from(task, submission.getContent(), evidences, fieldReportService.getView(task));
+    }
+
+    /** Báo Biên tập viên đã giao việc: đã có báo cáo để xem. */
+    private void notifyReportSubmitted(FieldAssignment task) {
+        User editor = task.getCreatedBy();
+        Submission submission = task.getSubmission();
+        String html = MailService.layout("""
+                  <p>Xin chào <b>%s</b>,</p>
+                  <p>Cộng tác viên <b>%s</b> đã nộp báo cáo xác minh hồ sơ <b>%s</b>: %s.</p>
+                  <p>Bạn có thể mở hồ sơ để xem báo cáo và bài viết nháp.</p>
+                """.formatted(MailService.escape(editor.getFullName()), MailService.escape(task.getContributor().getFullName()),
+                MailService.escape(submission.getTrackingCode()), MailService.escape(submission.getTitle())));
+        mailService.trySend(editor.getEmail(), "[Tin Nóng Dân Sinh] Cộng tác viên đã nộp báo cáo", html);
     }
 
     /** Báo Biên tập viên đã giao việc: CTV từ chối / huỷ thì cần giao cho người khác. Mail lỗi không làm hỏng thao tác. */

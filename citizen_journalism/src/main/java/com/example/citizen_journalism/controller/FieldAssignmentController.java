@@ -7,6 +7,7 @@ import com.example.citizen_journalism.dto.assignment.AssignmentHistoryEntry;
 import com.example.citizen_journalism.dto.assignment.AssignmentReasonRequest;
 import com.example.citizen_journalism.dto.assignment.AssignmentView;
 import com.example.citizen_journalism.dto.assignment.ContributorCandidate;
+import com.example.citizen_journalism.dto.assignment.FieldReportView;
 import com.example.citizen_journalism.entity.FieldAssignment;
 import com.example.citizen_journalism.service.FieldAssignmentService;
 import com.example.citizen_journalism.service.FieldAssignmentService.CandidateSort;
@@ -33,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /api/editor/assignments/candidates?code=...  -> danh sách CTV để chọn (lọc khu vực, tìm kiếm, điểm, sắp xếp)
  *   GET  /api/editor/assignments/latest?code=...      -> nhiệm vụ mới nhất của 1 hồ sơ (data = null nếu chưa giao)
  *   GET  /api/editor/assignments/history?code=...     -> lịch sử nhiệm vụ của 1 hồ sơ
+ *   GET  /api/editor/assignments/{id}/report          -> báo cáo hiện trường của 1 nhiệm vụ
  *   GET  /api/editor/assignments                      -> danh sách nhiệm vụ, mỗi hồ sơ 1 dòng
  *   POST /api/editor/assignments                      -> giao nhiệm vụ
  *   POST /api/editor/assignments/{id}/cancel          -> thu hồi nhiệm vụ (bắt buộc lý do)
@@ -67,6 +69,11 @@ public class FieldAssignmentController {
     @GetMapping("/history")
     public ApiResponse<List<AssignmentHistoryEntry>> history(@RequestParam String code) {
         return ApiResponse.ok("OK", assignmentService.getHistory(code));
+    }
+
+    @GetMapping("/{id}/report")
+    public ApiResponse<FieldReportView> report(@PathVariable Long id) {
+        return ApiResponse.ok("OK", assignmentService.getReport(id));
     }
 
     @GetMapping

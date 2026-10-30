@@ -51,6 +51,8 @@ export const editorService = {
   listAssignments: (params) => api.get('/editor/assignments', { params: cleanParams(params) }),
   /** payload: { trackingCode, contributorId, deadline, note } */
   assign: (payload) => api.post('/editor/assignments', payload),
+  /** Báo cáo hiện trường CTV đã nộp cho 1 nhiệm vụ. */
+  getAssignmentReport: (id) => api.get(`/editor/assignments/${id}/report`),
   cancelAssignment: (id, reason) => api.post(`/editor/assignments/${id}/cancel`, { reason }),
 
   // ----- Đơn đăng ký Cộng tác viên -----

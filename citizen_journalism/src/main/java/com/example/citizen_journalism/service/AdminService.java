@@ -73,7 +73,7 @@ public class AdminService {
                 userRepository.countByStatus(User.Status.LOCKED),
                 userRepository.countByCreatedAtAfter(LocalDateTime.now().minusDays(7)),
                 byRole,
-                submissionRepository.count(),
+                submissionRepository.countByTypeNot(Submission.SubmissionType.CONTRIBUTOR_POST),
                 submissionRepository.countByStatus(Submission.SubmissionStatus.PENDING),
                 userRepository.findTop5ByOrderByCreatedAtDesc().stream().map(AdminUserItem::from).toList());
     }
