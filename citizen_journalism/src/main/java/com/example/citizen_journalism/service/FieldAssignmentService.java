@@ -37,6 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
  *                     và sắp xếp. Mặc định ưu tiên CTV cùng khu vực với nơi xảy ra vụ việc.
  *   - assign        : giao đích danh 1 CTV, kèm hạn hoàn thành và chỉ dẫn; hồ sơ chuyển sang IN_REVIEW (Đang thẩm định).
  *   - list / getLatest : theo dõi các nhiệm vụ đã giao.
+ *   - cancel        : thu hồi nhiệm vụ đang hiệu lực (ví dụ CTV không phản hồi) để giao cho người khác.
+ * Phần CTV nhận / từ chối / huỷ nằm ở ContributorTaskService.
  *
  * TẠI SAO lọc + sắp xếp trong Java? Thứ tự "phù hợp nhất" dựa trên số nhiệm vụ đang làm và cùng khu vực hay không,
  * viết bằng SQL sẽ rất dài. Số CTV của một toà soạn không lớn, tải về rồi sắp xếp vẫn nhanh và dễ đọc hơn.
@@ -127,6 +129,19 @@ public class FieldAssignmentService {
         return AssignmentView.from(assignment);
     }
 
+    /** Thu hồi nhiệm vụ đang hiệu lực. Hồ sơ giữ nguyên trạng thái để Biên tập viên giao lại. CTV nhận email. */
+    @Transactional
+    public AssignmentView cancel(Long assignmentId, String reason) {
+        FieldAssignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy nhiệm vụ."));
+        if (!ACTIVE_STATUSES.contains(assignment.getStatus())) {
+            throw AppException.conflict("Nhiệm vụ này đã kết thúc, không thể thu hồi.");
+        }
+        assignment.cancel(FieldAssignment.CancelType.EDITOR_CANCELLED, reason.trim());
+        notifyCancelled(assignment);
+        return AssignmentView.from(assignment);
+    }
+
     /** Danh sách nhiệm vụ, mới nhất trước. status = null: mọi trạng thái. */
     @Transactional(readOnly = true)
     public PageResponse<AssignmentView> list(AssignmentStatus status, int page, int size) {
@@ -191,18 +206,29 @@ public class FieldAssignmentService {
         Submission submission = assignment.getSubmission();
         User contributor = assignment.getContributor();
         LocalDateTime deadline = assignment.getDeadline();
-        String note = assignment.getNote() == null ? ""
-                : "<p style=\"padding:12px 16px;background:#f5f7fb;border-radius:8px\">Chỉ dẫn của toà soạn: "
-                + MailService.escape(assignment.getNote()) + "</p>";
+        String note = assignment.getNote() == null ? "" : MailService.box("Chỉ dẫn của toà soạn: " + MailService.escape(assignment.getNote()));
         String html = MailService.layout("""
                   <p>Xin chào <b>%s</b>,</p>
                   <p>Bạn được giao nhiệm vụ xác minh hiện trường:</p>
-                  <p style="padding:12px 16px;background:#f5f7fb;border-radius:8px"><b>%s</b><br>%s, %s</p>
+                  %s
                   <p>Hạn hoàn thành: <b>%s</b></p>
                   %s
-                """.formatted(MailService.escape(contributor.getFullName()), MailService.escape(submission.getTitle()),
-                MailService.escape(submission.getAddress()), MailService.escape(submission.getProvince()),
+                """.formatted(MailService.escape(contributor.getFullName()),
+                MailService.box("<b>" + MailService.escape(submission.getTitle()) + "</b><br>"
+                        + MailService.escape(submission.getAddress()) + ", " + MailService.escape(submission.getProvince())),
                 deadline.format(DEADLINE_FORMAT), note));
         mailService.trySend(contributor.getEmail(), "[Tin Nóng Dân Sinh] Nhiệm vụ xác minh mới", html);
+    }
+
+    /** Email báo CTV nhiệm vụ đã bị thu hồi. */
+    private void notifyCancelled(FieldAssignment assignment) {
+        User contributor = assignment.getContributor();
+        String html = MailService.layout("""
+                  <p>Xin chào <b>%s</b>,</p>
+                  <p>Toà soạn đã thu hồi nhiệm vụ xác minh: <b>%s</b>.</p>
+                  %s
+                """.formatted(MailService.escape(contributor.getFullName()), MailService.escape(assignment.getSubmission().getTitle()),
+                MailService.box("Lý do: " + MailService.escape(assignment.getCancelReason()))));
+        mailService.trySend(contributor.getEmail(), "[Tin Nóng Dân Sinh] Nhiệm vụ xác minh đã bị thu hồi", html);
     }
 }

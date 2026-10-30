@@ -7,7 +7,7 @@ import Icon from '../../components/ui/Icon'
 import Pagination from '../../components/ui/Pagination'
 import SelectField from '../../components/ui/SelectField'
 import { useAsyncData } from '../../hooks/useAsyncData'
-import { ASSIGNMENT_STATUS, isOverdue } from '../../lib/assignment'
+import { assignmentBadge, ASSIGNMENT_STATUS, isOverdue } from '../../lib/assignment'
 import { formatDateTime } from '../../lib/format'
 import { editorService } from '../../services/editorService'
 import '../../assets/styles/assignment.css'
@@ -80,7 +80,7 @@ function EditorAssignments() {
             )}
 
             {data?.items.map((item) => {
-              const statusInfo = ASSIGNMENT_STATUS[item.status]
+              const badge = assignmentBadge(item)
               return (
                 <tr key={item.id}>
                   <td>
@@ -103,7 +103,7 @@ function EditorAssignments() {
                     {isOverdue(item) && <small className="assign-overdue">Quá hạn</small>}
                   </td>
                   <td>
-                    <Badge tone={statusInfo?.tone}>{statusInfo?.label ?? item.status}</Badge>
+                    <Badge tone={badge.tone}>{badge.label}</Badge>
                   </td>
                   <td className="data-table__actions">
                     <Link to={`/editor/queue/${item.trackingCode}`} className="desk-open">

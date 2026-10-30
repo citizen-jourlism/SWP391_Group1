@@ -1,16 +1,28 @@
 /**
  * Dữ liệu hiển thị dùng chung cho chức năng GIAO NHIỆM VỤ XÁC MINH HIỆN TRƯỜNG
- * (routes/editor/EditorAssignContributor.jsx, EditorAssignments.jsx, EditorSubmissionDetail.jsx).
+ * (routes/editor/EditorAssignContributor.jsx, EditorAssignments.jsx, EditorSubmissionDetail.jsx,
+ * routes/contributor/ContributorTasks.jsx, ContributorTaskDetail.jsx).
  * Giá trị (key, value) khớp với backend: FieldAssignment.AssignmentStatus, FieldAssignmentService.CandidateSort.
  */
 
 /** Trạng thái nhiệm vụ: chữ + màu nhãn (Badge). */
 export const ASSIGNMENT_STATUS = {
-  ASSIGNED: { label: 'Chờ CTV phản hồi', tone: 'orange' },
+  ASSIGNED: { label: 'Chờ phản hồi', tone: 'orange' },
   ACCEPTED: { label: 'Đang xác minh', tone: 'blue' },
   COMPLETED: { label: 'Hoàn thành', tone: 'green' },
   CANCELLED: { label: 'Đã huỷ', tone: 'neutral' },
 }
+
+/** Nhiệm vụ đã huỷ: phân biệt ai huỷ theo FieldAssignment.CancelType ở backend. */
+const CANCEL_BADGES = {
+  DECLINED: { label: 'Đã từ chối', tone: 'red' },
+  CONTRIBUTOR_CANCELLED: { label: 'CTV đã huỷ', tone: 'red' },
+  EDITOR_CANCELLED: { label: 'Toà soạn thu hồi', tone: 'neutral' },
+}
+
+/** Chữ + màu nhãn của 1 nhiệm vụ, dùng chung cho bàn Biên tập viên và trang của Cộng tác viên. */
+export const assignmentBadge = (assignment) =>
+  CANCEL_BADGES[assignment.cancelType] ?? ASSIGNMENT_STATUS[assignment.status] ?? { label: assignment.status, tone: 'neutral' }
 
 /** Nhiệm vụ còn hiệu lực: mỗi hồ sơ chỉ có 1 nhiệm vụ như vậy tại một thời điểm. */
 export const ACTIVE_ASSIGNMENT_STATUSES = ['ASSIGNED', 'ACCEPTED']

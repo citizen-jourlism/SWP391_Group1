@@ -3,6 +3,7 @@ package com.example.citizen_journalism.controller;
 import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.assignment.AssignContributorRequest;
+import com.example.citizen_journalism.dto.assignment.AssignmentReasonRequest;
 import com.example.citizen_journalism.dto.assignment.AssignmentView;
 import com.example.citizen_journalism.dto.assignment.ContributorCandidate;
 import com.example.citizen_journalism.entity.FieldAssignment;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /api/editor/assignments/latest?code=...      -> nhiệm vụ mới nhất của 1 hồ sơ (data = null nếu chưa giao)
  *   GET  /api/editor/assignments                      -> danh sách nhiệm vụ đã giao
  *   POST /api/editor/assignments                      -> giao nhiệm vụ
+ *   POST /api/editor/assignments/{id}/cancel          -> thu hồi nhiệm vụ (bắt buộc lý do)
  */
 @RestController
 @RequestMapping("/api/editor/assignments")
@@ -72,5 +75,10 @@ public class FieldAssignmentController {
     public ApiResponse<AssignmentView> assign(@AuthenticationPrincipal Jwt jwt,
                                               @Valid @RequestBody AssignContributorRequest request) {
         return ApiResponse.ok("Đã giao nhiệm vụ cho Cộng tác viên.", assignmentService.assign(jwt.getSubject(), request));
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ApiResponse<AssignmentView> cancel(@PathVariable Long id, @Valid @RequestBody AssignmentReasonRequest request) {
+        return ApiResponse.ok("Đã thu hồi nhiệm vụ.", assignmentService.cancel(id, request.reason()));
     }
 }

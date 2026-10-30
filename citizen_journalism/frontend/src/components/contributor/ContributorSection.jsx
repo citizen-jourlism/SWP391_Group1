@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import Alert from '../ui/Alert'
 import Badge from '../ui/Badge'
 import Button from '../ui/Button'
@@ -71,7 +72,9 @@ function ContributorSection({ profileKey }) {
           <Icon name="checkCircle" size={22} />
           <span>
             <strong>Bạn đang là Cộng tác viên của toà soạn.</strong>
-            <small>Các nhiệm vụ hiện trường sẽ được giao qua bàn làm việc Cộng tác viên.</small>
+            <small>
+              Các nhiệm vụ hiện trường nằm ở mục <Link to="/contributor/tasks">Nhiệm vụ của tôi</Link>.
+            </small>
           </span>
         </div>
       )}

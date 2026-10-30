@@ -31,6 +31,15 @@ public interface FieldAssignmentRepository extends JpaRepository<FieldAssignment
     @EntityGraph(attributePaths = {"submission", "contributor"})
     Page<FieldAssignment> findByStatusIn(Collection<FieldAssignment.AssignmentStatus> statuses, Pageable pageable);
 
+    /** Danh sách nhiệm vụ của 1 Cộng tác viên, lọc theo các trạng thái, có phân trang. */
+    @EntityGraph(attributePaths = {"submission"})
+    Page<FieldAssignment> findByContributorIdAndStatusIn(String contributorId, Collection<FieldAssignment.AssignmentStatus> statuses,
+                                                         Pageable pageable);
+
+    /** 1 nhiệm vụ, chỉ khi nó thuộc về đúng Cộng tác viên này. */
+    @EntityGraph(attributePaths = {"submission", "contributor", "createdBy"})
+    Optional<FieldAssignment> findByIdAndContributorId(Long id, String contributorId);
+
     /** Một dòng thống kê: mã CTV + trạng thái + số nhiệm vụ. */
     interface WorkloadRow {
         String getContributorId();

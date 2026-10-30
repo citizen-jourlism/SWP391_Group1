@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { ReasonDialog } from '../../components/research/ResearchEditorial'
 import SubmissionDetail from '../../components/submission/SubmissionDetail'
 import Alert from '../../components/ui/Alert'
 import Avatar from '../../components/ui/Avatar'
@@ -9,7 +11,7 @@ import { useAsyncData } from '../../hooks/useAsyncData'
 import {
   ACTIVE_ASSIGNMENT_STATUSES,
   ASSIGNABLE_SUBMISSION_STATUSES,
-  ASSIGNMENT_STATUS,
+  assignmentBadge,
   isOverdue,
 } from '../../lib/assignment'
 import { formatDateTime } from '../../lib/format'
@@ -23,7 +25,8 @@ import '../../assets/styles/assignment.css'
  * Thanh thao tác phía trên:
  *   - "Kiểm tra tin trùng" mở /editor/screening/<mã> (EditorDuplicateCheck).
  *   - "Giao CTV xác minh" mở /editor/queue/<mã>/assign (EditorAssignContributor); ẩn khi hồ sơ đã xử lý xong
- *     hoặc đang có nhiệm vụ. Hồ sơ từng được giao thì có thêm ô nhiệm vụ ngay dưới thanh này.
+ *     hoặc đang có nhiệm vụ. Hồ sơ từng được giao thì có thêm ô nhiệm vụ ngay dưới thanh này,
+ *     kèm nút "Thu hồi" khi nhiệm vụ còn hiệu lực. CTV từ chối / huỷ hoặc thu hồi xong thì giao lại được.
  *   - Các nút còn lại (tiếp nhận thẩm định, yêu cầu bổ sung, từ chối) đã ĐẶT SẴN nhưng đang KHOÁ:
  *     backend xử lý tin sẽ làm ở bản sau.
  */
@@ -38,7 +41,7 @@ function EditorSubmissionDetail() {
   const { code } = useParams()
   const { state } = useLocation() // state.notice: thông báo từ trang chọn CTV sau khi giao xong
   const { data, error } = useAsyncData(() => editorService.getSubmission(code), code)
-  const { data: assignment } = useAsyncData(() => editorService.getLatestAssignment(code), `assignment|${code}`)
+  const { data: assignment, setData: setAssignment } = useAsyncData(() => editorService.getLatestAssignment(code), `assignment|${code}`)
   const canAssign =
     ASSIGNABLE_SUBMISSION_STATUSES.includes(data?.status) && !ACTIVE_ASSIGNMENT_STATUSES.includes(assignment?.status)
 
@@ -50,7 +53,8 @@ function EditorSubmissionDetail() {
       </Link>
 
       {error && <Alert type="error">{error}</Alert>}
-      <Alert type="success">{state?.notice}</Alert>
+      {/* Thu hồi xong thì thông báo "đã giao" không còn đúng nữa */}
+      <Alert type="success">{!canAssign && state?.notice}</Alert>
       {!data && !error && <div className="skeleton skeleton--page" />}
 
       {data && (
@@ -85,7 +89,7 @@ function EditorSubmissionDetail() {
               ))}
             </div>
           </section>
-          {assignment && <CurrentAssignment assignment={assignment} />}
+          {assignment && <CurrentAssignment assignment={assignment} onCancelled={setAssignment} />}
           <SubmissionDetail detail={data} />
         </>
       )}
@@ -94,8 +98,15 @@ function EditorSubmissionDetail() {
 }
 
 /** Ô nhiệm vụ mới nhất của hồ sơ: ai đang xác minh, hạn khi nào, chỉ dẫn đã gửi. */
-function CurrentAssignment({ assignment }) {
-  const status = ASSIGNMENT_STATUS[assignment.status]
+function CurrentAssignment({ assignment, onCancelled }) {
+  const [revoking, setRevoking] = useState(false)
+  const badge = assignmentBadge(assignment)
+
+  const revoke = async (reason) => {
+    const response = await editorService.cancelAssignment(assignment.id, reason)
+    onCancelled(response.data)
+  }
+
   return (
     <section className="admin-panel assign-current">
       <Avatar name={assignment.contributorName} src={assignment.contributorAvatarUrl} size={44} />
@@ -104,8 +115,24 @@ function CurrentAssignment({ assignment }) {
         <small>Hạn hoàn thành: {formatDateTime(assignment.deadline)}</small>
         {isOverdue(assignment) && <small className="assign-overdue">Quá hạn</small>}
       </div>
-      <Badge tone={status?.tone}>{status?.label ?? assignment.status}</Badge>
+      <Badge tone={badge.tone}>{badge.label}</Badge>
+      {ACTIVE_ASSIGNMENT_STATUSES.includes(assignment.status) && (
+        <Button variant="secondary" className="btn--sm" onClick={() => setRevoking(true)}>
+          Thu hồi
+        </Button>
+      )}
       {assignment.note && <p className="assign-current__note">{assignment.note}</p>}
+      {assignment.cancelReason && <p className="assign-current__note">Lý do huỷ: {assignment.cancelReason}</p>}
+
+      <ReasonDialog
+        open={revoking}
+        title="Thu hồi nhiệm vụ"
+        message={`${assignment.contributorName} sẽ nhận được email kèm lý do. Sau đó bạn có thể giao cho Cộng tác viên khác.`}
+        label="Lý do thu hồi"
+        confirmLabel="Thu hồi"
+        onClose={() => setRevoking(false)}
+        onSubmit={revoke}
+      />
     </section>
   )
 }

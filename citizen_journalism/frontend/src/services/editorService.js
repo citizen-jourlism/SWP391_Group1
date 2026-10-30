@@ -48,6 +48,7 @@ export const editorService = {
   listAssignments: (params) => api.get('/editor/assignments', { params: cleanParams(params) }),
   /** payload: { trackingCode, contributorId, deadline, note } */
   assign: (payload) => api.post('/editor/assignments', payload),
+  cancelAssignment: (id, reason) => api.post(`/editor/assignments/${id}/cancel`, { reason }),
 
   // ----- Đơn đăng ký Cộng tác viên -----
   listApplications: (params) => api.get('/editor/applications', { params: cleanParams(params) }),

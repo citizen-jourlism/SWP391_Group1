@@ -196,14 +196,16 @@ export function RevisionComments({ comments, canPost, onPost }) {
 }
 
 const validateReason = createValidator({
-  reason: [rules.required('Vui lòng nhập lý do từ chối.'), rules.minLength(10, 'Lý do từ chối tối thiểu 10 ký tự.')],
+  reason: [rules.required('Vui lòng nhập lý do.'), rules.minLength(10, 'Lý do tối thiểu 10 ký tự.')],
 })
 
 /**
- * Hộp nhập LÝ DO (bắt buộc, 10–2000 ký tự) trước khi từ chối. Dùng cho BTV từ chối bài và Chuyên gia từ chối yêu cầu.
+ * Hộp nhập LÝ DO (bắt buộc, 10–2000 ký tự) trước khi từ chối / huỷ. Dùng cho BTV từ chối bài, Chuyên gia từ chối
+ * yêu cầu, Cộng tác viên từ chối / huỷ nhiệm vụ và BTV thu hồi nhiệm vụ.
+ * label, confirmLabel: chữ của ô nhập và nút đồng ý.
  * onSubmit: async (reason) => ...  lỗi backend tự hiện trong hộp; thành công thì tự đóng.
  */
-export function ReasonDialog({ open, title, message, onClose, onSubmit }) {
+export function ReasonDialog({ open, title, message, label = 'Lý do từ chối', confirmLabel = 'Từ chối', onClose, onSubmit }) {
   const form = useForm({ reason: '' }, validateReason)
 
   const close = () => {
@@ -222,13 +224,13 @@ export function ReasonDialog({ open, title, message, onClose, onSubmit }) {
       <form onSubmit={submit} className="revision-form" noValidate>
         <p className="modal__text">{message}</p>
         <Alert type="error">{form.formError}</Alert>
-        <TextField label="Lý do từ chối" required multiline rows={4} counter={2000} {...form.field('reason')} />
+        <TextField label={label} required multiline rows={4} counter={2000} {...form.field('reason')} />
         <div className="modal__actions">
           <Button variant="secondary" onClick={close} disabled={form.submitting}>
-            Huỷ
+            Đóng
           </Button>
           <Button type="submit" variant="danger" loading={form.submitting}>
-            Từ chối
+            {confirmLabel}
           </Button>
         </div>
       </form>

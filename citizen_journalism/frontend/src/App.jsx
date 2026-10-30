@@ -29,6 +29,8 @@ import EditorArticles from './routes/editor/EditorArticles.jsx'
 import EditorApplications from './routes/editor/EditorApplications.jsx'
 import EditorDuplicateCheck from './routes/editor/EditorDuplicateCheck.jsx'
 import EditorOverview from './routes/editor/EditorOverview.jsx'
+import ContributorTaskDetail from './routes/contributor/ContributorTaskDetail.jsx'
+import ContributorTasks from './routes/contributor/ContributorTasks.jsx'
 import EditorAssignContributor from './routes/editor/EditorAssignContributor.jsx'
 import EditorAssignments from './routes/editor/EditorAssignments.jsx'
 import EditorPlanned from './routes/editor/EditorPlanned.jsx'
@@ -142,6 +144,23 @@ function App() {
             element={
               <ProtectedRoute roles={SUBMITTER_ROLES}>
                 <SupplementSubmission />
+              </ProtectedRoute>
+            }
+          />
+          {/* Nhiệm vụ xác minh hiện trường (chỉ Cộng tác viên): danh sách và chi tiết 1 nhiệm vụ */}
+          <Route
+            path="/contributor/tasks"
+            element={
+              <ProtectedRoute roles={['CONTRIBUTOR']}>
+                <ContributorTasks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contributor/tasks/:id"
+            element={
+              <ProtectedRoute roles={['CONTRIBUTOR']}>
+                <ContributorTaskDetail />
               </ProtectedRoute>
             }
           />

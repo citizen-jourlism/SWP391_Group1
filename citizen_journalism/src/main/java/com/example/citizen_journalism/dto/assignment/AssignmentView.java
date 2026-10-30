@@ -18,8 +18,11 @@ public record AssignmentView(
         String contributorAvatarUrl,
         int contributorScore,
         FieldAssignment.AssignmentStatus status,
+        FieldAssignment.CancelType cancelType,
+        String cancelReason,
         LocalDateTime deadline,
         String note,
+        LocalDateTime claimedAt,
         LocalDateTime createdAt) {
 
     public static AssignmentView from(FieldAssignment assignment) {
@@ -37,8 +40,11 @@ public record AssignmentView(
                 contributor.getAvatarUrl(),
                 contributor.performanceScoreOrDefault(),
                 assignment.getStatus(),
+                assignment.getCancelType(),
+                assignment.getCancelReason(),
                 assignment.getDeadline(),
                 assignment.getNote(),
+                assignment.getClaimedAt(),
                 assignment.getCreatedAt());
     }
 }

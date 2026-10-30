@@ -15,6 +15,7 @@ const MENU_LINKS = [
   { to: '/editor', icon: 'activity', label: 'Bàn biên tập', roles: ['EDITOR'] },
   { to: '/account/submissions', icon: 'fileText', label: 'Thông tin đã gửi', roles: SUBMITTER_ROLES },
   { to: '/research', icon: 'edit', label: 'Bài nghiên cứu của tôi', roles: ['EXPERT'] },
+  { to: '/contributor/tasks', icon: 'mapPin', label: 'Nhiệm vụ của tôi', roles: ['CONTRIBUTOR'] },
   { to: '/account/profile', icon: 'user', label: 'Hồ sơ của tôi' },
   { to: '/account/change-password', icon: 'lock', label: 'Đổi mật khẩu' },
 ]

@@ -1,7 +1,8 @@
 /* =========================================================================
  * GIAO NHIỆM VỤ XÁC MINH HIỆN TRƯỜNG
  * Dùng ở: routes/editor/EditorAssignContributor.jsx (màn chọn CTV kiểu chọn quán),
- * EditorAssignments.jsx (danh sách nhiệm vụ), EditorSubmissionDetail.jsx (ô nhiệm vụ hiện tại).
+ * EditorAssignments.jsx (danh sách nhiệm vụ), EditorSubmissionDetail.jsx (ô nhiệm vụ hiện tại),
+ * routes/contributor/*.jsx (nhiệm vụ của Cộng tác viên).
  * ========================================================================= */
 
 /* .admin-panel.assign-*: cần cao hơn .admin-panel (xếp dọc), vì thứ tự nạp file CSS không cố định */
@@ -421,4 +422,45 @@
     position: static;
     grid-template-columns: 1fr;
   }
+}
+
+/* ---------- Nhiệm vụ của Cộng tác viên ---------- */
+.segmented.task-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 16px;
+}
+
+.assign-overdue--inline {
+  display: inline;
+  font-size: inherit;
+}
+
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.detail-head > .alert {
+  margin-top: 14px;
+}
+
+.task-locked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: #f5f7fb;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.task-locked svg {
+  flex-shrink: 0;
 }
