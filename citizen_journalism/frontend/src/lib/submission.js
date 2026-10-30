@@ -130,8 +130,19 @@ export const splitRequestNote = (note = '') => {
   return { intro: intro.join('\n'), items }
 }
 
-/** Giới hạn của form "Bổ sung thông tin" (SRS 4.1.2: ô thông tin bổ sung tối đa 2000 ký tự). */
-export const SUPPLEMENT_LIMITS = { infoMax: 2000, addressMax: 250, maxSources: 10, sourceTitleMax: 250, sourceUrlMax: 500 }
+/**
+ * Giới hạn của form "Bổ sung thông tin". Thông tin bổ sung: Người dân / CTV tối đa infoMax (2000) ký tự,
+ * Chuyên gia tối đa expertInfoMax (4000) - tính TỔNG mọi câu trả lời nếu trả lời theo từng mục.
+ * Khớp SubmissionSupplementService (backend).
+ */
+export const SUPPLEMENT_LIMITS = {
+  infoMax: 2000,
+  expertInfoMax: 4000,
+  addressMax: 250,
+  maxSources: 10,
+  sourceTitleMax: 250,
+  sourceUrlMax: 500,
+}
 
 /** Mã hồ sơ dạng KB-2026-0001 (khớp cách backend sinh mã trong SubmissionService.create). */
 export const TRACKING_CODE_REGEX = /^KB-\d{4}-\d{4,}$/i

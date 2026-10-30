@@ -16,30 +16,40 @@ import '../../assets/styles/supplement.css'
  * CSS: submit.css (form-card, uploader) + supplement.css (answer-block, source-row...).
  *
  * HAI DẠNG theo vai trò người gửi (UC "Provide Additional Information"):
- *   - Người dân (SRS 4.1.2): 1. Nội dung bổ sung (địa chỉ chính xác + ô thông tin bổ sung ≤ 2000 ký tự)
+ *   - Người dân            : 1. Nội dung bổ sung (địa chỉ chính xác + ô thông tin bổ sung ≤ 2000 ký tự)
  *                            2. Tư liệu bổ sung     3. Cam kết + gửi
  *     Phải có ÍT NHẤT một thứ: thông tin bổ sung, địa chỉ mới hoặc tệp.
  *   - Chuyên gia           : 1. Trả lời TỪNG mục biên tập viên hỏi (lời nhắn có "1. ...", "2. ..."; không có mục thì 1 ô chung)
+ *                               Tổng các câu trả lời ≤ 4000 ký tự (dùng chung, mục nào dài ngắn tuỳ ý)
  *                            2. Nguồn tham khảo bổ sung (tên nguồn + đường dẫn / DOI, khớp Evidences.source_ref)
  *                            3. Tài liệu đính kèm   4. Xác nhận + gửi
  *
- * Gửi lên: submissionService.supplement(mã, { additionalInfo, address, sources }, files).
- * Chuyên gia: các câu trả lời được ghép thành additionalInfo dạng "Mục 1: ...". Thành công -> onSubmitted({ payload, files }).
+ * Gửi lên: submissionService.supplement(mã, { additionalInfo, answers, address, sources }, files).
+ * Chuyên gia trả lời từng mục: gửi answers (mỗi mục 1 phần tử), backend tự ghép "Mục 1: ...". Thành công -> onSubmitted({ payload, files }).
+ * payload đưa cho onSubmitted có thêm additionalInfo đã ghép sẵn để trang "Đã gửi" hiện lại nội dung.
  */
 
 const newSource = () => ({ id: crypto.randomUUID(), title: '', url: '' })
 
+/** Số ký tự thông tin bổ sung tối đa: Chuyên gia 4000, còn lại 2000. */
+const infoLimitOf = (isExpert) => (isExpert ? SUPPLEMENT_LIMITS.expertInfoMax : SUPPLEMENT_LIMITS.infoMax)
+
+/** Tổng số ký tự các câu trả lời từng mục (không tính khoảng trắng đầu/cuối, giống backend). */
+const answersLength = (answers) => answers.reduce((sum, answer) => sum + answer.trim().length, 0)
+
 /** Kiểm tra form. Trả về { tênÔ: lỗi }; lỗi của ô động dùng khoá answer0, answer1..., source0... */
 const buildValidator = ({ isExpert, items, options, originalAddress }) => (values) => {
   const errors = {}
-  const { infoMax, addressMax, sourceTitleMax, sourceUrlMax } = SUPPLEMENT_LIMITS
+  const { addressMax, sourceTitleMax, sourceUrlMax } = SUPPLEMENT_LIMITS
+  const infoMax = infoLimitOf(isExpert)
   const info = values.additionalInfo.trim()
 
   if (isExpert && items.length > 0) {
     values.answers.forEach((answer, index) => {
       if (!answer.trim()) errors[`answer${index}`] = 'Vui lòng trả lời mục này.'
-      else if (answer.trim().length > infoMax) errors[`answer${index}`] = `Tối đa ${infoMax} ký tự.`
     })
+    const total = answersLength(values.answers)
+    if (total > infoMax) errors.answers = `Tổng các câu trả lời tối đa ${infoMax} ký tự (hiện ${total}).`
   } else if (isExpert && !info) {
     errors.additionalInfo = 'Vui lòng nhập nội dung trả lời toà soạn.'
   }
@@ -73,13 +83,12 @@ const buildValidator = ({ isExpert, items, options, originalAddress }) => (value
 
 /** Gom giá trị form thành dữ liệu gửi backend (ô trống -> null, giống lib/payload.js). */
 const buildPayload = ({ values, isExpert, items, originalAddress }) => {
-  const additionalInfo =
-    isExpert && items.length > 0
-      ? values.answers.map((answer, index) => `Mục ${index + 1}: ${answer.trim()}`).join('\n\n')
-      : values.additionalInfo.trim()
+  const byItem = isExpert && items.length > 0
+  const additionalInfo = byItem ? '' : values.additionalInfo.trim()
   const address = values.address.trim()
   return {
     additionalInfo: additionalInfo || null,
+    answers: byItem ? values.answers.map((answer) => answer.trim()) : [],
     address: !isExpert && address && address !== originalAddress ? address : null,
     sources: isExpert
       ? values.sources
@@ -112,6 +121,7 @@ function SectionHeader({ step, title, description }) {
 function SupplementForm({ detail, options, isExpert, onCancel, onSubmitted }) {
   const { items } = splitRequestNote(detail.requestNote ?? '')
   const originalAddress = detail.address ?? ''
+  const infoMax = infoLimitOf(isExpert)
   const validate = buildValidator({ isExpert, items, options, originalAddress })
   const form = useForm(
     {
@@ -145,7 +155,9 @@ function SupplementForm({ detail, options, isExpert, onCancel, onSubmitted }) {
     const files = values.files.map((item) => item.file)
     setProgress(0)
     await submissionService.supplement(detail.trackingCode, payload, files, setProgress)
-    onSubmitted({ payload, files })
+    // Trang "Đã gửi" hiện additionalInfo: với câu trả lời từng mục, ghép giống cách backend lưu
+    const joined = payload.answers.map((answer, index) => `Mục ${index + 1}: ${answer}`).join('\n\n')
+    onSubmitted({ payload: payload.answers.length ? { ...payload, additionalInfo: joined } : payload, files })
   })
 
   const onSubmit = (event) => {
@@ -180,35 +192,48 @@ function SupplementForm({ detail, options, isExpert, onCancel, onSubmitted }) {
             title="Trả lời yêu cầu của biên tập viên"
             description={
               items.length > 0
-                ? `Trả lời từng mục, mỗi mục tối đa ${SUPPLEMENT_LIMITS.infoMax} ký tự. Mục nào cần tệp, đính kèm ở phần 3.`
-                : `Trả lời đề nghị của toà soạn, tối đa ${SUPPLEMENT_LIMITS.infoMax} ký tự.`
+                ? `Trả lời từng mục, tổng tối đa ${infoMax} ký tự. Mục nào cần tệp, đính kèm ở phần 3.`
+                : `Trả lời đề nghị của toà soạn, tối đa ${infoMax} ký tự.`
             }
           />
           {items.length > 0 ? (
-            items.map((item, index) => (
-              <div className="answer-block" key={index}>
-                <p className="answer-block__q">
-                  <span className="request-items__num">{index + 1}</span>
-                  {item}
-                </p>
-                <TextField
-                  label={`Trả lời mục ${index + 1}`}
-                  multiline
-                  rows={4}
-                  counter={SUPPLEMENT_LIMITS.infoMax}
-                  value={form.values.answers[index]}
-                  onChange={(event) => setAnswer(index, event.target.value)}
-                  error={errorOf(`answer${index}`)}
-                />
+            <>
+              {items.map((item, index) => (
+                <div className="answer-block" key={index}>
+                  <p className="answer-block__q">
+                    <span className="request-items__num">{index + 1}</span>
+                    {item}
+                  </p>
+                  <TextField
+                    label={`Trả lời mục ${index + 1}`}
+                    multiline
+                    rows={4}
+                    value={form.values.answers[index]}
+                    onChange={(event) => setAnswer(index, event.target.value)}
+                    error={errorOf(`answer${index}`)}
+                  />
+                </div>
+              ))}
+              {/* Bộ đếm CHUNG cho mọi câu trả lời (cùng kiểu với bộ đếm của TextField) */}
+              <div className="field__meta answers-total">
+                {errorOf('answers') && (
+                  <p className="field__error" role="alert">
+                    <Icon name="alertCircle" size={14} />
+                    {errorOf('answers')}
+                  </p>
+                )}
+                <span className={`field__counter ${answersLength(form.values.answers) > infoMax ? 'is-over' : ''}`}>
+                  Tổng: {answersLength(form.values.answers)}/{infoMax}
+                </span>
               </div>
-            ))
+            </>
           ) : (
             <TextField
               label="Nội dung trả lời"
               required
               multiline
               rows={7}
-              counter={SUPPLEMENT_LIMITS.infoMax}
+              counter={infoMax}
               {...form.field('additionalInfo')}
               error={errorOf('additionalInfo')}
             />
@@ -234,7 +259,7 @@ function SupplementForm({ detail, options, isExpert, onCancel, onSubmitted }) {
               label="Thông tin bổ sung"
               multiline
               rows={7}
-              counter={SUPPLEMENT_LIMITS.infoMax}
+              counter={infoMax}
               placeholder="Ví dụ: thời gian xảy ra thường xuyên, người chứng kiến, cơ quan đã phản ánh..."
               {...form.field('additionalInfo')}
               error={errorOf('additionalInfo')}

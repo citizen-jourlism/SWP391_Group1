@@ -7,6 +7,7 @@ import com.example.citizen_journalism.dto.submission.SubmissionSummary;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.entity.Submission.SubmissionStatus;
 import com.example.citizen_journalism.repository.SubmissionRepository;
+import com.example.citizen_journalism.util.Paging;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -19,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Hiện có: số liệu trang Tổng quan, HÀNG ĐỢI TIN BÀI (xem danh sách + chi tiết, CHƯA có thao tác xử lý).
  * Các thao tác xử lý tin (tiếp nhận, yêu cầu bổ sung, giao CTV xác minh...) sẽ thêm ở các bản sau;
  * khi đổi trạng thái hồ sơ nhớ dùng SubmissionEventService.record để người gửi theo dõi được.
- * Phần đơn đăng ký CTV nằm ở ContributorApplicationService.
+ * Từ chối hồ sơ nằm ở SubmissionRejectionService. Phần đơn đăng ký CTV nằm ở ContributorApplicationService.
  */
 @Service
 @RequiredArgsConstructor
@@ -31,7 +32,7 @@ public class EditorService {
 
     @Transactional(readOnly = true)
     public EditorOverview getOverview() {
-        PageRequest latest = PageRequest.of(0, 5, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
+        PageRequest latest = PageRequest.of(0, 5, Paging.NEWEST_FIRST); // 5 hồ sơ chờ tiếp nhận mới nhất
         return new EditorOverview(
                 submissionRepository.countByTypeAndStatus(Submission.SubmissionType.HOT_NEWS, SubmissionStatus.PENDING),
                 submissionRepository.countByTypeAndStatus(Submission.SubmissionType.COMPLAINT, SubmissionStatus.PENDING),
@@ -49,11 +50,9 @@ public class EditorService {
     @Transactional(readOnly = true)
     public PageResponse<SubmissionSummary> listSubmissions(SubmissionStatus status, Submission.ReportCategory category,
                                                            int page, int size) {
-        Sort sort = status == SubmissionStatus.PENDING
-                ? Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id"))
-                : Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
-        PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50), sort);
-        return PageResponse.from(submissionRepository.searchForStaff(status, category, pageable).map(SubmissionSummary::from));
+        Sort sort = status == SubmissionStatus.PENDING ? Paging.OLDEST_FIRST : Paging.NEWEST_FIRST;
+        return PageResponse.from(submissionRepository.searchForStaff(status, category, Paging.of(page, size, sort))
+                .map(SubmissionSummary::from));
     }
 
     public SubmissionDetail getSubmission(String trackingCode) {

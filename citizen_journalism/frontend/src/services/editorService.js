@@ -13,6 +13,12 @@ export const editorService = {
   // ----- Hàng đợi tin bài -----
   listSubmissions: (params) => api.get('/editor/submissions', { params: cleanParams(params) }),
   getSubmission: (code) => api.get(`/editor/submissions/${encodeURIComponent(code)}`),
+
+  // ----- Từ chối hồ sơ (Reject Submission), xem routes/editor/EditorRejectSubmission.jsx -----
+  /** { submission, reporter, screening, rejectable, penaltyPoints, review } */
+  getRejection: (code) => api.get(`/editor/submissions/${encodeURIComponent(code)}/rejection`),
+  /** payload = { reason, feedback, internalNote, applyPenalty } -> trả về dữ liệu mới (cùng dạng getRejection) */
+  rejectSubmission: (code, payload) => api.post(`/editor/submissions/${encodeURIComponent(code)}/reject`, payload),
   /** Hàng đợi gộp: hồ sơ phản ánh + bài nghiên cứu Chuyên gia đã nộp. type: HOT_NEWS | COMPLAINT | INVESTIGATION | RESEARCH */
   listQueue: (params) => api.get('/editor/queue', { params: cleanParams(params) }),
   /** Danh sách lĩnh vực cho ô lọc "Lĩnh vực" của hàng đợi. */

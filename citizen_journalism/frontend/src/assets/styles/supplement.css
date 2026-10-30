@@ -86,6 +86,11 @@
   margin-top: 14px;
 }
 
+/* Bộ đếm chung cho mọi câu trả lời của Chuyên gia (dưới khối trả lời cuối) */
+.answers-total {
+  margin-top: 10px;
+}
+
 .answer-block__q {
   display: flex;
   gap: 10px;

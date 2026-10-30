@@ -5,6 +5,20 @@ import { FILE_TYPE_INFO, MB, fileTypeOf } from '../../lib/submission'
 import '../../assets/styles/submit.css'
 
 /** Tên ngắn của từng định dạng để hiện gợi ý "JPG, PNG, PDF..." (2 kiểu khai báo MP3 gộp làm 1). */
+/** Dung lượng tối đa (MB) của 1 tệp: theo loại nếu backend trả về maxFileSizeMbByType, không thì giới hạn chung. */
+const maxSizeMbOf = (options, type) => options.maxFileSizeMbByType?.[type] ?? options.maxFileSizeMb
+
+/** Gợi ý giới hạn, ví dụ "Hình ảnh 20MB (10 tệp) · Video 300MB (2 tệp)" hoặc "tối đa 5MB/tệp". */
+const limitText = (options) => {
+  if (!options.maxFileSizeMbByType) return `tối đa ${options.maxFileSizeMb}MB/tệp`
+  return Object.entries(options.maxFileSizeMbByType)
+    .map(([type, mb]) => {
+      const count = options.maxFilesByType?.[type]
+      return `${FILE_TYPE_INFO[type]?.label ?? type} ${mb}MB${count ? ` (${count} tệp)` : ''}`
+    })
+    .join(' · ')
+}
+
 const FORMAT_LABELS = {
   'image/jpeg': 'JPG',
   'image/png': 'PNG',
@@ -29,6 +43,8 @@ const FORMAT_LABELS = {
  *   - files    : mảng { id, file, previewUrl } (state nằm ở trang cha, trong useForm)
  *   - onChange : hàm nhận mảng mới
  *   - options  : { maxFiles, maxFileSizeMb, maxTotalSizeMb, acceptedTypes }
+ *                (form gửi tin có thêm maxFilesByType + maxFileSizeMbByType: giới hạn theo loại IMAGE/VIDEO/AUDIO/DOCUMENT,
+ *                 thay cho maxFileSizeMb; đơn Cộng tác viên vẫn dùng maxFileSizeMb chung)
  *   - error    : lỗi hiển thị dưới khung (ví dụ "Vui lòng đính kèm ít nhất 1 tệp")
  *
  * ẢNH XEM TRƯỚC: URL.createObjectURL(file) tạo một đường dẫn tạm "blob:..." trỏ tới file trong máy để thẻ <img> hiển thị
@@ -53,6 +69,12 @@ function EvidenceUploader({ files, onChange, options, error }) {
   const addFiles = (fileList) => {
     const skipped = []
     const accepted = []
+    // Đếm số tệp theo loại (đã có + vừa nhận) để chặn khi vượt maxFilesByType
+    const counts = {}
+    files.forEach((item) => {
+      const type = fileTypeOf(item.file.type)
+      counts[type] = (counts[type] ?? 0) + 1
+    })
     for (const file of fileList) {
       const duplicate = files.some(
         (item) => item.file.name === file.name && item.file.size === file.size && item.file.lastModified === file.lastModified,
@@ -60,9 +82,17 @@ function EvidenceUploader({ files, onChange, options, error }) {
       if (duplicate) continue // Chọn lại đúng tệp đã có -> lặng lẽ bỏ qua
       if (!options.acceptedTypes.includes(file.type)) {
         skipped.push(`"${file.name}" không đúng định dạng`)
-      } else if (file.size > options.maxFileSizeMb * MB) {
-        skipped.push(`"${file.name}" lớn hơn ${options.maxFileSizeMb}MB`)
+        continue
+      }
+      const type = fileTypeOf(file.type)
+      const maxMb = maxSizeMbOf(options, type)
+      const maxCount = options.maxFilesByType?.[type]
+      if (file.size > maxMb * MB) {
+        skipped.push(`"${file.name}" lớn hơn ${maxMb}MB`)
+      } else if (maxCount && (counts[type] ?? 0) >= maxCount) {
+        skipped.push(`"${file.name}" vượt quá giới hạn ${maxCount} tệp ${FILE_TYPE_INFO[type].label.toLowerCase()}`)
       } else {
+        counts[type] = (counts[type] ?? 0) + 1
         accepted.push(file)
       }
     }
@@ -117,7 +147,7 @@ function EvidenceUploader({ files, onChange, options, error }) {
         </span>
         <strong>{full ? 'Đã đủ số tệp tối đa' : 'Kéo thả tệp vào đây hoặc bấm để chọn'}</strong>
         <small>
-          {formats} · tối đa {options.maxFileSizeMb}MB/tệp · {options.maxFiles} tệp
+          {formats} · {limitText(options)} · tối đa {options.maxFiles} tệp
         </small>
       </button>
       <input

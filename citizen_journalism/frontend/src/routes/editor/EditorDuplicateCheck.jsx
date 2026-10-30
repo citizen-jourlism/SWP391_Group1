@@ -13,7 +13,7 @@ import { useAsyncData } from '../../hooks/useAsyncData'
 import { formatDateTime } from '../../lib/format'
 import { matchSignals, similarityLegend, similarityLevel } from '../../lib/screening'
 import { CATEGORY_BY_VALUE, SUBMISSION_STATUS } from '../../lib/submission'
-import { editorService } from '../../services/editorService'
+import { screeningService } from '../../services/screeningService'
 import '../../assets/styles/contributor.css' // Hàng nhãn tín hiệu (.app-facts__tags)
 import '../../assets/styles/screening.css'
 import '../../assets/styles/submit.css' // Danh sách tệp (.evidence-list)
@@ -24,7 +24,7 @@ import '../../assets/styles/tracking.css' // Đầu hồ sơ, thông tin, nội 
  * Mở từ nút "Kiểm tra tin trùng" ở chi tiết hồ sơ (EditorSubmissionDetail). Biên tập viên xem kết quả AI quét hồ sơ
  * (điểm tin rác, độ tin cậy, tóm tắt) và các hồ sơ AI cho là tương tự, so sánh từng cặp rồi kết luận.
  *
- * API (backend CHƯA có, xem services/editorService.js):
+ * API (backend CHƯA có, xem services/screeningService.js):
  *   GET  /api/editor/submissions/{mã}/duplicates          -> { submission, screening, candidates, review }
  *        submission : như GET /api/editor/submissions/{mã} (SubmissionDetail)
  *        screening  : { status: 'PROCESSING' | 'DONE', spamScore, credibilityScore, aiSummary, threshold, windowDays }
@@ -46,7 +46,7 @@ const NOTE_MAX = 500
 
 function EditorDuplicateCheck() {
   const { code } = useParams()
-  const { data, error, setData } = useAsyncData(() => editorService.getDuplicates(code), code)
+  const { data, error, setData } = useAsyncData(() => screeningService.getDuplicates(code), code)
   const [selectedCode, setSelectedCode] = useState(null)
   const [decision, setDecision] = useState('MERGE') // 'MERGE' | 'DISTINCT'
   const [note, setNote] = useState('')
@@ -84,10 +84,10 @@ function EditorDuplicateCheck() {
     const trimmed = note.trim() || null
     const response =
       confirm === 'MERGE'
-        ? await editorService.mergeDuplicate(code, selected.trackingCode, trimmed)
+        ? await screeningService.mergeDuplicate(code, selected.trackingCode, trimmed)
         : confirm === 'DISTINCT'
-          ? await editorService.dismissDuplicates(code, trimmed)
-          : await editorService.unmergeDuplicate(code)
+          ? await screeningService.dismissDuplicates(code, trimmed)
+          : await screeningService.unmergeDuplicate(code)
     setData(response.data)
     setNotice(response.message)
     setNote('')

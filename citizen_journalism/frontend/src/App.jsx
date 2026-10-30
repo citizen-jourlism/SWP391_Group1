@@ -17,6 +17,7 @@ import ExpertRevisionReview from './routes/ExpertRevisionReview.jsx'
 import ResearchEditor from './routes/ResearchEditor.jsx'
 import ResearchList from './routes/ResearchList.jsx'
 import SubmitReport from './routes/SubmitReport.jsx'
+import SubmissionHistory from './routes/SubmissionHistory.jsx'
 import SupplementSubmission from './routes/SupplementSubmission.jsx'
 import TrackSubmission from './routes/TrackSubmission.jsx'
 import VerifyOtp from './routes/VerifyOtp.jsx'
@@ -31,8 +32,11 @@ import EditorDuplicateCheck from './routes/editor/EditorDuplicateCheck.jsx'
 import EditorOverview from './routes/editor/EditorOverview.jsx'
 import EditorPlanned from './routes/editor/EditorPlanned.jsx'
 import EditorQueue from './routes/editor/EditorQueue.jsx'
+import EditorRejectSubmission from './routes/editor/EditorRejectSubmission.jsx'
+import EditorRequestInfo from './routes/editor/EditorRequestInfo.jsx'
 import EditorResearchDetail from './routes/editor/EditorResearchDetail.jsx'
 import EditorSubmissionDetail from './routes/editor/EditorSubmissionDetail.jsx'
+import EditorVerificationReview from './routes/editor/EditorVerificationReview.jsx'
 import AuditLogs from './routes/admin/AuditLogs'
 import EditorCategories from './routes/editor/EditorCategories.jsx'
 import Notifications from './routes/Notifications.jsx'
@@ -154,6 +158,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Lịch sử chỉnh sửa: các phiên bản của hồ sơ qua từng lần bổ sung, so sánh 2 phiên bản */}
+          <Route
+            path="/account/submissions/:code/history"
+            element={
+              <ProtectedRoute roles={SUBMITTER_ROLES}>
+                <SubmissionHistory />
+              </ProtectedRoute>
+            }
+          />
 
           {/* ----- Khu quản trị: chỉ SYSTEM_ADMIN. Route LỒNG NHAU: AdminLayout là khung chung,
                    các trang con hiện vào chỗ <Outlet /> của khung. index = trang mặc định của /admin ----- */}
@@ -183,12 +196,16 @@ function App() {
             <Route index element={<EditorOverview />} />                                {/* Tổng quan */}
             <Route path="queue" element={<EditorQueue />} />                            {/* Hàng đợi tin bài */}
             <Route path="queue/:code" element={<EditorSubmissionDetail />} />           {/* Chi tiết 1 hồ sơ */}
+            <Route path="queue/:code/reject" element={<EditorRejectSubmission />} />    {/* Từ chối 1 hồ sơ */}
+            <Route path="queue/:code/request-info" element={<EditorRequestInfo />} /> {/* Yêu cầu bổ sung cho 1 hồ sơ */}
+            <Route path="queue/:code/verification" element={<EditorVerificationReview />} /> {/* Duyệt kết quả xác minh của CTV */}
             <Route path="queue/research/:id" element={<EditorResearchDetail />} />     {/* Chi tiết 1 bài nghiên cứu */}
             <Route path="applications" element={<EditorApplications />} />              {/* Đơn đăng ký CTV */}
             <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
             <Route path="categories" element={<EditorCategories />} />
             <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
             {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
+            <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
             <Route path="screening" element={<EditorPlanned page="screening" />} />
             <Route path="assignments" element={<EditorPlanned page="assignments" />} />
             <Route path="articles" element={<EditorArticles />} />                       {/* Biên tập bài viết */}
