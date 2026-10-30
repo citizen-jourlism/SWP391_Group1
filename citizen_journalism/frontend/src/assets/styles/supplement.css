@@ -1,0 +1,263 @@
+/* ===== Bổ sung thông tin (routes/SupplementSubmission.jsx, components/submission/SupplementForm.jsx, RequestNoteCard.jsx)
+ * Dùng chung khung với trang gửi tin (submit.css: form-card, uploader, submit-layout) và trang theo dõi (tracking.css:
+ * detail-card, timeline). File này chỉ chứa phần riêng của màn hình. Màu lấy từ design tokens (src/index.css).
+ */
+
+/* ---------- Hộp lời nhắn "Toà soạn đề nghị bổ sung" ---------- */
+.request-card {
+  padding: 22px 24px;
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius-lg);
+  background: var(--warning-bg);
+}
+
+.request-card__title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0;
+  color: var(--warning);
+  font-size: 16px;
+}
+
+.request-card__from {
+  margin: 4px 0 12px;
+  color: var(--navy-800);
+  font-size: 13px;
+}
+
+.request-card__note {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--orange);
+  border-radius: 0 8px 8px 0;
+  background: #fff;
+  color: var(--navy-800);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line; /* giữ xuống dòng biên tập viên đã gõ */
+}
+
+.request-card__note:last-child {
+  margin-bottom: 0;
+}
+
+/* Danh sách các mục cần bổ sung (tách từ lời nhắn: "1. ...", "2. ...") */
+.request-items {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.request-items li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--navy-900);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.request-items__num {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--warning);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* ---------- Chuyên gia trả lời từng mục ---------- */
+.answer-block {
+  padding: 16px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  background: #fbfcfe;
+}
+
+.answer-block + .answer-block {
+  margin-top: 14px;
+}
+
+/* Bộ đếm chung cho mọi câu trả lời của Chuyên gia (dưới khối trả lời cuối) */
+.answers-total {
+  margin-top: 10px;
+}
+
+.answer-block__q {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  color: var(--navy-900);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.answer-block__q .request-items__num {
+  background: #fff1ea;
+  color: var(--orange-strong);
+}
+
+/* ---------- Nguồn tham khảo bổ sung (Chuyên gia) ---------- */
+.source-list {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+/* Tên nguồn | Đường dẫn / DOI | nút xoá */
+.source-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.source-row .field__input {
+  min-height: 44px;
+}
+
+.source-row__remove {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.source-row__remove:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* ---------- Cột phải: tóm tắt hồ sơ gốc ---------- */
+.origin-card dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.origin-card dt {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.origin-card dd {
+  margin: 2px 0 0;
+  color: var(--navy-900);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.origin-card .evidence-list {
+  margin-top: 8px;
+}
+
+/* ---------- Hàng nút cuối form: Huỷ (trái) | Gửi bổ sung (phải) ---------- */
+.supplement-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.supplement-actions .btn--ghost {
+  margin-right: auto;
+}
+
+/* ---------- Màn hình sau khi gửi bổ sung ---------- */
+.sent-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 24px;
+  text-align: center;
+}
+
+.sent-card__icon {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.sent-card h2 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 20px;
+}
+
+.sent-card p {
+  max-width: 520px;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.sent-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.sent-summary {
+  display: grid;
+  gap: 12px;
+}
+
+.sent-summary h3 {
+  margin-bottom: 0;
+}
+
+.sent-summary__label {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* ---------- Màn hình hẹp (khung 2 cột đã tự xếp 1 cột trong submit.css) ---------- */
+@media (max-width: 640px) {
+  .request-card {
+    padding: 18px 16px;
+  }
+
+  /* Tên nguồn chiếm cả hàng, đường dẫn xuống dòng dưới cạnh nút xoá */
+  .source-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .source-row > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .supplement-actions .btn {
+    flex: 1;
+  }
+
+  .supplement-actions .btn--ghost {
+    flex-basis: 100%;
+    margin-right: 0;
+  }
+}

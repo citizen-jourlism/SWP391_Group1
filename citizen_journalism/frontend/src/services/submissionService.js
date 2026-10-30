@@ -32,4 +32,21 @@ export const submissionService = {
       timeout: 0,
       onUploadProgress: (event) => event.total && onProgress?.(Math.round((event.loaded / event.total) * 100)),
     }),
+
+  /**
+   * BỔ SUNG THÔNG TIN cho hồ sơ của tôi đang ở trạng thái "Cần bổ sung" (NEED_MORE_INFO).
+   * Cùng kiểu multipart với create: "data" = JSON { additionalInfo, answers, address, sources: [{ title, url }] },
+   * "files" = các tệp tư liệu bổ sung. Backend nhận xong chuyển hồ sơ về "Đang thẩm định" và ghi 1 bước nhật ký.
+   */
+  supplement: (trackingCode, data, files, onProgress) =>
+    api.post(`/submissions/mine/${encodeURIComponent(trackingCode)}/supplement`, toMultipart(data, files), {
+      timeout: 0,
+      onUploadProgress: (event) => event.total && onProgress?.(Math.round((event.loaded / event.total) * 100)),
+    }),
+
+  /**
+   * HUỶ hồ sơ của tôi khi toà soạn chưa xử lý (trạng thái PENDING). data = { reason, note }.
+   * Trả về chi tiết hồ sơ sau khi huỷ (trạng thái "Đã huỷ"). Toà soạn đã xử lý -> lỗi 409.
+   */
+  cancel: (trackingCode, data) => api.post(`/submissions/mine/${encodeURIComponent(trackingCode)}/cancel`, data),
 }

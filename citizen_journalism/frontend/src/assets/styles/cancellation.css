@@ -1,0 +1,173 @@
+/* ===== HUỶ HỒ SƠ ĐANG CHỜ XỬ LÝ (Cancel Pending Submission) =====
+ * Dùng ở: components/submission/CancelSubmissionPanel.jsx (thanh huỷ / hộp "Bạn đã huỷ hồ sơ này")
+ * và CancelSubmissionDialog.jsx (hộp thoại). Phần còn lại dùng lại class có sẵn (tracking.css, ui.css).
+ * Màu lấy từ design tokens trong src/index.css.
+ */
+
+/* Hộp xanh "Đã huỷ hồ sơ" phía trên trang (routes/MySubmissionDetail.jsx) */
+.cancel-success {
+  margin-bottom: 18px;
+}
+
+/* ---------- Thanh "Huỷ hồ sơ" dưới đầu hồ sơ (chỉ hiện khi trạng thái PENDING) ---------- */
+.cancel-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border: 1px dashed var(--card-border);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+}
+
+.cancel-bar__text {
+  display: flex;
+  flex: 1 1 320px;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.cancel-bar__text svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.cancel-bar__text strong {
+  display: block;
+  color: var(--navy-900);
+}
+
+.cancel-bar__text small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Nút "Huỷ hồ sơ": viền đỏ nhạt, chữ đỏ (hành động phá huỷ nhưng không phải hành động chính của trang) */
+.btn--danger-outline {
+  border: 1px solid #fecaca;
+  background: #fff;
+  color: var(--danger);
+}
+
+.btn--danger-outline:hover {
+  background: var(--danger-bg);
+}
+
+/* Hết thời gian được huỷ (toà soạn đã bắt đầu xử lý): không còn nút, chỉ có lời giải thích */
+.cancel-bar--locked {
+  border-style: solid;
+  background: #f6f8fb;
+}
+
+/* ---------- Hộp thoại huỷ hồ sơ ---------- */
+.modal__dialog:has(.cancel-dialog) {
+  width: min(500px, 100%);
+}
+
+.cancel-dialog .modal__text strong {
+  word-break: normal; /* ui.css để break-all (dành cho email dài), tiêu đề hồ sơ thì xuống dòng theo từ */
+}
+
+.cancel-dialog__warn {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.cancel-dialog__warn svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.cancel-dialog__form {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.cancel-dialog .alert {
+  margin-bottom: 16px;
+}
+
+/* ---------- Hộp "Bạn đã huỷ hồ sơ" (sau khi huỷ, cùng khuôn với hộp từ chối nhưng tông xám) ---------- */
+.cancel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px 24px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: #f6f8fb;
+}
+
+.cancel-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.cancel-card__title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 17px;
+}
+
+.cancel-card__from {
+  margin: 4px 0 0 30px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.cancel-card__text {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.cancel-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .cancel-bar > .btn {
+    width: 100%;
+  }
+
+  .cancel-card {
+    padding: 18px;
+  }
+
+  .cancel-dialog .modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancel-dialog .modal__actions .btn {
+    width: 100%;
+  }
+}

@@ -30,6 +30,9 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
     long countByAuthorId(String authorId);
 
+    /** Số hồ sơ KHÁC (id khác) của 1 người đang ở trạng thái này, ví dụ đã bị từ chối bao nhiêu lần (màn Từ chối hồ sơ). */
+    long countByAuthorIdAndStatusAndIdNot(String authorId, Submission.SubmissionStatus status, Long id);
+
     long countByTypeAndStatus(Submission.SubmissionType type, Submission.SubmissionStatus status);
 
     /**

@@ -19,15 +19,14 @@ import com.example.citizen_journalism.util.TextUtils;
 import com.example.citizen_journalism.util.VietnamProvinces;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.unit.DataSize;
 import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
 
@@ -49,9 +48,36 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class SubmissionService {
 
-    /** Số tệp tối đa mỗi lần gửi và dung lượng tối đa mỗi tệp. */
+    private static final long MB = 1024L * 1024;
+
+    /*
+     * GIỚI HẠN TỆP TƯ LIỆU cho MỖI lần gửi: lần gửi hồ sơ (create) và mỗi lần bổ sung thông tin
+     * (SubmissionSupplementService) đều tính riêng, không cộng dồn các tệp đã gửi trước đó.
+     */
+
+    /** Tổng số tệp tối đa (mọi loại cộng lại). */
     public static final int MAX_FILES = 10;
-    public static final long MAX_FILE_BYTES = 50L * 1024 * 1024;
+
+    /** Số tệp tối đa theo từng loại. */
+    public static final Map<FileType, Integer> MAX_FILES_BY_TYPE = Map.of(
+            FileType.IMAGE, 10,
+            FileType.DOCUMENT, 5,
+            FileType.AUDIO, 2,
+            FileType.VIDEO, 2);
+
+    /** Dung lượng tối đa MỖI tệp theo từng loại (byte). */
+    public static final Map<FileType, Long> MAX_FILE_BYTES_BY_TYPE = Map.of(
+            FileType.IMAGE, 20 * MB,
+            FileType.DOCUMENT, 50 * MB,
+            FileType.AUDIO, 100 * MB,
+            FileType.VIDEO, 300 * MB);
+
+    /**
+     * Tổng dung lượng tối đa của tất cả tệp (byte).
+     * spring.servlet.multipart.max-request-size để lớn hơn một chút (chừa chỗ cho phần "data")
+     * để lỗi vượt tổng do hàm này báo bằng tiếng Việt, không bị Spring chặn trước.
+     */
+    public static final long MAX_TOTAL_BYTES = 300 * MB;
 
     private static final String EVIDENCE_FOLDER = "evidences";
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -65,10 +91,6 @@ public class SubmissionService {
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
 
-    /** Tổng dung lượng tối đa 1 request (application.properties). Vượt quá thì Spring chặn trước khi vào service. */
-    @Value("${spring.servlet.multipart.max-request-size}")
-    private DataSize maxRequestSize;
-
     /** Tuỳ chọn cho form (loại phản ánh được phép theo vai trò, danh sách tỉnh, giới hạn tệp). Xem SubmissionFormOptions. */
     @Transactional(readOnly = true)
     public SubmissionFormOptions getFormOptions(String userId) {
@@ -77,8 +99,9 @@ public class SubmissionService {
                 Submission.ReportCategory.allowedFor(user.getRole()),
                 VietnamProvinces.ALL,
                 MAX_FILES,
-                MAX_FILE_BYTES / 1024 / 1024,
-                maxRequestSize.toMegabytes(),
+                new EnumMap<>(MAX_FILES_BY_TYPE), // EnumMap: giữ thứ tự IMAGE, VIDEO, AUDIO, DOCUMENT khi trả JSON
+                toMegabytes(MAX_FILE_BYTES_BY_TYPE),
+                MAX_TOTAL_BYTES / MB,
                 FileStorageService.EVIDENCE_TYPES.keySet().stream().sorted().toList());
     }
 
@@ -121,15 +144,7 @@ public class SubmissionService {
                 "Gửi hồ sơ thành công, toà soạn đã tiếp nhận.", null);
 
         // ----- 3. Lưu tệp tư liệu -----
-        List<String> storedUrls = new ArrayList<>();
-        List<EvidenceInfo> evidences;
-        try {
-            evidences = evidenceFiles.stream().map(file -> saveEvidence(submission, author, file, storedUrls)).toList();
-        } catch (RuntimeException ex) {
-            // Lỗi giữa chừng: DB tự huỷ (rollback) nhờ @Transactional, còn file đã ghi ra ổ đĩa thì phải tự xoá.
-            storedUrls.forEach(fileStorageService::delete);
-            throw ex;
-        }
+        List<EvidenceInfo> evidences = attachEvidences(submission, author, evidenceFiles);
 
         // ----- 4. Gửi email biên nhận -----
         String recipient = anonymous ? author.getEmail() : submission.getContactEmail();
@@ -147,6 +162,61 @@ public class SubmissionService {
                 notifiedEmail,
                 !mailService.isLiveDelivery(),
                 evidences);
+    }
+
+    /**
+     * Lưu các tệp tư liệu của 1 hồ sơ (ghi file + bảng evidences). Gọi TRONG transaction của hàm gọi.
+     * Dùng ở: create() và SubmissionSupplementService (tệp bổ sung khi toà soạn đề nghị).
+     * Tệp phải đã qua validateEvidenceFiles.
+     */
+    public List<EvidenceInfo> attachEvidences(Submission submission, User uploader, List<MultipartFile> files) {
+        List<String> storedUrls = new ArrayList<>();
+        try {
+            return files.stream().map(file -> saveEvidence(submission, uploader, file, storedUrls)).toList();
+        } catch (RuntimeException ex) {
+            // Lỗi giữa chừng: DB tự huỷ (rollback) nhờ @Transactional, còn file đã ghi ra ổ đĩa thì phải tự xoá.
+            storedUrls.forEach(fileStorageService::delete);
+            throw ex;
+        }
+    }
+
+    /**
+     * Kiểm tra số lượng, định dạng, dung lượng các tệp (KHÔNG bắt buộc có tệp). Lỗi ghi vào errors với khoá "files".
+     * Dùng ở: validate() của create() và SubmissionSupplementService.
+     * Thứ tự: tổng số tệp -> từng tệp (định dạng, dung lượng theo loại) -> số tệp theo loại -> tổng dung lượng.
+     */
+    public void validateEvidenceFiles(List<MultipartFile> files, Map<String, String> errors) {
+        if (files.size() > MAX_FILES) {
+            errors.put("files", "Chỉ được đính kèm tối đa " + MAX_FILES + " tệp.");
+            return;
+        }
+        Map<FileType, Integer> counts = new EnumMap<>(FileType.class);
+        long totalBytes = 0;
+        // Kiểm tra TẤT CẢ tệp trước khi lưu bất kỳ tệp nào
+        try {
+            for (MultipartFile file : files) {
+                // Lần 1: có nội dung + đúng định dạng (chưa xét dung lượng) -> mới biết tệp thuộc loại nào
+                fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES, Long.MAX_VALUE);
+                FileType type = fileTypeOf(file.getContentType());
+                // Lần 2: dung lượng theo giới hạn của đúng loại đó
+                fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES_BY_TYPE.get(type));
+                counts.merge(type, 1, Integer::sum);
+                totalBytes += file.getSize();
+            }
+        } catch (AppException ex) {
+            errors.put("files", ex.getMessage());
+            return;
+        }
+        for (Map.Entry<FileType, Integer> entry : counts.entrySet()) {
+            int max = MAX_FILES_BY_TYPE.get(entry.getKey());
+            if (entry.getValue() > max) {
+                errors.put("files", "Chỉ được đính kèm tối đa " + max + " tệp " + labelOf(entry.getKey()) + ".");
+                return;
+            }
+        }
+        if (totalBytes > MAX_TOTAL_BYTES) {
+            errors.put("files", "Tổng dung lượng các tệp vượt quá " + (MAX_TOTAL_BYTES / MB) + "MB.");
+        }
     }
 
     // ================================ HÀM PHỤ ================================
@@ -182,15 +252,8 @@ public class SubmissionService {
 
         if (files.isEmpty()) {
             errors.put("files", "Vui lòng đính kèm ít nhất 1 tệp tư liệu.");
-        } else if (files.size() > MAX_FILES) {
-            errors.put("files", "Chỉ được đính kèm tối đa " + MAX_FILES + " tệp.");
         } else {
-            // Kiểm tra TẤT CẢ tệp trước khi lưu bất kỳ tệp nào
-            try {
-                files.forEach(file -> fileStorageService.validate(file, FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES));
-            } catch (AppException ex) {
-                errors.put("files", ex.getMessage());
-            }
+            validateEvidenceFiles(files, errors);
         }
 
         if (!errors.isEmpty()) {
@@ -204,7 +267,7 @@ public class SubmissionService {
 
         // Tên file trên ổ đĩa bắt đầu bằng mã hồ sơ, ví dụ "KB-2026-0007-1a2b3c4d.jpg" (dễ tìm khi cần)
         String url = fileStorageService.store(file, EVIDENCE_FOLDER, submission.getTrackingCode(),
-                FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES);
+                FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES_BY_TYPE.get(fileType));
         storedUrls.add(url);
 
         Map<String, Object> metadata = new LinkedHashMap<>();
@@ -221,6 +284,23 @@ public class SubmissionService {
                 .build());
 
         return EvidenceInfo.from(evidence, objectMapper); // Cùng cách đọc với màn hình chi tiết hồ sơ
+    }
+
+    /** Đổi giới hạn byte theo loại sang MB để trả cho frontend (EnumMap giữ thứ tự loại tệp). */
+    private static Map<FileType, Long> toMegabytes(Map<FileType, Long> bytesByType) {
+        Map<FileType, Long> result = new EnumMap<>(FileType.class);
+        bytesByType.forEach((type, bytes) -> result.put(type, bytes / MB));
+        return result;
+    }
+
+    /** Tên loại tệp trong thông báo lỗi, ví dụ "Chỉ được đính kèm tối đa 2 tệp video." */
+    private static String labelOf(FileType type) {
+        return switch (type) {
+            case IMAGE -> "hình ảnh";
+            case VIDEO -> "video";
+            case AUDIO -> "ghi âm";
+            case DOCUMENT -> "tài liệu";
+        };
     }
 
     /** Phân loại tệp theo phần đầu của Content-Type: "image/jpeg" -> IMAGE, "audio/mpeg" -> AUDIO... */
