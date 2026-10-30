@@ -51,7 +51,7 @@ public class JwtService {
                 .issuedAt(now)
                 .expiresAt(expiresAt)
                 .subject(user.getId())                  // "sub": mã người dùng, ví dụ CT0001
-                .claim("role", user.getRole().name())   // dùng để phân quyền
+                .claim("role", user.getRole().name())   // vai trò lúc đăng nhập; phân quyền dùng vai trò trong DB (ActiveUserJwtConverter)
                 .claim("name", user.getFullName())
                 .build();
 

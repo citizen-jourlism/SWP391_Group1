@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import AccountLayout from '../components/layout/AccountLayout'
 import AvatarUploader from '../components/profile/AvatarUploader'
 import ChangeEmailDialog from '../components/profile/ChangeEmailDialog'
 import ContributorSection from '../components/contributor/ContributorSection'
 import Alert from '../components/ui/Alert'
+import AddressFields from '../components/ui/AddressFields'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import TextField from '../components/ui/TextField'
+import { useAsyncData } from '../hooks/useAsyncData'
 import { useAuth } from '../hooks/useAuth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useForm } from '../hooks/useForm'
@@ -35,6 +37,8 @@ const toFormValues = (profile) => ({
   fullName: profile.fullName ?? '',
   phone: profile.phone ?? '',
   citizenId: profile.citizenId ?? '',
+  province: profile.province ?? '',
+  ward: profile.ward ?? '',
   address: profile.address ?? '',
   dateOfBirth: profile.dateOfBirth ?? '',
 })
@@ -52,50 +56,33 @@ const validate = createValidator({
   dateOfBirth: [rules.optional(rules.pastDate('Ngày sinh phải là một ngày trong quá khứ.'))],
 })
 
-
 function Profile() {
   useDocumentTitle('Hồ sơ của tôi')
   const { updateUser } = useAuth()
-  const [profile, setProfile] = useState(null)
-  const [loadError, setLoadError] = useState('')
   const [notice, setNotice] = useState('') // Thông báo thành công chung của trang
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
 
-  const fetchProfile = useCallback(() => {
-    userService
-      .getProfile()
-      .then((response) => setProfile(response.data))
-      .catch((error) => setLoadError(error.message))
-  }, [])
-
-  // Tải hồ sơ 1 lần khi mở trang.
-  useEffect(() => {
-    fetchProfile()
-  }, [fetchProfile])
-
-  /** Nút "Thử lại" khi tải lỗi (ví dụ backend chưa chạy). */
-  const retry = () => {
-    setLoadError('')
-    fetchProfile()
-  }
+  // Tải hồ sơ 1 lần khi mở trang. reload = nút "Thử lại" khi tải lỗi (ví dụ backend chưa chạy);
+  // setProfile = thay hồ sơ bằng bản mới backend trả về sau khi lưu (không cần gọi lại API).
+  const { data: profile, error: loadError, loading, reload, setData: setProfile } = useAsyncData(
+    () => userService.getProfile(),
+    'profile',
+  )
 
   /** Mọi thay đổi (thông tin, ảnh, email) đều đi qua đây: lưu hồ sơ mới + đồng bộ menu tài khoản + báo thành công. */
-  const applyProfile = useCallback(
-    (updated, message) => {
-      setProfile(updated)
-      updateUser({ fullName: updated.fullName, email: updated.email, avatarUrl: updated.avatarUrl })
-      setNotice(message)
-    },
-    [updateUser],
-  )
+  const applyProfile = (updated, message) => {
+    setProfile(updated)
+    updateUser({ fullName: updated.fullName, email: updated.email, avatarUrl: updated.avatarUrl })
+    setNotice(message)
+  }
 
   return (
     <AccountLayout title="Hồ sơ của tôi" subtitle="Quản lý thông tin cá nhân, ảnh đại diện và bảo mật tài khoản.">
-      {loadError && (
+      {loadError && !loading && (
         <Alert type="error">
           {loadError}
           <div className="alert__actions">
-            <Button variant="secondary" onClick={retry}>
+            <Button variant="secondary" onClick={reload}>
               Thử lại
             </Button>
           </div>
@@ -103,7 +90,7 @@ function Profile() {
       )}
 
       {/* Đang tải: hiện khung xám "skeleton" thay cho nội dung để người dùng biết trang đang tải */}
-      {!profile && !loadError && <div className="skeleton skeleton--page" aria-busy="true" aria-label="Đang tải hồ sơ" />}
+      {!profile && loading && <div className="skeleton skeleton--page" aria-busy="true" aria-label="Đang tải hồ sơ" />}
 
       {profile && (
         <div className="profile-grid">
@@ -118,11 +105,20 @@ function Profile() {
 
             {/* Điểm: CHỈ XEM, do hệ thống cộng/trừ (backend không cho người dùng sửa) */}
             <div className="profile-stats">
-              <div className="profile-stat profile-stat--trust">
-                <Icon name="shield" size={20} />
-                <strong>{profile.reputationScore ?? 0}</strong>
-                <span>Điểm uy tín</span>
-              </div>
+              {/* Cộng tác viên dùng điểm hiệu suất thay cho điểm uy tín */}
+              {profile.role === 'CONTRIBUTOR' ? (
+                <div className="profile-stat profile-stat--trust">
+                  <Icon name="star" size={20} />
+                  <strong>{profile.performanceScore ?? 0}</strong>
+                  <span>Điểm hiệu suất</span>
+                </div>
+              ) : (
+                <div className="profile-stat profile-stat--trust">
+                  <Icon name="shield" size={20} />
+                  <strong>{profile.reputationScore ?? 0}</strong>
+                  <span>Điểm uy tín</span>
+                </div>
+              )}
               <div className="profile-stat profile-stat--reward">
                 <Icon name="gift" size={20} />
                 <strong>{profile.rewardPoints}</strong>
@@ -241,16 +237,8 @@ function ProfileForm({ profile, onSaved, onEditEmail, onChange }) {
         />
       </div>
 
-      <div className="form__row">
-        <TextField label="Ngày sinh" icon="calendar" type="date" max={todayIso()} {...field('dateOfBirth')} />
-        <TextField
-          label="Địa chỉ"
-          icon="mapPin"
-          placeholder="Số nhà, đường, phường/xã, tỉnh/thành"
-          autoComplete="street-address"
-          {...field('address')}
-        />
-      </div>
+      <TextField label="Ngày sinh" icon="calendar" type="date" max={todayIso()} {...field('dateOfBirth')} />
+      <AddressFields form={form} field={field} />
 
       <div className="form__actions">
         <Button variant="secondary" onClick={() => form.reset()} disabled={!form.isDirty || form.submitting}>

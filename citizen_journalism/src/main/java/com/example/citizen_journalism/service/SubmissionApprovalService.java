@@ -5,12 +5,14 @@ import com.example.citizen_journalism.dto.editor.ApproveSubmissionRequest;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
 import com.example.citizen_journalism.entity.Category;
 import com.example.citizen_journalism.entity.EditoralReview;
+import com.example.citizen_journalism.entity.FieldAssignment;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.entity.Submission.SubmissionStatus;
 import com.example.citizen_journalism.entity.SubmissionEvent;
 import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.exception.AppException;
 import com.example.citizen_journalism.repository.EditorialReviewRepository;
+import com.example.citizen_journalism.repository.FieldAssignmentRepository;
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.util.TextUtils;
@@ -47,7 +49,14 @@ public class SubmissionApprovalService {
      */
     private static final Set<SubmissionStatus> APPROVABLE_STATUSES = Set.of(SubmissionStatus.IN_REVIEW);
 
+    /** Hồ sơ có nhiệm vụ ở các trạng thái này thì phải đi qua bước Duyệt kết quả xác minh. */
+    private static final Set<FieldAssignment.AssignmentStatus> VERIFYING_STATUSES = Set.of(
+            FieldAssignment.AssignmentStatus.ASSIGNED,
+            FieldAssignment.AssignmentStatus.ACCEPTED,
+            FieldAssignment.AssignmentStatus.COMPLETED);
+
     private final SubmissionRepository submissionRepository;
+    private final FieldAssignmentRepository assignmentRepository;
     private final UserRepository userRepository;
     private final EditorialReviewRepository reviewRepository;
     private final SubmissionEventService eventService;
@@ -97,6 +106,9 @@ public class SubmissionApprovalService {
         }
         if (!APPROVABLE_STATUSES.contains(submission.getStatus())) {
             return "Chỉ duyệt được hồ sơ đang thẩm định. Hồ sơ mới cần được tiếp nhận thẩm định trước.";
+        }
+        if (assignmentRepository.existsBySubmissionIdAndStatusIn(submission.getId(), VERIFYING_STATUSES)) {
+            return "Hồ sơ đã giao Cộng tác viên xác minh. Hãy duyệt kết quả xác minh, hoặc thu hồi nhiệm vụ trước.";
         }
         return null;
     }

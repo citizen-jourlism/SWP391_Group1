@@ -1,8 +1,5 @@
 import api from '../lib/api'
-
-/** Bỏ các tham số rỗng ('' / null) trước khi gửi, để backend hiểu là "không lọc". */
-const cleanParams = (params) =>
-  Object.fromEntries(Object.entries(params).filter(([, value]) => value !== '' && value != null))
+import { cleanParams } from '../lib/payload'
 
 /**
  * API BÀN LÀM VIỆC BIÊN TẬP VIÊN (backend: EditorController.java, chỉ vai trò EDITOR).
@@ -47,6 +44,25 @@ export const editorService = {
   dismissDuplicates: (code, note) => api.post(`/editor/submissions/${encodeURIComponent(code)}/duplicates/dismiss`, { note }),
   /** Hoàn tác gộp: hồ sơ quay lại hàng đợi như trước khi gộp. */
   unmergeDuplicate: (code) => api.post(`/editor/submissions/${encodeURIComponent(code)}/duplicates/unmerge`),
+
+  // ----- Giao nhiệm vụ xác minh hiện trường (backend: FieldAssignmentController) -----
+  /** Cộng tác viên để chọn. params: { code, province, ward, q, minScore, sort: RECOMMENDED | SCORE_DESC | SCORE_ASC | WORKLOAD } */
+  listCandidates: (params) => api.get('/editor/assignments/candidates', { params: cleanParams(params) }),
+  /** Nhiệm vụ mới nhất của 1 hồ sơ; data = null nếu hồ sơ chưa từng được giao. */
+  getLatestAssignment: (code) => api.get('/editor/assignments/latest', { params: { code } }),
+  /** Lịch sử nhiệm vụ của 1 hồ sơ, xem components/editor/AssignmentHistoryDialog.jsx. */
+  getAssignmentHistory: (code) => api.get('/editor/assignments/history', { params: { code } }),
+  /** Mỗi hồ sơ 1 dòng, là nhiệm vụ mới nhất. params: { status, page, size } */
+  listAssignments: (params) => api.get('/editor/assignments', { params: cleanParams(params) }),
+  /** payload: { trackingCode, contributorId, deadline, note } */
+  assign: (payload) => api.post('/editor/assignments', payload),
+  /** Báo cáo hiện trường CTV đã nộp cho 1 nhiệm vụ. */
+  getAssignmentReport: (id) => api.get(`/editor/assignments/${id}/report`),
+  /** Phản hồi báo cáo: trả về báo cáo mới nhất. reason là nội dung yêu cầu gửi Cộng tác viên. */
+  requestReportRevision: (id, reason) => api.post(`/editor/assignments/${id}/report/revision`, { reason }),
+  requestReportEvidence: (id, reason) => api.post(`/editor/assignments/${id}/report/evidence`, { reason }),
+  approveReport: (id) => api.post(`/editor/assignments/${id}/report/approve`),
+  cancelAssignment: (id, reason) => api.post(`/editor/assignments/${id}/cancel`, { reason }),
 
   // ----- Đơn đăng ký Cộng tác viên -----
   listApplications: (params) => api.get('/editor/applications', { params: cleanParams(params) }),

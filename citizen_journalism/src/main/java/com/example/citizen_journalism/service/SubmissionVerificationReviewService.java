@@ -7,6 +7,8 @@ import com.example.citizen_journalism.entity.Category;
 import com.example.citizen_journalism.entity.EditoralReview;
 import com.example.citizen_journalism.entity.Evidence;
 import com.example.citizen_journalism.entity.FieldAssignment;
+import com.example.citizen_journalism.entity.FieldReport;
+import com.example.citizen_journalism.entity.FieldReportFeedback.ReviewStatus;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.entity.Submission.SubmissionStatus;
 import com.example.citizen_journalism.entity.SubmissionEvent;
@@ -15,6 +17,7 @@ import com.example.citizen_journalism.exception.AppException;
 import com.example.citizen_journalism.repository.EditorialReviewRepository;
 import com.example.citizen_journalism.repository.EvidenceRepository;
 import com.example.citizen_journalism.repository.FieldAssignmentRepository;
+import com.example.citizen_journalism.repository.FieldReportRepository;
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.util.TextUtils;
@@ -36,7 +39,8 @@ import tools.jackson.databind.ObjectMapper;
  * API: EditorController (GET / POST /api/editor/submissions/{mã}/verification-review).
  * Frontend: routes/editor/EditorVerificationReview.jsx (/editor/queue/:code/verification).
  *
- * Điều kiện duyệt: hồ sơ IN_REVIEW VÀ nhiệm vụ field_assignments gần nhất đã COMPLETED, có bài CTV (output_submission_id).
+ * Điều kiện duyệt: hồ sơ IN_REVIEW VÀ nhiệm vụ field_assignments gần nhất đã COMPLETED, có bài CTV (output_submission_id)
+ * VÀ báo cáo hiện trường đã được Biên tập viên duyệt (không còn yêu cầu sửa bài / bổ sung tư liệu đang chờ).
  * KHÔNG thêm cột / bảng mới. Khi đủ 5 tiêu chí Đạt, ghi:
  *   - submissions.status = DEPUTY_PENDING + 1 bước nhật ký (actor EDITOR, không có note vì người gửi đọc được nhật ký)
  *   - submissions.assigned_editor_id = Biên tập viên duyệt (nếu hồ sơ chưa có BTV phụ trách)
@@ -56,6 +60,8 @@ public class SubmissionVerificationReviewService {
     private final SubmissionRepository submissionRepository;
     private final UserRepository userRepository;
     private final FieldAssignmentRepository assignmentRepository;
+    private final FieldReportRepository fieldReportRepository;
+    private final FieldReportService fieldReportService;
     private final EvidenceRepository evidenceRepository;
     private final EditorialReviewRepository reviewRepository;
     private final SubmissionEventService eventService;
@@ -153,6 +159,10 @@ public class SubmissionVerificationReviewService {
         if (assignment.getStatus() != FieldAssignment.AssignmentStatus.COMPLETED || assignment.getOutputSubmission() == null) {
             return "Nhiệm vụ xác minh chưa hoàn thành: Cộng tác viên chưa nộp bài và báo cáo.";
         }
+        ReviewStatus reportStatus = fieldReportService.reviewStatuses(List.of(assignment.getId())).get(assignment.getId());
+        if (reportStatus != ReviewStatus.APPROVED) {
+            return "Báo cáo của Cộng tác viên chưa được duyệt. Hãy duyệt báo cáo ở trang hồ sơ trước.";
+        }
         return null;
     }
 
@@ -199,7 +209,7 @@ public class SubmissionVerificationReviewService {
                 assignment.getStatus(),
                 contributor == null ? null : contributor.getId(),
                 contributor == null ? null : contributor.getFullName(),
-                contributor == null ? null : contributor.getReputationScore(),
+                contributor == null ? null : contributor.performanceScoreOrDefault(),
                 assignment.getCreatedAt(),
                 assignment.getDeadline(),
                 submittedAt,
@@ -215,8 +225,13 @@ public class SubmissionVerificationReviewService {
                 .stream()
                 .map(this::fieldEvidenceOf)
                 .toList();
-        return new VerificationReviewResponse.Report(output.getTrackingCode(), output.getTitle(), output.getSummary(),
-                output.getContent(), output.getCreatedAt(), evidences);
+        FieldReport report = fieldReportRepository.findByAssignmentId(assignment.getId()).orElse(null);
+        return new VerificationReviewResponse.Report(output.getTitle(), output.getSummary(), output.getContent(),
+                output.getCreatedAt(), evidences,
+                report == null ? null : report.getConclusion(),
+                report == null ? null : report.getFindings(),
+                report == null ? null : report.getWitnessStatements(),
+                report == null ? null : report.getRecommendation());
     }
 
     /**

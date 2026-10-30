@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
  *   - submissions.status = REJECTED + 1 bước nhật ký (SubmissionEventService.record):
  *       description "Không tiếp nhận hồ sơ: <tên lý do>.", note = phản hồi gửi người gửi
  *   - editorial_reviews: review_role EDITOR, action REJECT, comments = "[MÃ LÝ DO] ghi chú nội bộ"
+ *   - nhiệm vụ CTV còn hiệu lực được thu hồi và báo cho CTV (FieldAssignmentService.revokeActive)
  *   - lý do tin rác + có chọn trừ điểm + hồ sơ không ẩn danh: reputation_logs (-SPAM_PENALTY, SPAM_REPORTED)
  *     và giảm users.reputation_score (không xuống dưới 0)
  * Đọc lại lý do / phản hồi: SubmissionTrackingService.rejectionOf.
@@ -51,8 +52,9 @@ public class SubmissionRejectionService {
     private final EditorialReviewRepository reviewRepository;
     private final ReputationLogRepository reputationLogRepository;
     private final SubmissionEventService eventService;
+    private final FieldAssignmentService fieldAssignmentService;
     private final SubmissionTrackingService trackingService;
-    private final NotificationMailService notificationMailService;
+    private final MailService mailService;
 
     /** Dữ liệu màn Từ chối hồ sơ: chi tiết hồ sơ, người gửi, sàng lọc AI, lần từ chối đã lưu (nếu có). */
     @Transactional(readOnly = true)
@@ -74,6 +76,8 @@ public class SubmissionRejectionService {
 
         eventService.record(submission, SubmissionStatus.REJECTED, SubmissionEvent.Actor.EDITOR,
                 "Không tiếp nhận hồ sơ: " + reason.getLabel() + ".", feedback);
+        // Hồ sơ đã đóng thì Cộng tác viên không cần đi xác minh nữa
+        fieldAssignmentService.revokeActive(submission, editor, "Hồ sơ đã bị từ chối nên nhiệm vụ không còn cần thiết.");
         reviewRepository.save(EditoralReview.builder()
                 .submission(submission)
                 .reviewer(editor)
@@ -153,7 +157,7 @@ public class SubmissionRejectionService {
                 ? "<p style=\"color:#b45309\">Điểm uy tín của bạn bị trừ " + SPAM_PENALTY
                 + " điểm do hồ sơ là tin rác, quảng cáo.</p>"
                 : "";
-        String html = NotificationMailService.layout("""
+        String html = MailService.layout("""
                   <p>Xin chào <b>%s</b>,</p>
                   <p>Toà soạn <b>không tiếp nhận</b> hồ sơ <b>%s</b> (%s).</p>
                   <p>Lý do: <b>%s</b></p>
@@ -161,13 +165,13 @@ public class SubmissionRejectionService {
                   %s
                   <p>Bạn có thể xem chi tiết trong mục <b>Thông tin đã gửi</b> hoặc tra cứu bằng mã hồ sơ + mã PIN.</p>
                 """.formatted(
-                NotificationMailService.escape(submission.getAuthor().getFullName()),
-                NotificationMailService.escape(submission.getTrackingCode()),
-                NotificationMailService.escape(submission.getTitle()),
-                NotificationMailService.escape(reason.getLabel()),
-                NotificationMailService.escape(feedback),
+                MailService.escape(submission.getAuthor().getFullName()),
+                MailService.escape(submission.getTrackingCode()),
+                MailService.escape(submission.getTitle()),
+                MailService.escape(reason.getLabel()),
+                MailService.escape(feedback),
                 penalty));
-        notificationMailService.trySend(contactEmailOf(submission),
+        mailService.trySend(contactEmailOf(submission),
                 "[Tin Nóng Dân Sinh] Hồ sơ " + submission.getTrackingCode() + " không được tiếp nhận", html);
     }
 }

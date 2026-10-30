@@ -3,6 +3,7 @@ package com.example.citizen_journalism.dto.editor;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
 import com.example.citizen_journalism.entity.Evidence.FileType;
 import com.example.citizen_journalism.entity.FieldAssignment;
+import com.example.citizen_journalism.entity.FieldReport;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.entity.User;
 import java.time.LocalDateTime;
@@ -44,6 +45,7 @@ public record VerificationReviewResponse(
 
     /**
      * @param contributorId   mã CTV nhận nhiệm vụ (null khi nhiệm vụ BROADCAST chưa có ai nhận)
+     * @param contributorScore điểm hiệu suất của CTV
      * @param submittedAt     lúc CTV nộp bài (= thời điểm tạo bài CTV); null nếu chưa nộp
      * @param onTime          nộp trước hạn chót; null nếu chưa nộp hoặc nhiệm vụ không có hạn
      */
@@ -53,21 +55,27 @@ public record VerificationReviewResponse(
             FieldAssignment.AssignmentStatus status,
             String contributorId,
             String contributorName,
-            Integer contributorReputation,
+            Integer contributorScore,
             LocalDateTime assignedAt,
             LocalDateTime deadline,
             LocalDateTime submittedAt,
             Boolean onTime) {
     }
 
-    /** Bài CTV (submission loại CONTRIBUTOR_POST mà field_assignments.output_submission_id trỏ tới). */
+    /**
+     * Bài CTV (submission loại CONTRIBUTOR_POST mà field_assignments.output_submission_id trỏ tới)
+     * kèm kết luận trong báo cáo hiện trường (bảng field_reports).
+     */
     public record Report(
-            String trackingCode,
             String title,
             String summary,
             String content,
             LocalDateTime createdAt,
-            List<FieldEvidence> evidences) {
+            List<FieldEvidence> evidences,
+            FieldReport.Conclusion conclusion,
+            String findings,
+            String witnessStatements,
+            FieldReport.Recommendation recommendation) {
     }
 
     /**

@@ -9,11 +9,11 @@ import OtpInput from '../components/ui/OtpInput'
 import { DevMailNotice, OtpCountdown, OtpResendLink } from '../components/ui/OtpStatus'
 import ResultView from '../components/ui/ResultView'
 import TextField from '../components/ui/TextField'
-import { useCountdown } from '../hooks/useCountdown'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useForm } from '../hooks/useForm'
+import { useOtpFlow } from '../hooks/useOtpFlow'
 import { confirmPasswordRules, createValidator, newPasswordRules, rules } from '../lib/validators'
-import { authService, toOtpState } from '../services/authService'
+import { authService } from '../services/authService'
 
 /*
  * TRANG QUÊN MẬT KHẨU — đường dẫn /forgot-password (khai báo trong App.jsx), mở từ link "Quên mật khẩu?"
@@ -25,7 +25,7 @@ import { authService, toOtpState } from '../services/authService'
  *   Bước 2 (otpState có giá trị): nhập mã 6 số + mật khẩu mới -> POST /api/auth/reset-password.
  *   Bước 3 (done = true): báo thành công, nút "Đăng nhập ngay" (điền sẵn email).
  *
- * Dùng lại: OtpInput, OtpCountdown/OtpResendLink/DevMailNotice (đồng hồ + gửi lại mã),
+ * Dùng lại: hook useOtpFlow (đồng hồ, gửi lại mã, thông báo), OtpInput, OtpCountdown/OtpResendLink/DevMailNotice,
  * NewPasswordFields (mật khẩu mới + nhập lại), ResultView (màn hình kết quả).
  */
 
@@ -46,44 +46,30 @@ function ForgotPassword() {
   useDocumentTitle('Quên mật khẩu')
   const location = useLocation()
 
-  const [otpState, setOtpState] = useState(null) // { email, expiresAt, resendAt, printedToConsole } sau bước 1
   const [done, setDone] = useState(false)
-  const [notice, setNotice] = useState(null) // Thông báo thành công / lỗi gửi lại mã: { type, message }
-  const [resending, setResending] = useState(false)
 
   const emailForm = useForm({ email: location.state?.email ?? '' }, validateEmail)
   const resetForm = useForm({ otp: '', newPassword: '', confirmPassword: '' }, validateReset)
 
-  const expiresIn = useCountdown(otpState?.expiresAt)
-  const resendIn = useCountdown(otpState?.resendAt)
-  const expired = Boolean(otpState) && expiresIn === 0
+  // Đồng hồ hết hạn, thời gian chờ gửi lại, thông báo, nút gửi lại mã: dùng chung hook useOtpFlow.
+  // (Ô nhập mã nằm trong resetForm vì mã được gửi CÙNG mật khẩu mới, nên không dùng phần nhập mã của hook.)
+  const flow = useOtpFlow({
+    onResend: async () => {
+      const response = await authService.forgotPassword(flow.otpState.email)
+      resetForm.setValue('otp', '')
+      return response.data // Hook tự đặt lại 2 đồng hồ + báo "Đã gửi mã OTP mới."
+    },
+  })
+  const { otpState, expired } = flow // otpState = null nghĩa là đang ở bước 1
 
   /** Bước 1: gửi mã. Lỗi (ví dụ gửi quá nhanh) thì useForm tự hiện trên form email. */
   const sendCode = emailForm.handleSubmit(async ({ email }) => {
     const response = await authService.forgotPassword(email)
-    setOtpState(toOtpState(response.data))
-    setNotice({ type: 'success', message: response.message })
+    flow.start(response.data, response.message)
   })
-
-  /** Gửi lại mã ở bước 2. */
-  const resend = async () => {
-    setResending(true)
-    setNotice(null)
-    try {
-      const response = await authService.forgotPassword(otpState.email)
-      setOtpState(toOtpState(response.data)) // Đặt lại 2 đồng hồ
-      resetForm.setValue('otp', '')
-      setNotice({ type: 'success', message: 'Đã gửi lại mã OTP mới.' })
-    } catch (error) {
-      setNotice({ type: 'error', message: error.message })
-    } finally {
-      setResending(false)
-    }
-  }
 
   /** Bước 2: đặt mật khẩu mới. Sai mã thì xoá ô OTP để nhập lại, rồi ném lỗi để useForm hiện thông báo. */
   const submitReset = resetForm.handleSubmit(async ({ otp, newPassword }) => {
-    setNotice(null)
     try {
       await authService.resetPassword({ email: otpState.email, otp, newPassword })
       setDone(true)
@@ -92,12 +78,6 @@ function ForgotPassword() {
       throw error
     }
   })
-
-  /** Quay lại bước 1 để nhập email khác. */
-  const changeEmail = () => {
-    setOtpState(null)
-    setNotice(null)
-  }
 
   // ===== Bước 3: thành công =====
   if (done) {
@@ -167,7 +147,7 @@ function ForgotPassword() {
         ) : expired ? (
           <Alert type="warning">Mã OTP đã hết hạn. Vui lòng bấm &quot;Gửi lại mã&quot; để nhận mã mới.</Alert>
         ) : (
-          notice && <Alert type={notice.type}>{notice.message}</Alert>
+          flow.notice && <Alert type={flow.notice.type}>{flow.notice.message}</Alert>
         )}
 
         <div className="field">
@@ -189,7 +169,7 @@ function ForgotPassword() {
           )}
         </div>
 
-        <OtpCountdown secondsLeft={expiresIn} />
+        <OtpCountdown secondsLeft={flow.expiresIn} />
 
         <NewPasswordFields form={resetForm} name="newPassword" label="Mật khẩu mới" />
 
@@ -197,10 +177,11 @@ function ForgotPassword() {
           {resetForm.submitting ? 'Đang cập nhật...' : 'Đặt lại mật khẩu'}
         </Button>
 
-        <OtpResendLink secondsLeft={resendIn} sending={resending} onResend={resend} />
+        <OtpResendLink secondsLeft={flow.resendIn} sending={flow.resending} onResend={flow.resend} />
 
         <p className="otp-resend">
-          <button type="button" className="link-button" onClick={changeEmail}>
+          {/* Quay lại bước 1 để nhập email khác */}
+          <button type="button" className="link-button" onClick={flow.stop}>
             Dùng email khác
           </button>
         </p>

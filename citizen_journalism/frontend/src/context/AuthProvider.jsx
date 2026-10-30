@@ -13,6 +13,7 @@ import { AuthContext } from './authContext'
  *   - status : 'loading' (đang kiểm tra token lúc mở web) | 'ready' (đã biết đăng nhập hay chưa)
  *   - login(loginData, remember): lưu token + user sau khi gọi API đăng nhập thành công
  *   - logout(): xoá token + user
+ *   - loggedOut: true sau khi người dùng tự bấm đăng xuất (ProtectedRoute dựa vào đây để không nhớ trang cũ)
  *   - updateUser(changes): sửa một phần thông tin user (sau khi cập nhật hồ sơ)
  *
  * KHI MỞ / TẢI LẠI WEB: nếu trình duyệt còn token -> gọi GET /api/auth/me để
@@ -23,16 +24,19 @@ import { AuthContext } from './authContext'
  */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [loggedOut, setLoggedOut] = useState(false)
   // Có token -> phải chờ hỏi backend ('loading'); không có token -> biết ngay là chưa đăng nhập ('ready').
   const [status, setStatus] = useState(() => (tokenStorage.get() ? 'loading' : 'ready'))
 
   // useCallback: giữ nguyên hàm giữa các lần render, tránh useEffect bên dưới chạy lại không cần thiết.
   const logout = useCallback(() => {
     tokenStorage.clear()
+    setLoggedOut(true)
     setUser(null)
   }, [])
 
   const login = useCallback(({ accessToken, user: loggedInUser }, remember) => {
+    setLoggedOut(false)
     tokenStorage.set(accessToken, remember)
     setUser(loggedInUser)
   }, [])
@@ -53,14 +57,17 @@ export function AuthProvider({ children }) {
     authService
       .me()
       .then((response) => setUser(response.data))
-      .catch(() => logout())
+      // Token hết hạn / tài khoản bị khoá -> backend trả 401 -> lib/api.js đã tự gọi logout().
+      // Lỗi khác (backend đang tắt / khởi động lại...) thì GIỮ token: tạm coi như chưa đăng nhập,
+      // tải lại trang khi backend chạy là vào lại được ngay, không bắt người dùng đăng nhập lại.
+      .catch(() => {})
       .finally(() => setStatus('ready'))
   }, [logout])
 
   // useMemo: chỉ tạo object mới khi dữ liệu thật sự đổi -> các component dùng useAuth() không bị vẽ lại thừa.
   const value = useMemo(
-    () => ({ user, status, login, logout, updateUser }),
-    [user, status, login, logout, updateUser],
+    () => ({ user, status, login, logout, updateUser, loggedOut }),
+    [user, status, login, logout, updateUser, loggedOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

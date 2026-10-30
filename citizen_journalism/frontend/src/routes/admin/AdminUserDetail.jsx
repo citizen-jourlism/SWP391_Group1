@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ResetPasswordDialog from '../../components/admin/ResetPasswordDialog'
 import UserCell from '../../components/admin/UserCell'
+import AddressFields from '../../components/ui/AddressFields'
 import Alert from '../../components/ui/Alert'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
@@ -21,7 +22,8 @@ import { adminService } from '../../services/adminService'
  * TRANG CHI TIẾT TÀI KHOẢN — /admin/users/:id (trang con trong AdminLayout, chỉ SYSTEM_ADMIN).
  * Mở từ nút sửa ở bảng /admin/users. Luồng: AdminUserDetail -> adminService -> AdminController -> AdminService.
  *
- *   - Cột trái : form sửa họ tên, SĐT, CCCD, ngày sinh, địa chỉ và VAI TRÒ  (PUT /api/admin/users/{id})
+ *   - Cột trái : form sửa họ tên, SĐT, CCCD, ngày sinh, địa chỉ và VAI TRÒ  (PUT /api/admin/users/{id}).
+ *                Với Cộng tác viên, tỉnh + phường/xã dùng để ghép với nơi xảy ra vụ việc khi giao nhiệm vụ.
  *   - Cột phải : mọi thông tin còn lại, chỉ xem (email, tên đăng nhập, trạng thái, điểm...). Không có mật khẩu.
  * Bấm "Lưu thay đổi": kiểm tra form -> hiện hộp thoại xác nhận -> bấm xác nhận mới gọi API.
  * Tài khoản quản trị: chỉ xem, không có form (backend cũng chặn sửa).
@@ -50,6 +52,8 @@ const toFormValues = (user) => ({
   fullName: user.fullName ?? '',
   phone: user.phone ?? '',
   citizenId: user.citizenId ?? '',
+  province: user.province ?? '',
+  ward: user.ward ?? '',
   address: user.address ?? '',
   dateOfBirth: user.dateOfBirth ?? '',
   role: user.role,
@@ -76,13 +80,15 @@ function AdminUserDetail() {
 
   const statusInfo = STATUS_INFO[user.status]
   const isNewsroom = NEWSROOM_ROLES.includes(user.role)
+  const isContributor = user.role === 'CONTRIBUTOR'
   // Các thông tin chỉ xem: [nhãn, giá trị]. Thông tin không áp dụng cho vai trò này thì hiện "—".
   const facts = [
     ['Mã tài khoản', user.id],
     ['Email', user.email],
     ['Tên đăng nhập', user.username ? `@${user.username}` : '—'],
     ['Trạng thái', <Badge key="status" tone={statusInfo?.tone}>{statusInfo?.label ?? user.status}</Badge>],
-    ['Điểm uy tín', isNewsroom ? '—' : (user.reputationScore ?? 0)],
+    // Cộng tác viên dùng điểm hiệu suất thay cho điểm uy tín
+    isContributor ? ['Điểm hiệu suất', user.performanceScore ?? 0] : ['Điểm uy tín', isNewsroom ? '—' : (user.reputationScore ?? 0)],
     ['Điểm thưởng', isNewsroom ? '—' : user.rewardPoints],
     ['Nâng cấp Cộng tác viên', isNewsroom ? '—' : (UPGRADE_LABELS[user.upgradeStatus] ?? '—')],
     ['Lĩnh vực am hiểu', (EXPERTISE_ROLES.includes(user.role) && user.expertiseFields) || '—'],
@@ -190,7 +196,7 @@ function UserEditForm({ user, onSaved }) {
           <TextField label="Ngày sinh" icon="calendar" type="date" max={todayIso()} {...form.field('dateOfBirth')} />
           <SelectField label="Vai trò" options={ROLE_OPTIONS} required {...form.field('role')} />
         </div>
-        <TextField label="Địa chỉ" icon="mapPin" {...form.field('address')} />
+        <AddressFields form={form} />
 
         <div className="modal__actions">
           <Button variant="secondary" onClick={() => form.reset()} disabled={!form.isDirty || form.submitting}>
@@ -209,7 +215,7 @@ function UserEditForm({ user, onSaved }) {
         message={
           `Lưu thay đổi cho ${user.fullName} (${user.id})?` +
           (roleChanged
-            ? ` Vai trò sẽ đổi từ "${ROLE_LABELS[user.role]}" thành "${ROLE_LABELS[form.values.role]}" và có hiệu lực khi người này đăng nhập lại.`
+            ? ` Vai trò sẽ đổi từ "${ROLE_LABELS[user.role]}" thành "${ROLE_LABELS[form.values.role]}" và có hiệu lực ngay.`
             : '')
         }
         confirmLabel="Xác nhận lưu"

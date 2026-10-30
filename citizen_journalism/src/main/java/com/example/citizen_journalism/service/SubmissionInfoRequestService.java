@@ -52,7 +52,7 @@ public class SubmissionInfoRequestService {
     private final EditorialReviewRepository reviewRepository;
     private final SubmissionEventService eventService;
     private final SubmissionTrackingService trackingService;
-    private final NotificationMailService notificationMailService;
+    private final MailService mailService;
 
     /** Dữ liệu màn Yêu cầu bổ sung: chi tiết hồ sơ, người gửi, yêu cầu đang chờ (nếu có). */
     @Transactional(readOnly = true)
@@ -93,7 +93,8 @@ public class SubmissionInfoRequestService {
         List<String> lines = new ArrayList<>();
         String intro = TextUtils.blankToNull(message);
         if (intro != null) {
-            lines.add(intro);
+            // Bỏ dấu sau số đầu dòng ("1. Ảnh" -> "1 Ảnh"): dòng dạng "1. ..." được hiểu là mục phải trả lời
+            lines.add(intro.replaceAll("(?m)^(\\s*\\d+)[.)](\\s)", "$1$2"));
         }
         for (int i = 0; i < items.size(); i++) {
             lines.add((i + 1) + ". " + items.get(i).replaceAll("\\s+", " ").trim());
@@ -126,13 +127,7 @@ public class SubmissionInfoRequestService {
         if (submission.getStatus() != SubmissionStatus.NEED_MORE_INFO) {
             return null;
         }
-        List<SubmissionEvent> events = eventRepository.findBySubmissionOrderByCreatedAtAscIdAsc(submission);
-        SubmissionEvent step = null;
-        for (int i = events.size() - 1; i >= 0 && step == null; i--) {
-            if (events.get(i).getStatus() == SubmissionStatus.NEED_MORE_INFO) {
-                step = events.get(i);
-            }
-        }
+        SubmissionEvent step = SubmissionEventService.latestInfoRequest(eventRepository.findBySubmissionOrderByCreatedAtAscIdAsc(submission));
         if (step == null) {
             return null;
         }
@@ -166,18 +161,18 @@ public class SubmissionInfoRequestService {
     }
 
     private void notifyReporter(Submission submission, String note) {
-        String html = NotificationMailService.layout("""
+        String html = MailService.layout("""
                   <p>Xin chào <b>%s</b>,</p>
                   <p>Toà soạn đề nghị bạn <b>bổ sung thông tin</b> cho hồ sơ <b>%s</b> (%s).</p>
                   <p style="padding:12px 16px;background:#f5f7fb;border-radius:8px;white-space:pre-line">%s</p>
                   <p>Bạn vui lòng đăng nhập, vào mục <b>Thông tin đã gửi</b>, mở hồ sơ và bấm <b>Bổ sung ngay</b>.
                   Sau khi bạn bổ sung, toà soạn sẽ tiếp tục thẩm định hồ sơ.</p>
                 """.formatted(
-                NotificationMailService.escape(submission.getAuthor().getFullName()),
-                NotificationMailService.escape(submission.getTrackingCode()),
-                NotificationMailService.escape(submission.getTitle()),
-                NotificationMailService.escape(note)));
-        notificationMailService.trySend(contactEmailOf(submission),
+                MailService.escape(submission.getAuthor().getFullName()),
+                MailService.escape(submission.getTrackingCode()),
+                MailService.escape(submission.getTitle()),
+                MailService.escape(note)));
+        mailService.trySend(contactEmailOf(submission),
                 "[Tin Nóng Dân Sinh] Hồ sơ " + submission.getTrackingCode() + " cần bổ sung thông tin", html);
     }
 }

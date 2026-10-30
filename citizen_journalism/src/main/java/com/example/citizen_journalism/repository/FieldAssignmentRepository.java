@@ -2,15 +2,81 @@ package com.example.citizen_journalism.repository;
 
 import com.example.citizen_journalism.entity.FieldAssignment;
 import com.example.citizen_journalism.entity.Submission;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
- * REPOSITORY cho bảng "field_assignments" (nhiệm vụ xác minh thực địa Biên tập viên giao cho Cộng tác viên).
- * Dùng ở SubmissionVerificationReviewService: tìm nhiệm vụ của hồ sơ và bài CTV nộp về (output_submission_id).
+ * REPOSITORY cho bảng "field_assignments" (nhiệm vụ xác minh hiện trường giao cho Cộng tác viên).
+ * Dùng ở FieldAssignmentService, ContributorTaskService, SubmissionVerificationReviewService, SubmissionApprovalService.
+ *
+ * @EntityGraph: lấy luôn hồ sơ + Cộng tác viên trong CÙNG câu SQL (JOIN), tránh hiện danh sách 10 nhiệm vụ
+ * lại phải chạy thêm hàng chục câu SQL để lấy tên từng người.
  */
 public interface FieldAssignmentRepository extends JpaRepository<FieldAssignment, Long> {
 
+    /** Hồ sơ này còn nhiệm vụ nào đang hiệu lực không (mỗi hồ sơ chỉ giao 1 nhiệm vụ tại một thời điểm). */
+    boolean existsBySubmissionIdAndStatusIn(Long submissionId, Collection<FieldAssignment.AssignmentStatus> statuses);
+
+    /** Nhiệm vụ mới nhất của 1 hồ sơ theo mã hồ sơ, kèm CTV. */
+    @EntityGraph(attributePaths = {"submission", "contributor"})
+    Optional<FieldAssignment> findTopBySubmissionTrackingCodeOrderByCreatedAtDescIdDesc(String trackingCode);
+
+    /**
+     * Danh sách cho Biên tập viên: MỖI HỒ SƠ 1 DÒNG là nhiệm vụ mới nhất (trạng thái hiện tại của hồ sơ),
+     * lọc theo các trạng thái, có phân trang. Các nhiệm vụ cũ hơn xem ở lịch sử.
+     * Câu đếm tổng số dòng viết riêng vì Spring không tự suy ra được từ câu có truy vấn con.
+     */
+    @EntityGraph(attributePaths = {"submission", "contributor"})
+    @Query(value = """
+            select a from FieldAssignment a
+            where a.status in :statuses
+              and a.id = (select max(b.id) from FieldAssignment b where b.submission = a.submission)
+            """, countQuery = """
+            select count(a) from FieldAssignment a
+            where a.status in :statuses
+              and a.id = (select max(b.id) from FieldAssignment b where b.submission = a.submission)
+            """)
+    Page<FieldAssignment> findLatestPerSubmission(@Param("statuses") Collection<FieldAssignment.AssignmentStatus> statuses,
+                                                  Pageable pageable);
+
+    /** Mọi nhiệm vụ của 1 hồ sơ từ cũ đến mới, cho lịch sử nhiệm vụ. */
+    @EntityGraph(attributePaths = {"contributor", "createdBy", "cancelledBy"})
+    List<FieldAssignment> findBySubmissionIdOrderByIdAsc(Long submissionId);
+
     /** Các nhiệm vụ của 1 hồ sơ, mới nhất trước (1 hồ sơ có thể bị giao lại sau khi nhiệm vụ cũ bị huỷ). */
     List<FieldAssignment> findBySubmissionOrderByCreatedAtDescIdDesc(Submission submission);
+
+    /** Danh sách nhiệm vụ của 1 Cộng tác viên, lọc theo các trạng thái, có phân trang. */
+    @EntityGraph(attributePaths = {"submission"})
+    Page<FieldAssignment> findByContributorIdAndStatusIn(String contributorId, Collection<FieldAssignment.AssignmentStatus> statuses,
+                                                         Pageable pageable);
+
+    /** 1 nhiệm vụ, chỉ khi nó thuộc về đúng Cộng tác viên này. */
+    @EntityGraph(attributePaths = {"submission", "contributor", "createdBy"})
+    Optional<FieldAssignment> findByIdAndContributorId(Long id, String contributorId);
+
+    /** Một dòng thống kê: mã CTV + trạng thái + số nhiệm vụ. */
+    interface WorkloadRow {
+        String getContributorId();
+
+        FieldAssignment.AssignmentStatus getStatus();
+
+        long getTotal();
+    }
+
+    /** Đếm nhiệm vụ theo từng CTV và trạng thái trong 1 câu SQL, để hiện "đang làm / đã xong" trên thẻ CTV. */
+    @Query("""
+            select a.contributor.id as contributorId, a.status as status, count(a) as total
+            from FieldAssignment a
+            where a.contributor.id in :contributorIds
+            group by a.contributor.id, a.status
+            """)
+    List<WorkloadRow> countByContributors(@Param("contributorIds") Collection<String> contributorIds);
 }
