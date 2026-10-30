@@ -1,17 +1,7 @@
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { categoryManageService } from '../../services/categoryManageService'
 import '../../assets/styles/editor-categories.css'
-
-// Dữ liệu minh họa trên trình duyệt, KHÔNG ghi vào MySQL.
-const DEMO_CATEGORIES = [
-  { id: 1, name: 'Thời sự', slug: 'thoi-su', deputyEicId: null, active: true },
-  { id: 2, name: 'Giao thông', slug: 'giao-thong', deputyEicId: null, active: true },
-  { id: 3, name: 'Đời sống', slug: 'doi-song', deputyEicId: null, active: true },
-  { id: 4, name: 'Môi trường', slug: 'moi-truong', deputyEicId: null, active: true },
-  { id: 5, name: 'Giáo dục', slug: 'giao-duc', deputyEicId: null, active: false },
-  { id: 6, name: 'Y tế & sức khỏe', slug: 'y-te-suc-khoe', deputyEicId: null, active: true },
-]
 
 const EMPTY = {
   name: '',
@@ -21,27 +11,54 @@ const EMPTY = {
 }
 
 export default function EditorCategories() {
-  const [demo, setDemo] = useState(true)
-  const [demoItems, setDemoItems] = useState(DEMO_CATEGORIES)
-  const [realItems, setRealItems] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
+
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [showForm, setShowForm] = useState(false)
 
-  const items = demo ? demoItems : realItems
+  // Lấy danh sách chuyên mục từ Database thông qua API
+  const loadCategories = useCallback(async () => {
+    setLoading(true)
+    setError('')
 
+    try {
+      const response = await categoryManageService.list()
+
+      setItems(
+        Array.isArray(response.data) ? response.data : []
+      )
+    } catch (err) {
+      setError(
+        err.message || 'Không tải được danh sách chuyên mục.'
+      )
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Tự động tải dữ liệu khi mở trang
+  useEffect(() => {
+    loadCategories()
+  }, [loadCategories])
+
+  // Thống kê
   const activeCount = items.filter(item => item.active).length
 
+  // Tìm kiếm và lọc trạng thái
   const visible = items.filter(item => {
-    const matchesText = `${item.name} ${item.slug}`
-      .toLowerCase()
-      .includes(search.trim().toLowerCase())
+    const matchesText =
+      `${item.name || ''} ${item.slug || ''}`
+        .toLowerCase()
+        .includes(search.trim().toLowerCase())
 
     const matchesStatus =
       status === 'all' ||
@@ -50,51 +67,27 @@ export default function EditorCategories() {
     return matchesText && matchesStatus
   })
 
-  async function loadReal() {
-    setLoading(true)
-    setError('')
-
-    try {
-      const response = await categoryManageService.list()
-      setRealItems(response.data || [])
-    } catch (err) {
-      setError(err.message || 'Không tải được danh sách chuyên mục.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!demo) loadReal()
-  }, [demo])
-
-  function switchMode(value) {
-    setDemo(value)
-    setSearch('')
-    setStatus('all')
-    setError('')
-    setMessage('')
-    setShowForm(false)
-    setEditingId(null)
-    setForm(EMPTY)
-  }
-
+  // Mở form thêm chuyên mục
   function openCreate() {
     setEditingId(null)
-    setForm(EMPTY)
+    setForm({ ...EMPTY })
     setShowForm(true)
     setError('')
     setMessage('')
   }
 
+  // Mở form sửa chuyên mục
   function openEdit(item) {
     setEditingId(item.id)
 
     setForm({
-      name: item.name,
-      slug: item.slug,
-      deputyEicId: item.deputyEicId || '',
-      active: item.active,
+      name: item.name || '',
+      slug: item.slug || '',
+      deputyEicId:
+        item.deputyEicId == null
+          ? ''
+          : String(item.deputyEicId),
+      active: Boolean(item.active),
     })
 
     setShowForm(true)
@@ -102,8 +95,17 @@ export default function EditorCategories() {
     setMessage('')
   }
 
+  // Đóng form
+  function closeForm() {
+    setShowForm(false)
+    setEditingId(null)
+    setForm({ ...EMPTY })
+  }
+
+  // Thêm hoặc cập nhật chuyên mục
   async function save(event) {
     event.preventDefault()
+
     setError('')
     setMessage('')
 
@@ -114,21 +116,25 @@ export default function EditorCategories() {
       active: form.active,
     }
 
+    // Kiểm tra tên và slug
     if (
       !payload.name ||
       !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug)
     ) {
-      setError('Hãy nhập tên và slug hợp lệ (chữ thường, số, dấu -).')
+      setError(
+        'Hãy nhập tên và slug hợp lệ (chữ thường, số, dấu -).'
+      )
       return
     }
 
-    if (
-      items.some(
-        item =>
-          item.slug.toLowerCase() === payload.slug &&
-          item.id !== editingId
-      )
-    ) {
+    // Kiểm tra slug trùng trong danh sách hiện tại
+    const duplicated = items.some(
+      item =>
+        (item.slug || '').toLowerCase() === payload.slug &&
+        item.id !== editingId
+    )
+
+    if (duplicated) {
       setError('Slug đã tồn tại trong danh sách hiện tại.')
       return
     }
@@ -136,80 +142,57 @@ export default function EditorCategories() {
     setBusy(true)
 
     try {
-      if (demo) {
-        if (editingId !== null) {
-          setDemoItems(old =>
-            old.map(item =>
-              item.id === editingId
-                ? { ...item, ...payload }
-                : item
-            )
-          )
-        } else {
-          setDemoItems(old => [
-            ...old,
-            {
-              ...payload,
-              id: Math.max(0, ...old.map(item => item.id)) + 1,
-            },
-          ])
-        }
+      if (editingId !== null) {
+        // Gọi API sửa chuyên mục
+        await categoryManageService.update(editingId, payload)
       } else {
-        if (editingId !== null) {
-          await categoryManageService.update(editingId, payload)
-        } else {
-          await categoryManageService.create(payload)
-        }
-
-        await loadReal()
+        // Gọi API thêm chuyên mục
+        await categoryManageService.create(payload)
       }
 
+      // Tải lại danh sách từ Backend
+      await loadCategories()
+
       setMessage(
-        demo
-          ? 'Đã cập nhật dữ liệu minh họa (không lưu Database).'
-          : 'Đã lưu chuyên mục vào hệ thống.'
+        editingId !== null
+          ? 'Đã cập nhật chuyên mục thành công.'
+          : 'Đã thêm chuyên mục thành công.'
       )
 
-      setShowForm(false)
-      setEditingId(null)
-      setForm(EMPTY)
+      closeForm()
     } catch (err) {
-      setError(err.message || 'Không thể lưu chuyên mục.')
+      setError(
+        err.message || 'Không thể lưu chuyên mục.'
+      )
     } finally {
       setBusy(false)
     }
   }
 
+  // Bật hoặc tạm tắt chuyên mục
   async function toggle(item) {
     setError('')
     setMessage('')
     setBusy(true)
 
     try {
-      if (demo) {
-        setDemoItems(old =>
-          old.map(row =>
-            row.id === item.id
-              ? { ...row, active: !row.active }
-              : row
-          )
-        )
-      } else {
-        await categoryManageService.setActive(
-          item.id,
-          !item.active
-        )
+      await categoryManageService.setActive(
+        item.id,
+        !item.active
+      )
 
-        await loadReal()
-      }
+      await loadCategories()
 
       setMessage(
-        demo
-          ? 'Đã đổi trạng thái bản demo.'
-          : 'Đã cập nhật trạng thái chuyên mục.'
+        item.active
+          ? 'Đã tạm tắt chuyên mục.'
+          : 'Đã kích hoạt chuyên mục.'
       )
     } catch (err) {
-      setError(err.message || 'Không thể cập nhật trạng thái.')
+      setError(
+        err.message ||
+        'Không thể cập nhật trạng thái chuyên mục.'
+      )
     } finally {
       setBusy(false)
     }
@@ -217,6 +200,8 @@ export default function EditorCategories() {
 
   return (
     <main className="category-page">
+
+      {/* Tiêu đề */}
       <header className="category-page__heading">
         <div>
           <div className="category-page__eyebrow">
@@ -240,66 +225,46 @@ export default function EditorCategories() {
         </button>
       </header>
 
-      {/* Chọn nguồn dữ liệu */}
-      <div
-        className="category-mode"
-        role="group"
-        aria-label="Nguồn dữ liệu"
-      >
-        <div>
-          <strong>Nguồn dữ liệu</strong>
-
-          <span>
-            {demo
-              ? 'Đang xem ví dụ để thử giao diện. Không ghi vào cơ sở dữ liệu.'
-              : 'Đang dùng dữ liệu thật từ API Editor.'}
-          </span>
-        </div>
-
-        <div className="category-mode__switch">
-          <button
-            type="button"
-            className={demo ? 'selected' : ''}
-            onClick={() => switchMode(true)}
-          >
-            Xem demo
-          </button>
-
-          <button
-            type="button"
-            className={!demo ? 'selected' : ''}
-            onClick={() => switchMode(false)}
-          >
-            Dữ liệu thật
-          </button>
-        </div>
-      </div>
-
       {/* Thống kê chuyên mục */}
       <div className="category-stats">
+
         <article>
           <span>Tổng chuyên mục</span>
+
           <strong>{items.length}</strong>
-          <small>Các chuyên mục đang quản lý</small>
+
+          <small>
+            Các chuyên mục đang quản lý
+          </small>
         </article>
 
         <article>
           <span>Đang hoạt động</span>
+
           <strong className="category-stats__green">
             {activeCount}
           </strong>
-          <small>Được bật trong hệ thống</small>
+
+          <small>
+            Được bật trong hệ thống
+          </small>
         </article>
 
         <article>
           <span>Tạm tắt</span>
+
           <strong className="category-stats__orange">
             {items.length - activeCount}
           </strong>
-          <small>Chuyên mục chưa hoạt động</small>
+
+          <small>
+            Chuyên mục chưa hoạt động
+          </small>
         </article>
+
       </div>
 
+      {/* Hiển thị lỗi */}
       {error && (
         <div
           className="category-notice category-notice--error"
@@ -309,6 +274,7 @@ export default function EditorCategories() {
         </div>
       )}
 
+      {/* Hiển thị thông báo thành công */}
       {message && (
         <div
           className="category-notice category-notice--ok"
@@ -318,9 +284,10 @@ export default function EditorCategories() {
         </div>
       )}
 
-      {/* Form thêm / chỉnh sửa */}
+      {/* Form thêm / sửa chuyên mục */}
       {showForm && (
         <section className="category-panel category-form">
+
           <div className="category-panel__head">
             <h2>
               {editingId !== null
@@ -331,7 +298,8 @@ export default function EditorCategories() {
             <button
               type="button"
               className="category-link"
-              onClick={() => setShowForm(false)}
+              onClick={closeForm}
+              disabled={busy}
             >
               Đóng ✕
             </button>
@@ -339,35 +307,48 @@ export default function EditorCategories() {
 
           <form onSubmit={save}>
             <div className="category-form__grid">
+
+              {/* Tên chuyên mục */}
               <label>
                 Tên chuyên mục <span>*</span>
+
                 <input
                   required
                   maxLength={100}
                   value={form.name}
                   onChange={e =>
-                    setForm({ ...form, name: e.target.value })
+                    setForm({
+                      ...form,
+                      name: e.target.value,
+                    })
                   }
-                  placeholder="Ví dụ: Giao thông"
+                  placeholder="Nhập tên chuyên mục"
                 />
               </label>
 
+              {/* Slug */}
               <label>
                 Slug <span>*</span>
+
                 <input
                   required
                   maxLength={100}
                   value={form.slug}
                   onChange={e =>
-                    setForm({ ...form, slug: e.target.value })
+                    setForm({
+                      ...form,
+                      slug: e.target.value,
+                    })
                   }
-                  placeholder="giao-thong"
+                  placeholder="Nhập slug chuyên mục"
                 />
               </label>
 
+              {/* Phó Tổng biên tập */}
               <label>
                 Mã Phó Tổng biên tập
                 <small>(tùy chọn)</small>
+
                 <input
                   value={form.deputyEicId}
                   onChange={e =>
@@ -379,9 +360,12 @@ export default function EditorCategories() {
                   placeholder="Để trống nếu chưa phân công"
                 />
               </label>
+
             </div>
 
             <div className="category-form__footer">
+
+              {/* Kích hoạt */}
               <label className="category-check">
                 <input
                   type="checkbox"
@@ -393,6 +377,7 @@ export default function EditorCategories() {
                     })
                   }
                 />
+
                 Kích hoạt chuyên mục
               </label>
 
@@ -400,7 +385,8 @@ export default function EditorCategories() {
                 <button
                   type="button"
                   className="category-btn category-btn--light"
-                  onClick={() => setShowForm(false)}
+                  onClick={closeForm}
+                  disabled={busy}
                 >
                   Hủy
                 </button>
@@ -417,6 +403,7 @@ export default function EditorCategories() {
                       : 'Tạo chuyên mục'}
                 </button>
               </div>
+
             </div>
           </form>
         </section>
@@ -424,53 +411,65 @@ export default function EditorCategories() {
 
       {/* Danh sách chuyên mục */}
       <section className="category-panel">
+
         <div className="category-panel__head">
           <div>
             <h2>Danh sách chuyên mục</h2>
-            <p>{visible.length} kết quả phù hợp</p>
-          </div>
 
-          {demo && (
-            <span className="category-demo-badge">
-              DỮ LIỆU MINH HỌA
-            </span>
-          )}
+            <p>
+              {visible.length} kết quả phù hợp
+            </p>
+          </div>
         </div>
 
-        {/* Bộ lọc */}
+        {/* Tìm kiếm và lọc */}
         <div className="category-filters">
+
           <input
             aria-label="Tìm chuyên mục"
             placeholder="Tìm theo tên hoặc slug..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e =>
+              setSearch(e.target.value)
+            }
           />
 
           <select
             aria-label="Lọc trạng thái"
             value={status}
-            onChange={e => setStatus(e.target.value)}
+            onChange={e =>
+              setStatus(e.target.value)
+            }
           >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang hoạt động</option>
-            <option value="inactive">Tạm tắt</option>
+            <option value="all">
+              Tất cả trạng thái
+            </option>
+
+            <option value="active">
+              Đang hoạt động
+            </option>
+
+            <option value="inactive">
+              Tạm tắt
+            </option>
           </select>
 
-          {!demo && (
-            <button
-              type="button"
-              className="category-btn category-btn--light"
-              onClick={loadReal}
-              disabled={loading}
-            >
-              Làm mới
-            </button>
-          )}
+          {/* Tải lại dữ liệu thật */}
+          <button
+            type="button"
+            className="category-btn category-btn--light"
+            onClick={loadCategories}
+            disabled={loading || busy}
+          >
+            {loading ? 'Đang tải...' : 'Làm mới'}
+          </button>
+
         </div>
 
-        {/* Bảng dữ liệu */}
+        {/* Bảng chuyên mục */}
         <div className="table-wrap">
           <table className="data-table category-table">
+
             <thead>
               <tr>
                 <th>MÃ</th>
@@ -483,27 +482,37 @@ export default function EditorCategories() {
             </thead>
 
             <tbody>
-              {loading && !demo ? (
+
+              {loading ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={6} className="category-empty">
                     Đang tải chuyên mục...
                   </td>
                 </tr>
               ) : (
                 visible.map(item => (
                   <tr key={item.id}>
+
+                    {/* Mã */}
                     <td className="category-table__id">
                       #{item.id}
                     </td>
 
+                    {/* Tên */}
                     <td>
-                      <strong>{item.name}</strong>
+                      <strong>
+                        {item.name}
+                      </strong>
                     </td>
 
+                    {/* Slug */}
                     <td>
-                      <code>{item.slug}</code>
+                      <code>
+                        {item.slug}
+                      </code>
                     </td>
 
+                    {/* Phó Tổng biên tập */}
                     <td>
                       {item.deputyEicId || (
                         <span className="category-muted">
@@ -512,6 +521,7 @@ export default function EditorCategories() {
                       )}
                     </td>
 
+                    {/* Trạng thái */}
                     <td>
                       <span
                         className={`category-status ${
@@ -526,8 +536,10 @@ export default function EditorCategories() {
                       </span>
                     </td>
 
+                    {/* Thao tác */}
                     <td>
                       <div className="category-actions">
+
                         <button
                           type="button"
                           disabled={busy}
@@ -545,12 +557,15 @@ export default function EditorCategories() {
                             ? 'Tạm tắt'
                             : 'Bật lại'}
                         </button>
+
                       </div>
                     </td>
+
                   </tr>
                 ))
               )}
 
+              {/* Không có dữ liệu */}
               {!loading && visible.length === 0 && (
                 <tr>
                   <td
@@ -561,9 +576,11 @@ export default function EditorCategories() {
                   </td>
                 </tr>
               )}
+
             </tbody>
           </table>
         </div>
+
       </section>
     </main>
   )
