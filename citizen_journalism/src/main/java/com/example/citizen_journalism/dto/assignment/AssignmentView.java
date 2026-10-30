@@ -1,0 +1,44 @@
+package com.example.citizen_journalism.dto.assignment;
+
+import com.example.citizen_journalism.entity.FieldAssignment;
+import com.example.citizen_journalism.entity.Submission;
+import com.example.citizen_journalism.entity.User;
+import java.time.LocalDateTime;
+
+/** Một nhiệm vụ xác minh hiện trường, hiển thị ở bàn Biên tập viên. Không chứa thông tin liên hệ của người gửi. */
+public record AssignmentView(
+        Long id,
+        String trackingCode,
+        String submissionTitle,
+        Submission.ReportCategory category,
+        String province,
+        String address,
+        String contributorId,
+        String contributorName,
+        String contributorAvatarUrl,
+        int contributorScore,
+        FieldAssignment.AssignmentStatus status,
+        LocalDateTime deadline,
+        String note,
+        LocalDateTime createdAt) {
+
+    public static AssignmentView from(FieldAssignment assignment) {
+        Submission submission = assignment.getSubmission();
+        User contributor = assignment.getContributor();
+        return new AssignmentView(
+                assignment.getId(),
+                submission.getTrackingCode(),
+                submission.getTitle(),
+                submission.getReportCategory(),
+                submission.getProvince(),
+                submission.getAddress(),
+                contributor.getId(),
+                contributor.getFullName(),
+                contributor.getAvatarUrl(),
+                contributor.performanceScoreOrDefault(),
+                assignment.getStatus(),
+                assignment.getDeadline(),
+                assignment.getNote(),
+                assignment.getCreatedAt());
+    }
+}

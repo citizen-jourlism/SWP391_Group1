@@ -39,6 +39,16 @@ export const editorService = {
   /** Hoàn tác gộp: hồ sơ quay lại hàng đợi như trước khi gộp. */
   unmergeDuplicate: (code) => api.post(`/editor/submissions/${encodeURIComponent(code)}/duplicates/unmerge`),
 
+  // ----- Giao nhiệm vụ xác minh hiện trường (backend: FieldAssignmentController) -----
+  listAssignmentProvinces: () => api.get('/editor/assignments/provinces'),
+  /** Cộng tác viên để chọn. params: { code, province, q, minScore, sort: RECOMMENDED | SCORE | WORKLOAD } */
+  listCandidates: (params) => api.get('/editor/assignments/candidates', { params: cleanParams(params) }),
+  /** Nhiệm vụ mới nhất của 1 hồ sơ; data = null nếu hồ sơ chưa từng được giao. */
+  getLatestAssignment: (code) => api.get('/editor/assignments/latest', { params: { code } }),
+  listAssignments: (params) => api.get('/editor/assignments', { params: cleanParams(params) }),
+  /** payload: { trackingCode, contributorId, deadline, note } */
+  assign: (payload) => api.post('/editor/assignments', payload),
+
   // ----- Đơn đăng ký Cộng tác viên -----
   listApplications: (params) => api.get('/editor/applications', { params: cleanParams(params) }),
   getApplication: (id) => api.get(`/editor/applications/${id}`),

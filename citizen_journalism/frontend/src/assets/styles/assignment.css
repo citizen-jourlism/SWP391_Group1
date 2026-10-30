@@ -1,0 +1,424 @@
+/* =========================================================================
+ * GIAO NHIỆM VỤ XÁC MINH HIỆN TRƯỜNG
+ * Dùng ở: routes/editor/EditorAssignContributor.jsx (màn chọn CTV kiểu chọn quán),
+ * EditorAssignments.jsx (danh sách nhiệm vụ), EditorSubmissionDetail.jsx (ô nhiệm vụ hiện tại).
+ * ========================================================================= */
+
+/* .admin-panel.assign-*: cần cao hơn .admin-panel (xếp dọc), vì thứ tự nạp file CSS không cố định */
+
+/* Chừa chỗ để thanh chốt việc dính đáy không che mất thẻ cuối danh sách */
+.assign-page {
+  padding-bottom: 12px;
+}
+
+/* ---------- Tóm tắt vụ việc ---------- */
+.admin-panel.assign-case {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.assign-case .category-card__icon {
+  flex-shrink: 0;
+}
+
+.assign-case small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.assign-case strong {
+  display: block;
+  margin: 2px 0 6px;
+  color: var(--navy-900);
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.assign-case p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.assign-case p svg {
+  flex-shrink: 0;
+  color: var(--orange);
+}
+
+/* ---------- Bộ lọc ---------- */
+.admin-panel.assign-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px 170px;
+  align-items: center;
+  gap: 12px;
+}
+
+.assign-filters .field {
+  margin: 0;
+}
+
+.assign-chips {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.assign-chips > span {
+  margin-right: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.assign-chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1.5px solid var(--card-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--navy-700);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.assign-chips button:hover {
+  border-color: var(--orange);
+}
+
+.assign-chips button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.assign-chips button.is-active {
+  border-color: var(--orange);
+  background: #fff3ec;
+  color: var(--orange-strong);
+}
+
+.assign-chips button svg {
+  fill: currentColor;
+}
+
+.assign-count {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ---------- Lưới thẻ Cộng tác viên ---------- */
+.assign-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  transition: opacity 0.2s;
+}
+
+.assign-grid.is-loading {
+  opacity: 0.55;
+}
+
+.assign-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius);
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.assign-card:hover {
+  border-color: var(--orange);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+.assign-card:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.assign-card.is-selected {
+  border-color: var(--orange);
+  box-shadow: var(--focus-ring);
+}
+
+.assign-card__cover {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 84px;
+  padding: 0 16px;
+  background: linear-gradient(120deg, #fff1e8 0%, #eaf0f8 100%);
+}
+
+.assign-card__cover .avatar {
+  margin-bottom: -22px;
+  border: 3px solid #fff;
+  box-sizing: content-box;
+}
+
+.assign-card__score {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(13, 31, 53, 0.12);
+  color: var(--navy-900);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.assign-card__score svg {
+  color: var(--orange);
+  fill: currentColor;
+}
+
+.assign-card__check {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--orange);
+  color: #fff;
+}
+
+.assign-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  padding: 30px 16px 14px;
+}
+
+.assign-card__body strong {
+  color: var(--navy-900);
+  font-size: 16px;
+}
+
+.assign-card__line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.assign-card__line svg {
+  flex-shrink: 0;
+  color: var(--orange);
+}
+
+.assign-card__address {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assign-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-top: auto;
+  padding-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-panel.assign-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-block: 36px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.assign-empty strong {
+  color: var(--navy-900);
+}
+
+.assign-empty p {
+  margin: 0;
+}
+
+/* ---------- Thanh chốt việc giao (như giỏ hàng) ---------- */
+.admin-panel.assign-basket {
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 210px minmax(180px, 1.4fr) auto;
+  align-items: start;
+  gap: 14px;
+  border: 1.5px solid var(--orange);
+  box-shadow: 0 10px 30px rgba(13, 31, 53, 0.18);
+}
+
+.assign-basket .alert {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.assign-basket .field {
+  margin: 0;
+}
+
+.assign-basket > .btn {
+  margin-top: 26px;
+}
+
+.assign-basket__who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-top: 20px;
+}
+
+.assign-basket__who > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.assign-basket__who small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.assign-basket__who strong {
+  display: block;
+  overflow: hidden;
+  color: var(--navy-900);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assign-basket__clear {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: #eef1f6;
+  color: var(--navy-700);
+  cursor: pointer;
+}
+
+.assign-basket__clear:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ---------- Danh sách nhiệm vụ + ô nhiệm vụ trên trang hồ sơ ---------- */
+.assign-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.assign-overdue {
+  display: block;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-panel.assign-current {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 14px;
+}
+
+.assign-current__info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.assign-current__info strong {
+  display: block;
+  color: var(--navy-900);
+}
+
+.assign-current__info small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.assign-current__note {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: #f5f7fb;
+  color: var(--text);
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Màn hình hẹp ---------- */
+@media (max-width: 1100px) {
+  .admin-panel.assign-basket {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .assign-basket__who {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+
+  .assign-basket > .btn {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-panel.assign-filters {
+    grid-template-columns: 1fr;
+  }
+
+  /* Màn hình điện thoại: thanh dính đáy sẽ che hết danh sách, nên nằm cuối trang (chọn thẻ thì tự cuộn tới) */
+  .admin-panel.assign-basket {
+    position: static;
+    grid-template-columns: 1fr;
+  }
+}

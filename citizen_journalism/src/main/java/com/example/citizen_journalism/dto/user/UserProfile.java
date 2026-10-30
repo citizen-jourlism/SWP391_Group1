@@ -21,6 +21,8 @@ public record UserProfile(
         String avatarUrl,
         User.Role role,
         Integer reputationScore,
+        Integer performanceScore, // Chỉ Cộng tác viên có; thay cho điểm uy tín của vai trò này
+        String workingProvince,   // Khu vực tác nghiệp của Cộng tác viên
         int rewardPoints,
         LocalDateTime createdAt  // Ngày tham gia
 ) {
@@ -37,6 +39,8 @@ public record UserProfile(
                 user.getAvatarUrl(),
                 user.getRole(),
                 user.getReputationScore(),
+                user.getRole() == User.Role.CONTRIBUTOR ? user.performanceScoreOrDefault() : null,
+                user.getWorkingProvince(),
                 user.getRewardPoints(),
                 user.getCreatedAt());
     }

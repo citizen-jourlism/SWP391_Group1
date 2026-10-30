@@ -102,11 +102,20 @@ function Profile() {
 
             {/* Điểm: CHỈ XEM, do hệ thống cộng/trừ (backend không cho người dùng sửa) */}
             <div className="profile-stats">
-              <div className="profile-stat profile-stat--trust">
-                <Icon name="shield" size={20} />
-                <strong>{profile.reputationScore ?? 0}</strong>
-                <span>Điểm uy tín</span>
-              </div>
+              {/* Cộng tác viên dùng điểm hiệu suất thay cho điểm uy tín */}
+              {profile.role === 'CONTRIBUTOR' ? (
+                <div className="profile-stat profile-stat--trust">
+                  <Icon name="star" size={20} />
+                  <strong>{profile.performanceScore ?? 0}</strong>
+                  <span>Điểm hiệu suất</span>
+                </div>
+              ) : (
+                <div className="profile-stat profile-stat--trust">
+                  <Icon name="shield" size={20} />
+                  <strong>{profile.reputationScore ?? 0}</strong>
+                  <span>Điểm uy tín</span>
+                </div>
+              )}
               <div className="profile-stat profile-stat--reward">
                 <Icon name="gift" size={20} />
                 <strong>{profile.rewardPoints}</strong>

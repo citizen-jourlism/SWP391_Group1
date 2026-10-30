@@ -68,6 +68,25 @@ public interface UserRepository extends JpaRepository<User, String> {
                       @Param("status") User.Status status,
                       Pageable pageable);
 
+    /**
+     * Cộng tác viên đang hoạt động cho màn hình chọn người giao nhiệm vụ (FieldAssignmentService).
+     * Tham số nào null thì bỏ qua: province = đúng khu vực tác nghiệp; keyword = khớp một phần họ tên, địa chỉ, khu vực.
+     * coalesce: CTV cũ chưa có điểm hiệu suất thì tính bằng điểm khởi đầu.
+     */
+    @Query("""
+            select u from User u
+            where u.role = com.example.citizen_journalism.entity.User.Role.CONTRIBUTOR
+              and u.status = com.example.citizen_journalism.entity.User.Status.ACTIVE
+              and (:province is null or u.workingProvince = :province)
+              and (:keyword is null
+                   or lower(u.fullName) like lower(concat('%', :keyword, '%'))
+                   or lower(u.address) like lower(concat('%', :keyword, '%'))
+                   or lower(u.workingProvince) like lower(concat('%', :keyword, '%')))
+              and coalesce(u.performanceScore, 100) >= :minScore
+            """)
+    List<User> findContributorCandidates(@Param("province") String province, @Param("keyword") String keyword,
+                                         @Param("minScore") int minScore);
+
     /** Số CCCD đã được NGƯỜI KHÁC (khác id) dùng chưa. -> WHERE citizen_id = ? AND id <> ? */
     boolean existsByCitizenIdAndIdNot(String citizenId, String id);
 

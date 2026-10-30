@@ -8,13 +8,16 @@ import com.example.citizen_journalism.dto.admin.AdminStats;
 import com.example.citizen_journalism.dto.admin.AdminUpdateUserRequest;
 import com.example.citizen_journalism.dto.admin.AdminUserItem;
 import com.example.citizen_journalism.dto.admin.CreateUserRequest;
+import com.example.citizen_journalism.entity.ContributorApplication;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.exception.AppException;
+import com.example.citizen_journalism.repository.ContributorApplicationRepository;
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.util.Paging;
 import com.example.citizen_journalism.util.UserIdGenerator;
+import com.example.citizen_journalism.util.VietnamProvinces;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -46,6 +49,7 @@ import org.springframework.web.util.HtmlUtils;
 public class AdminService {
 
     private final UserRepository userRepository;
+    private final ContributorApplicationRepository applicationRepository;
     private final SubmissionRepository submissionRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserIdGenerator userIdGenerator;
@@ -141,7 +145,7 @@ public class AdminService {
     /**
      * Sửa thông tin cá nhân + vai trò trong MỘT lần lưu (cùng transaction: lỗi thì không đổi gì cả).
      * Đổi vai trò: mã người dùng giữ nguyên (CT0001 vẫn là CT0001) vì mã là định danh cố định, đã được dùng ở các bảng khác;
-     * vai trò mới có hiệu lực khi người đó đăng nhập lại (vai trò nằm trong token).
+     * vai trò mới có hiệu lực ngay ở request tiếp theo (ActiveUserJwtConverter lấy vai trò từ DB).
      */
     @Transactional
     public AdminUserItem updateUser(String userId, AdminUpdateUserRequest request) {
@@ -160,6 +164,7 @@ public class AdminService {
         user.setAddress(blankToNull(request.address()));
         user.setDateOfBirth(request.dateOfBirth());
         user.setRole(request.role());
+        user.setWorkingProvince(workingProvinceOf(user, request));
         // Không cần save(): user đang được JPA quản lý trong transaction, tự ghi xuống DB khi hàm kết thúc.
         return AdminUserItem.from(user);
     }
@@ -191,6 +196,25 @@ public class AdminService {
     }
 
     // ================================= HÀM PHỤ =================================
+
+    /**
+     * Khu vực tác nghiệp sau khi sửa tài khoản. Chỉ Cộng tác viên mới có; admin bỏ trống thì lấy khu vực
+     * ghi trong đơn đăng ký CTV gần nhất (nếu có), để CTV mới được nâng cấp xuất hiện ngay ở đúng khu vực.
+     */
+    private String workingProvinceOf(User user, AdminUpdateUserRequest request) {
+        if (request.role() != User.Role.CONTRIBUTOR) {
+            return null;
+        }
+        String province = blankToNull(request.workingProvince());
+        if (province != null && !VietnamProvinces.isValid(province)) {
+            throw AppException.invalidFields(Map.of("workingProvince", "Tỉnh/thành phố không hợp lệ."));
+        }
+        if (province != null) {
+            return province;
+        }
+        return applicationRepository.findByApplicantIdOrderByCreatedAtDescIdDesc(user.getId()).stream()
+                .findFirst().map(ContributorApplication::getProvince).orElse(null);
+    }
 
     /**
      * Mật khẩu tạm 12 ký tự, luôn có chữ HOA, chữ thường, số và ký tự đặc biệt (đạt quy tắc @StrongPassword).

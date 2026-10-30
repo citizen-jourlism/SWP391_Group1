@@ -62,6 +62,10 @@ public class FieldAssignment extends BaseEntity {
     @Column(name = "deadline")
     private LocalDateTime deadline;
 
+    /** Chỉ dẫn tác nghiệp của Biên tập viên gửi Cộng tác viên (không bắt buộc). */
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;
+
     public enum AssignmentMode {
         BROADCAST,
         DIRECT
