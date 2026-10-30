@@ -1,0 +1,282 @@
+
+.notification-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  z-index: 100;
+}
+
+.notification-dropdown__trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.notification-dropdown__trigger:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Số thông báo chưa đọc */
+.notification-dropdown__badge {
+  position: absolute;
+  top: -7px;
+  right: -8px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  border-radius: 999px;
+  border: 2px solid #102942;
+}
+
+/* Menu thông báo */
+.notification-dropdown__panel {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: 370px;
+  max-width: calc(100vw - 24px);
+  background: #fff;
+  color: #172d49;
+  border: 1px solid #e8edf3;
+  border-radius: 14px;
+  box-shadow: 0 16px 45px rgba(12, 30, 51, 0.22);
+  overflow: hidden;
+  z-index: 9999;
+}
+
+/* Header */
+.notification-dropdown__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.notification-dropdown__header h3 {
+  margin: 0 0 5px;
+  color: #142b45;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.notification-dropdown__header span {
+  font-size: 12px;
+  color: #8593a4;
+}
+
+.notification-dropdown__header button {
+  border: 0;
+  background: #f2f5f9;
+  border-radius: 7px;
+  width: 27px;
+  height: 27px;
+  color: #66788d;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Thanh đánh dấu đã đọc */
+.notification-dropdown__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 18px;
+  background: #fafbfd;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.notification-dropdown__toolbar button {
+  border: none;
+  background: transparent;
+  color: #e8752f;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.notification-dropdown__toolbar button:hover {
+  text-decoration: underline;
+}
+
+/* Danh sách */
+.notification-dropdown__list {
+  max-height: 370px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.notification-dropdown__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px 18px;
+  border-bottom: 1px solid #f0f2f5;
+  transition: background 0.2s;
+}
+
+.notification-dropdown__item.is-unread {
+  background: #f2f7ff;
+}
+
+.notification-dropdown__item.is-read {
+  background: #ffffff;
+}
+
+.notification-dropdown__item:hover {
+  background: #f8fafd;
+}
+
+.notification-dropdown__item-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  background: #fff0e5;
+  border-radius: 11px;
+  font-size: 19px;
+}
+
+.notification-dropdown__item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-dropdown__item-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.notification-dropdown__unread-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  background: #2583e9;
+  border-radius: 50%;
+}
+
+.notification-dropdown__item-title {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #172d49;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-dropdown__item.is-read
+.notification-dropdown__item-title {
+  font-weight: 500;
+  color: #63748a;
+}
+
+.notification-dropdown__item-title:hover {
+  color: #e8752f;
+}
+
+.notification-dropdown__item-content p {
+  margin: 5px 0;
+  color: #68798d;
+  font-size: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.notification-dropdown__item-content time {
+  color: #9aa6b5;
+  font-size: 11px;
+}
+
+/* Khi chưa có thông báo */
+.notification-dropdown__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 35px 20px;
+  text-align: center;
+  color: #728297;
+  font-size: 13px;
+}
+
+.notification-dropdown__empty-icon {
+  font-size: 30px;
+}
+
+.notification-dropdown__empty strong {
+  color: #213a56;
+}
+
+.notification-dropdown__empty p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.notification-dropdown__empty button {
+  border: 0;
+  background: #fff0e5;
+  color: #e8752f;
+  padding: 8px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+/* Xem tất cả */
+.notification-dropdown__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 15px;
+  background: #fff7f0;
+  color: #e5702c;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  border-top: 1px solid #f7e5d9;
+}
+
+.notification-dropdown__footer:hover {
+  background: #ffeddd;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .notification-dropdown__panel {
+    position: fixed;
+    top: 65px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+  }
+}
