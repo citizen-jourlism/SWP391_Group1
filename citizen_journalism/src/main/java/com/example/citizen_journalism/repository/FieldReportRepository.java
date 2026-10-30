@@ -1,6 +1,8 @@
 package com.example.citizen_journalism.repository;
 
 import com.example.citizen_journalism.entity.FieldReport;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -8,4 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface FieldReportRepository extends JpaRepository<FieldReport, Long> {
 
     Optional<FieldReport> findByAssignmentId(Long assignmentId);
+
+    /** Báo cáo của nhiều nhiệm vụ trong 1 câu SQL, cho các danh sách. */
+    List<FieldReport> findByAssignmentIdIn(Collection<Long> assignmentIds);
 }

@@ -732,3 +732,58 @@
     flex: 1;
   }
 }
+
+/* ---------- Phản hồi của Biên tập viên ---------- */
+.report-feedbacks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.report-feedbacks li {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: #f5f7fb;
+}
+
+.report-feedbacks__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.report-feedbacks small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.report-feedbacks p {
+  margin: 8px 0 0;
+  color: var(--text);
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.report-feedbacks__reply {
+  padding-top: 8px;
+  border-top: 1px solid var(--card-border);
+}
+
+.report-revision {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-revision h3 {
+  margin: 0;
+}
+
+.report-revision .field {
+  margin: 0;
+}

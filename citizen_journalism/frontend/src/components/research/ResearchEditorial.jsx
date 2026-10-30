@@ -202,10 +202,19 @@ const validateReason = createValidator({
 /**
  * Hộp nhập LÝ DO (bắt buộc, 10–2000 ký tự) trước khi từ chối / huỷ. Dùng cho BTV từ chối bài, Chuyên gia từ chối
  * yêu cầu, Cộng tác viên từ chối / huỷ nhiệm vụ và BTV thu hồi nhiệm vụ.
- * label, confirmLabel: chữ của ô nhập và nút đồng ý.
+ * label, confirmLabel, confirmVariant: chữ của ô nhập, chữ và kiểu của nút đồng ý.
  * onSubmit: async (reason) => ...  lỗi backend tự hiện trong hộp; thành công thì tự đóng.
  */
-export function ReasonDialog({ open, title, message, label = 'Lý do từ chối', confirmLabel = 'Từ chối', onClose, onSubmit }) {
+export function ReasonDialog({
+  open,
+  title,
+  message,
+  label = 'Lý do từ chối',
+  confirmLabel = 'Từ chối',
+  confirmVariant = 'danger',
+  onClose,
+  onSubmit,
+}) {
   const form = useForm({ reason: '' }, validateReason)
 
   const close = () => {
@@ -229,7 +238,7 @@ export function ReasonDialog({ open, title, message, label = 'Lý do từ chối
           <Button variant="secondary" onClick={close} disabled={form.submitting}>
             Đóng
           </Button>
-          <Button type="submit" variant="danger" loading={form.submitting}>
+          <Button type="submit" variant={confirmVariant} loading={form.submitting}>
             {confirmLabel}
           </Button>
         </div>

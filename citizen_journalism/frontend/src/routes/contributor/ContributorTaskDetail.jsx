@@ -11,7 +11,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import Icon from '../../components/ui/Icon'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
-import { assignmentBadge, isOverdue } from '../../lib/assignment'
+import { assignmentBadge, FEEDBACK_TYPES, isOverdue, openFeedback } from '../../lib/assignment'
 import { formatDateTime } from '../../lib/format'
 import { CATEGORY_BY_VALUE } from '../../lib/submission'
 import { contributorTaskService } from '../../services/contributorTaskService'
@@ -24,7 +24,8 @@ import '../../assets/styles/tracking.css' // Thẻ, đầu hồ sơ, thông tin 
  *
  *   - Chờ phản hồi: nút "Nhận nhiệm vụ" và "Từ chối" (bắt buộc lý do). Quá hạn thì không nhận được nữa.
  *   - Đang làm    : nút "Viết báo cáo" (mở ContributorTaskReport) và "Huỷ nhiệm vụ" (bắt buộc lý do).
- *   - Hoàn thành  : xem lại báo cáo đã nộp.
+ *   - Đã nộp      : xem lại báo cáo và phản hồi của Biên tập viên. Có yêu cầu đang chờ thì hiện ô yêu cầu
+ *                   kèm nút mở ContributorTaskRevision để sửa bài hoặc bổ sung tư liệu.
  *   - Đã huỷ      : hiện ai huỷ và lý do.
  * Nội dung chi tiết + tư liệu chỉ có sau khi nhận (backend không gửi trước đó) để bảo vệ nguồn tin.
  * Các API thao tác trả về nhiệm vụ mới nhất -> cập nhật thẳng vào trang, không cần tải lại.
@@ -52,6 +53,7 @@ function ContributorTaskDetail() {
       {task && (
         <div className="detail">
           <TaskHead task={task} onOpenDialog={setDialog} />
+          <FeedbackRequest task={task} />
 
           {task.note && (
             <Alert type="info" title="Chỉ dẫn của toà soạn">
@@ -122,6 +124,25 @@ function ContributorTaskDetail() {
         onSubmit={async (reason) => applyResult(await contributorTaskService.cancel(id, reason))}
       />
     </AccountLayout>
+  )
+}
+
+/** Ô báo có yêu cầu đang chờ của Biên tập viên, kèm nút mở trang xử lý. */
+function FeedbackRequest({ task }) {
+  const feedback = openFeedback(task.report)
+  if (!feedback) return null
+
+  const isRevision = feedback.type === 'REQUEST_REVISION'
+  return (
+    <Alert type="warning" title={`${FEEDBACK_TYPES[feedback.type].label} từ ${feedback.editorName}`}>
+      {feedback.message}
+      <div className="alert__actions">
+        <Button to={`/contributor/tasks/${task.id}/revise`} className="btn--sm">
+          <Icon name={isRevision ? 'edit' : 'upload'} size={16} />
+          {isRevision ? 'Sửa bài viết' : 'Bổ sung tư liệu'}
+        </Button>
+      </div>
+    </Alert>
   )
 }
 

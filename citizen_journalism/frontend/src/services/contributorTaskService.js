@@ -15,4 +15,8 @@ export const contributorTaskService = {
   cancel: (id, reason) => api.post(`/contributor/tasks/${id}/cancel`, { reason }),
   /** Nộp báo cáo: multipart gồm "data" (JSON các ô chữ) + "files" (tư liệu). timeout 0: tệp lớn có thể tải lên lâu. */
   submitReport: (id, data, files) => api.post(`/contributor/tasks/${id}/report`, toMultipart(data, files), { timeout: 0 }),
+  /** Sửa bài viết khi Biên tập viên yêu cầu. payload: { title, content, note } */
+  updateArticle: (id, payload) => api.put(`/contributor/tasks/${id}/report/article`, payload),
+  /** Bổ sung tư liệu khi Biên tập viên yêu cầu. data: { note } */
+  addEvidence: (id, data, files) => api.post(`/contributor/tasks/${id}/report/evidence`, toMultipart(data, files), { timeout: 0 }),
 }

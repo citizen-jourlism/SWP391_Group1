@@ -31,6 +31,7 @@ import EditorDuplicateCheck from './routes/editor/EditorDuplicateCheck.jsx'
 import EditorOverview from './routes/editor/EditorOverview.jsx'
 import ContributorTaskDetail from './routes/contributor/ContributorTaskDetail.jsx'
 import ContributorTaskReport from './routes/contributor/ContributorTaskReport.jsx'
+import ContributorTaskRevision from './routes/contributor/ContributorTaskRevision.jsx'
 import ContributorTasks from './routes/contributor/ContributorTasks.jsx'
 import EditorAssignContributor from './routes/editor/EditorAssignContributor.jsx'
 import EditorAssignments from './routes/editor/EditorAssignments.jsx'
@@ -170,6 +171,14 @@ function App() {
             element={
               <ProtectedRoute roles={['CONTRIBUTOR']}>
                 <ContributorTaskReport />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contributor/tasks/:id/revise"
+            element={
+              <ProtectedRoute roles={['CONTRIBUTOR']}>
+                <ContributorTaskRevision />
               </ProtectedRoute>
             }
           />

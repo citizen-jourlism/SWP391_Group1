@@ -2,10 +2,12 @@ package com.example.citizen_journalism.controller;
 
 import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.PageResponse;
+import com.example.citizen_journalism.dto.assignment.AdditionalEvidenceRequest;
 import com.example.citizen_journalism.dto.assignment.AssignmentReasonRequest;
 import com.example.citizen_journalism.dto.assignment.ContributorTaskDetail;
 import com.example.citizen_journalism.dto.assignment.ContributorTaskItem;
 import com.example.citizen_journalism.dto.assignment.SubmitFieldReportRequest;
+import com.example.citizen_journalism.dto.assignment.UpdateReportArticleRequest;
 import com.example.citizen_journalism.entity.FieldAssignment.AssignmentStatus;
 import com.example.citizen_journalism.service.ContributorTaskService;
 import jakarta.validation.Valid;
@@ -17,6 +19,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,6 +38,8 @@ import org.springframework.web.multipart.MultipartFile;
  *   POST /api/contributor/tasks/{id}/decline -> từ chối nhiệm vụ đang chờ phản hồi (bắt buộc lý do)
  *   POST /api/contributor/tasks/{id}/cancel  -> huỷ nhiệm vụ đã nhận (bắt buộc lý do)
  *   POST /api/contributor/tasks/{id}/report  -> nộp báo cáo hiện trường (multipart: "data" + "files")
+ *   PUT  /api/contributor/tasks/{id}/report/article  -> sửa bài viết khi Biên tập viên yêu cầu
+ *   POST /api/contributor/tasks/{id}/report/evidence -> bổ sung tư liệu khi Biên tập viên yêu cầu (multipart)
  */
 @RestController
 @RequestMapping("/api/contributor/tasks")
@@ -85,5 +90,18 @@ public class ContributorTaskController {
                                                            @Valid @RequestPart("data") SubmitFieldReportRequest request,
                                                            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
         return ApiResponse.ok("Đã nộp báo cáo hiện trường.", taskService.submitReport(jwt.getSubject(), id, request, files));
+    }
+
+    @PutMapping("/{id}/report/article")
+    public ApiResponse<ContributorTaskDetail> updateArticle(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                                            @Valid @RequestBody UpdateReportArticleRequest request) {
+        return ApiResponse.ok("Đã gửi lại bài viết cho toà soạn.", taskService.updateArticle(jwt.getSubject(), id, request));
+    }
+
+    @PostMapping("/{id}/report/evidence")
+    public ApiResponse<ContributorTaskDetail> addEvidence(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                                          @Valid @RequestPart("data") AdditionalEvidenceRequest request,
+                                                          @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+        return ApiResponse.ok("Đã gửi tư liệu bổ sung cho toà soạn.", taskService.addEvidence(jwt.getSubject(), id, request, files));
     }
 }

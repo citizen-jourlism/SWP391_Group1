@@ -8,6 +8,7 @@ import Alert from '../../components/ui/Alert'
 import Avatar from '../../components/ui/Avatar'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import Icon from '../../components/ui/Icon'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
@@ -31,7 +32,8 @@ import '../../assets/styles/assignment.css'
  *     Hồ sơ từng được giao thì có ô nhiệm vụ ngay dưới thanh này: nút "Thu hồi" khi nhiệm vụ còn hiệu lực,
  *     nút "Giao CTV khác" khi CTV từ chối / huỷ hoặc nhiệm vụ đã bị thu hồi.
  *   - "Lịch sử" mở AssignmentHistoryDialog: giao cho ai, ai nhận, ai từ chối, lý do...
- * Nhiệm vụ đã hoàn thành thì hiện báo cáo hiện trường CTV nộp (FieldReportCard) ngay dưới ô nhiệm vụ.
+ * Nhiệm vụ đã nộp báo cáo thì hiện báo cáo (FieldReportCard) ngay dưới ô nhiệm vụ. Báo cáo đang chờ xem thì có
+ * 3 nút phản hồi: yêu cầu sửa bài, yêu cầu bổ sung tư liệu, duyệt.
  *   - Các nút còn lại (tiếp nhận thẩm định, yêu cầu bổ sung, từ chối) đã ĐẶT SẴN nhưng đang KHOÁ:
  *     backend xử lý tin sẽ làm ở bản sau.
  */
@@ -46,7 +48,7 @@ function EditorSubmissionDetail() {
   const { code } = useParams()
   const { state } = useLocation() // state.notice: thông báo từ trang chọn CTV sau khi giao xong
   const { data, error } = useAsyncData(() => editorService.getSubmission(code), code)
-  const { data: assignment, setData: setAssignment, loading: assignmentLoading } = useAsyncData(
+  const { data: assignment, setData: setAssignment, loading: assignmentLoading, reload: reloadAssignment } = useAsyncData(
     () => editorService.getLatestAssignment(code),
     `assignment|${code}`,
   )
@@ -102,7 +104,7 @@ function EditorSubmissionDetail() {
             </div>
           </section>
           {assignment && <CurrentAssignment assignment={assignment} onCancelled={setAssignment} />}
-          {assignment?.status === 'COMPLETED' && <AssignmentReport assignmentId={assignment.id} />}
+          {assignment?.status === 'COMPLETED' && <AssignmentReport assignmentId={assignment.id} onReviewed={reloadAssignment} />}
           <SubmissionDetail detail={data} />
         </>
       )}
@@ -158,11 +160,78 @@ function CurrentAssignment({ assignment, onCancelled }) {
   )
 }
 
-/** Báo cáo hiện trường của nhiệm vụ đã hoàn thành. */
-function AssignmentReport({ assignmentId }) {
-  const { data: report, error } = useAsyncData(() => editorService.getAssignmentReport(assignmentId), assignmentId)
-  if (error) return <Alert type="error">{error}</Alert>
-  return report ? <FieldReportCard report={report} /> : <div className="skeleton skeleton--card" />
+/** Hộp thoại phản hồi đang mở: gửi yêu cầu sửa bài hoặc bổ sung tư liệu. */
+const REQUEST_DIALOGS = {
+  revision: {
+    title: 'Yêu cầu sửa bài',
+    message: 'Cộng tác viên sẽ nhận được email kèm nội dung cần sửa.',
+    send: editorService.requestReportRevision,
+  },
+  evidence: {
+    title: 'Yêu cầu bổ sung tư liệu',
+    message: 'Cộng tác viên sẽ nhận được email kèm những tư liệu cần bổ sung.',
+    send: editorService.requestReportEvidence,
+  },
+}
+
+/** Báo cáo hiện trường đã nộp, kèm các nút phản hồi khi báo cáo đang chờ xem. */
+function AssignmentReport({ assignmentId, onReviewed }) {
+  const { data: report, error, setData } = useAsyncData(() => editorService.getAssignmentReport(assignmentId), assignmentId)
+  const [dialog, setDialog] = useState(null) // 'revision' | 'evidence' | 'approve'
+  const request = REQUEST_DIALOGS[dialog]
+
+  /** API trả về báo cáo mới nhất -> cập nhật thẳng, rồi tải lại ô nhiệm vụ để đổi nhãn trạng thái. */
+  const applyResult = (response) => {
+    setData(response.data)
+    onReviewed()
+  }
+
+  if (error && !report) return <Alert type="error">{error}</Alert>
+  if (!report) return <div className="skeleton skeleton--card" />
+
+  return (
+    <>
+      <FieldReportCard
+        report={report}
+        actions={
+          report.reviewStatus === 'PENDING_REVIEW' && (
+            <>
+              <Button className="btn--sm" onClick={() => setDialog('approve')}>
+                <Icon name="checkCircle" size={14} />
+                Duyệt báo cáo
+              </Button>
+              <Button variant="secondary" className="btn--sm" onClick={() => setDialog('revision')}>
+                <Icon name="edit" size={14} />
+                Yêu cầu sửa bài
+              </Button>
+              <Button variant="secondary" className="btn--sm" onClick={() => setDialog('evidence')}>
+                <Icon name="upload" size={14} />
+                Yêu cầu bổ sung tư liệu
+              </Button>
+            </>
+          )
+        }
+      />
+      <ReasonDialog
+        open={Boolean(request)}
+        title={request?.title}
+        message={request?.message}
+        label="Nội dung yêu cầu"
+        confirmLabel="Gửi yêu cầu"
+        confirmVariant="primary"
+        onClose={() => setDialog(null)}
+        onSubmit={async (reason) => applyResult(await request.send(assignmentId, reason))}
+      />
+      <ConfirmDialog
+        open={dialog === 'approve'}
+        title="Duyệt báo cáo"
+        message="Sau khi duyệt, Cộng tác viên không sửa báo cáo được nữa."
+        confirmLabel="Duyệt báo cáo"
+        onConfirm={async () => applyResult(await editorService.approveReport(assignmentId))}
+        onClose={() => setDialog(null)}
+      />
+    </>
+  )
 }
 
 export default EditorSubmissionDetail

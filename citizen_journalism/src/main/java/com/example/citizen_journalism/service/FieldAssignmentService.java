@@ -11,6 +11,8 @@ import com.example.citizen_journalism.dto.assignment.ContributorCandidate;
 import com.example.citizen_journalism.dto.assignment.FieldReportView;
 import com.example.citizen_journalism.entity.FieldAssignment;
 import com.example.citizen_journalism.entity.FieldAssignment.AssignmentStatus;
+import com.example.citizen_journalism.entity.FieldReportFeedback;
+import com.example.citizen_journalism.entity.FieldReportFeedback.ReviewStatus;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.entity.Submission.SubmissionStatus;
 import com.example.citizen_journalism.entity.SubmissionEvent;
@@ -31,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -157,15 +160,17 @@ public class FieldAssignmentService {
     @Transactional(readOnly = true)
     public PageResponse<AssignmentView> list(AssignmentStatus status, int page, int size) {
         Set<AssignmentStatus> statuses = status == null ? EnumSet.allOf(AssignmentStatus.class) : EnumSet.of(status);
-        return PageResponse.from(assignmentRepository.findLatestPerSubmission(statuses, Paging.of(page, size, Paging.NEWEST_FIRST))
-                .map(AssignmentView::from));
+        Page<FieldAssignment> assignments = assignmentRepository.findLatestPerSubmission(statuses, Paging.of(page, size, Paging.NEWEST_FIRST));
+        Map<Long, ReviewStatus> reviews = fieldReportService.reviewStatuses(assignments.map(FieldAssignment::getId).getContent());
+        return PageResponse.from(assignments.map(assignment -> AssignmentView.from(assignment, reviews.get(assignment.getId()))));
     }
 
     /** Nhiệm vụ mới nhất của 1 hồ sơ; null nếu hồ sơ chưa từng được giao. */
     @Transactional(readOnly = true)
     public AssignmentView getLatest(String trackingCode) {
         return assignmentRepository.findTopBySubmissionTrackingCodeOrderByCreatedAtDescIdDesc(normalize(trackingCode))
-                .map(AssignmentView::from)
+                .map(assignment -> AssignmentView.from(assignment,
+                        fieldReportService.reviewStatuses(List.of(assignment.getId())).get(assignment.getId())))
                 .orElse(null);
     }
 
@@ -187,8 +192,10 @@ public class FieldAssignmentService {
         Submission submission = findSubmission(trackingCode);
         List<AssignmentHistoryEntry> entries = new ArrayList<>();
         entries.add(new AssignmentHistoryEntry(Type.SUBMITTED, submission.getCreatedAt(), null, null, null, null));
-        assignmentRepository.findBySubmissionIdOrderByIdAsc(submission.getId())
-                .forEach(assignment -> addHistory(entries, assignment));
+        List<FieldAssignment> assignments = assignmentRepository.findBySubmissionIdOrderByIdAsc(submission.getId());
+        assignments.forEach(assignment -> addHistory(entries, assignment));
+        fieldReportService.feedbacksOf(assignments.stream().map(FieldAssignment::getId).toList())
+                .forEach(feedback -> addFeedbackHistory(entries, feedback));
         entries.sort(Comparator.comparing(AssignmentHistoryEntry::at));
         return entries;
     }
@@ -235,6 +242,23 @@ public class FieldAssignmentService {
                 .forEach(row -> workload.computeIfAbsent(row.getContributorId(), id -> new HashMap<>())
                         .put(row.getStatus(), row.getTotal()));
         return workload;
+    }
+
+    /** Thêm các bước phản hồi báo cáo: Biên tập viên yêu cầu / duyệt, rồi CTV xử lý xong (nếu có). */
+    private static void addFeedbackHistory(List<AssignmentHistoryEntry> entries, FieldReportFeedback feedback) {
+        String contributor = feedback.getReport().getAssignment().getContributor().getFullName();
+        String editor = feedback.getEditor().getFullName();
+        Type requested = switch (feedback.getType()) {
+            case REQUEST_REVISION -> Type.REVISION_REQUESTED;
+            case REQUEST_EVIDENCE -> Type.EVIDENCE_REQUESTED;
+            case APPROVED -> Type.REPORT_APPROVED;
+        };
+        entries.add(new AssignmentHistoryEntry(requested, feedback.getCreatedAt(), editor, contributor, null, feedback.getMessage()));
+        if (feedback.getResolvedAt() != null) {
+            Type resolved = feedback.getType() == FieldReportFeedback.Type.REQUEST_REVISION
+                    ? Type.REVISION_SUBMITTED : Type.EVIDENCE_SUBMITTED;
+            entries.add(new AssignmentHistoryEntry(resolved, feedback.getResolvedAt(), contributor, contributor, null, feedback.getResponse()));
+        }
     }
 
     private static ContributorCandidate toCandidate(User user, String incidentProvince, Map<AssignmentStatus, Long> tasks) {

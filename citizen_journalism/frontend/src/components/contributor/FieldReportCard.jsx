@@ -1,7 +1,7 @@
 import EvidenceList from '../submission/EvidenceList'
 import Badge from '../ui/Badge'
 import Icon from '../ui/Icon'
-import { REPORT_CONCLUSION_BY_VALUE, REPORT_RECOMMENDATION_BY_VALUE } from '../../lib/assignment'
+import { FEEDBACK_TYPES, REPORT_CONCLUSION_BY_VALUE, REPORT_RECOMMENDATION_BY_VALUE } from '../../lib/assignment'
 import { formatDateTime } from '../../lib/format'
 import '../../assets/styles/assignment.css'
 import '../../assets/styles/tracking.css' // Thẻ, nội dung (.detail-card, .detail-content)
@@ -10,9 +10,13 @@ import '../../assets/styles/tracking.css' // Thẻ, nội dung (.detail-card, .d
  * Thẻ XEM BÁO CÁO HIỆN TRƯỜNG đã nộp (chỉ đọc).
  * Dùng ở: routes/contributor/ContributorTaskDetail.jsx (CTV xem lại), routes/editor/EditorSubmissionDetail.jsx.
  *
- * Props: report = FieldReportView từ backend.
+ * Có thêm phần "Phản hồi của Biên tập viên": lần lượt các yêu cầu và lời nhắn của CTV khi xử lý xong.
+ *
+ * Props:
+ *   - report  : FieldReportView từ backend
+ *   - actions : nút thao tác đặt dưới cùng thẻ (Biên tập viên dùng để phản hồi)
  */
-function FieldReportCard({ report }) {
+function FieldReportCard({ report, actions }) {
   const conclusion = REPORT_CONCLUSION_BY_VALUE[report.conclusion]
   const recommendation = REPORT_RECOMMENDATION_BY_VALUE[report.recommendation]
 
@@ -54,7 +58,41 @@ function FieldReportCard({ report }) {
 
       <h4>Tư liệu hiện trường ({report.evidences.length})</h4>
       <EvidenceList evidences={report.evidences} />
+
+      {report.feedbacks.length > 0 && <FeedbackList feedbacks={report.feedbacks} />}
+      {actions && <div className="task-actions">{actions}</div>}
     </section>
+  )
+}
+
+/** Các lần Biên tập viên phản hồi, từ cũ đến mới. */
+function FeedbackList({ feedbacks }) {
+  return (
+    <>
+      <h4>Phản hồi của Biên tập viên</h4>
+      <ol className="report-feedbacks">
+        {feedbacks.map((feedback) => {
+          const type = FEEDBACK_TYPES[feedback.type]
+          return (
+            <li key={feedback.id}>
+              <div className="report-feedbacks__head">
+                <Badge tone={type.tone}>{type.label}</Badge>
+                <small>
+                  {feedback.editorName} · {formatDateTime(feedback.createdAt)}
+                </small>
+              </div>
+              {feedback.message && <p>{feedback.message}</p>}
+              {feedback.resolvedAt && (
+                <p className="report-feedbacks__reply">
+                  <b>Đã xử lý lúc {formatDateTime(feedback.resolvedAt)}</b>
+                  {feedback.response && `: ${feedback.response}`}
+                </p>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </>
   )
 }
 

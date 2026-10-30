@@ -9,7 +9,7 @@
 export const ASSIGNMENT_STATUS = {
   ASSIGNED: { label: 'Chờ phản hồi', tone: 'orange' },
   ACCEPTED: { label: 'Đang xác minh', tone: 'blue' },
-  COMPLETED: { label: 'Hoàn thành', tone: 'green' },
+  COMPLETED: { label: 'Đã nộp báo cáo', tone: 'green' },
   CANCELLED: { label: 'Đã huỷ', tone: 'neutral' },
 }
 
@@ -20,9 +20,32 @@ const CANCEL_BADGES = {
   EDITOR_CANCELLED: { label: 'Toà soạn thu hồi', tone: 'neutral' },
 }
 
-/** Chữ + màu nhãn của 1 nhiệm vụ, dùng chung cho bàn Biên tập viên và trang của Cộng tác viên. */
+/** Nhiệm vụ đã nộp báo cáo: nhãn theo kết quả xem xét (khớp FieldReportFeedback.ReviewStatus ở backend). */
+const REVIEW_BADGES = {
+  PENDING_REVIEW: { label: 'Chờ BTV xem', tone: 'blue' },
+  REVISION_REQUESTED: { label: 'Cần sửa bài', tone: 'orange' },
+  EVIDENCE_REQUESTED: { label: 'Cần bổ sung tư liệu', tone: 'orange' },
+  APPROVED: { label: 'Đã duyệt', tone: 'green' },
+}
+
+/**
+ * Chữ + màu nhãn của 1 nhiệm vụ, dùng chung cho bàn Biên tập viên và trang của Cộng tác viên.
+ * reviewStatus có ở các danh sách, report.reviewStatus có ở trang chi tiết của CTV.
+ */
 export const assignmentBadge = (assignment) =>
-  CANCEL_BADGES[assignment.cancelType] ?? ASSIGNMENT_STATUS[assignment.status] ?? { label: assignment.status, tone: 'neutral' }
+  REVIEW_BADGES[assignment.reviewStatus ?? assignment.report?.reviewStatus] ??
+  CANCEL_BADGES[assignment.cancelType] ??
+  ASSIGNMENT_STATUS[assignment.status] ?? { label: assignment.status, tone: 'neutral' }
+
+/** Các loại phản hồi của Biên tập viên (khớp FieldReportFeedback.Type ở backend). */
+export const FEEDBACK_TYPES = {
+  REQUEST_REVISION: { label: 'Yêu cầu sửa bài', icon: 'edit', tone: 'orange' },
+  REQUEST_EVIDENCE: { label: 'Yêu cầu bổ sung tư liệu', icon: 'upload', tone: 'orange' },
+  APPROVED: { label: 'Đã duyệt báo cáo', icon: 'checkCircle', tone: 'green' },
+}
+
+/** Yêu cầu đang chờ Cộng tác viên xử lý; không có thì trả về undefined. */
+export const openFeedback = (report) => report?.feedbacks.find((item) => item.type !== 'APPROVED' && !item.resolvedAt)
 
 /** Nhiệm vụ còn hiệu lực: mỗi hồ sơ chỉ có 1 nhiệm vụ như vậy tại một thời điểm. */
 export const ACTIVE_ASSIGNMENT_STATUSES = ['ASSIGNED', 'ACCEPTED']
@@ -53,6 +76,21 @@ export const HISTORY_STEPS = {
     detailLabel: 'Lý do',
   },
   COMPLETED: { icon: 'check', tone: 'green', title: (entry) => `${entry.contributorName} nộp báo cáo hiện trường` },
+  REVISION_REQUESTED: {
+    icon: 'edit',
+    tone: 'orange',
+    title: (entry) => `${entry.actorName} yêu cầu ${entry.contributorName} sửa bài`,
+    detailLabel: 'Yêu cầu',
+  },
+  EVIDENCE_REQUESTED: {
+    icon: 'upload',
+    tone: 'orange',
+    title: (entry) => `${entry.actorName} yêu cầu ${entry.contributorName} bổ sung tư liệu`,
+    detailLabel: 'Yêu cầu',
+  },
+  REVISION_SUBMITTED: { icon: 'edit', tone: 'blue', title: (entry) => `${entry.contributorName} gửi lại bài viết`, detailLabel: 'Lời nhắn' },
+  EVIDENCE_SUBMITTED: { icon: 'upload', tone: 'blue', title: (entry) => `${entry.contributorName} bổ sung tư liệu`, detailLabel: 'Lời nhắn' },
+  REPORT_APPROVED: { icon: 'checkCircle', tone: 'green', title: (entry) => `${entry.actorName} duyệt báo cáo` },
 }
 
 /** Kết luận xác minh trong báo cáo hiện trường (khớp FieldReport.Conclusion ở backend). */

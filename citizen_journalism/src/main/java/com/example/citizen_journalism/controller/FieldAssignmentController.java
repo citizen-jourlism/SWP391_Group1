@@ -9,8 +9,10 @@ import com.example.citizen_journalism.dto.assignment.AssignmentView;
 import com.example.citizen_journalism.dto.assignment.ContributorCandidate;
 import com.example.citizen_journalism.dto.assignment.FieldReportView;
 import com.example.citizen_journalism.entity.FieldAssignment;
+import com.example.citizen_journalism.entity.FieldReportFeedback;
 import com.example.citizen_journalism.service.FieldAssignmentService;
 import com.example.citizen_journalism.service.FieldAssignmentService.CandidateSort;
+import com.example.citizen_journalism.service.FieldReportService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,9 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /api/editor/assignments/latest?code=...      -> nhiệm vụ mới nhất của 1 hồ sơ (data = null nếu chưa giao)
  *   GET  /api/editor/assignments/history?code=...     -> lịch sử nhiệm vụ của 1 hồ sơ
  *   GET  /api/editor/assignments/{id}/report          -> báo cáo hiện trường của 1 nhiệm vụ
+ *   POST /api/editor/assignments/{id}/report/revision -> yêu cầu CTV sửa bài viết (bắt buộc nội dung)
+ *   POST /api/editor/assignments/{id}/report/evidence -> yêu cầu CTV bổ sung tư liệu (bắt buộc nội dung)
+ *   POST /api/editor/assignments/{id}/report/approve  -> duyệt báo cáo
  *   GET  /api/editor/assignments                      -> danh sách nhiệm vụ, mỗi hồ sơ 1 dòng
  *   POST /api/editor/assignments                      -> giao nhiệm vụ
  *   POST /api/editor/assignments/{id}/cancel          -> thu hồi nhiệm vụ (bắt buộc lý do)
@@ -43,6 +48,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class FieldAssignmentController {
 
     private final FieldAssignmentService assignmentService;
+    private final FieldReportService fieldReportService;
 
     @GetMapping("/candidates")
     public ApiResponse<List<ContributorCandidate>> candidates(
@@ -68,6 +74,25 @@ public class FieldAssignmentController {
     @GetMapping("/{id}/report")
     public ApiResponse<FieldReportView> report(@PathVariable Long id) {
         return ApiResponse.ok("OK", assignmentService.getReport(id));
+    }
+
+    @PostMapping("/{id}/report/revision")
+    public ApiResponse<FieldReportView> requestRevision(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                                        @Valid @RequestBody AssignmentReasonRequest request) {
+        return ApiResponse.ok("Đã gửi yêu cầu sửa bài cho Cộng tác viên.",
+                fieldReportService.request(jwt.getSubject(), id, FieldReportFeedback.Type.REQUEST_REVISION, request.reason()));
+    }
+
+    @PostMapping("/{id}/report/evidence")
+    public ApiResponse<FieldReportView> requestEvidence(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                                        @Valid @RequestBody AssignmentReasonRequest request) {
+        return ApiResponse.ok("Đã gửi yêu cầu bổ sung tư liệu cho Cộng tác viên.",
+                fieldReportService.request(jwt.getSubject(), id, FieldReportFeedback.Type.REQUEST_EVIDENCE, request.reason()));
+    }
+
+    @PostMapping("/{id}/report/approve")
+    public ApiResponse<FieldReportView> approveReport(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return ApiResponse.ok("Đã duyệt báo cáo.", fieldReportService.approve(jwt.getSubject(), id));
     }
 
     @GetMapping

@@ -1,13 +1,16 @@
 package com.example.citizen_journalism.service;
 
 import com.example.citizen_journalism.dto.PageResponse;
+import com.example.citizen_journalism.dto.assignment.AdditionalEvidenceRequest;
 import com.example.citizen_journalism.dto.assignment.ContributorTaskDetail;
 import com.example.citizen_journalism.dto.assignment.ContributorTaskItem;
 import com.example.citizen_journalism.dto.assignment.SubmitFieldReportRequest;
+import com.example.citizen_journalism.dto.assignment.UpdateReportArticleRequest;
 import com.example.citizen_journalism.dto.submission.EvidenceInfo;
 import com.example.citizen_journalism.entity.FieldAssignment;
 import com.example.citizen_journalism.entity.FieldAssignment.AssignmentStatus;
 import com.example.citizen_journalism.entity.FieldAssignment.CancelType;
+import com.example.citizen_journalism.entity.FieldReportFeedback.ReviewStatus;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.entity.SubmissionEvent;
 import com.example.citizen_journalism.entity.User;
@@ -22,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +41,7 @@ import tools.jackson.databind.ObjectMapper;
  *            +-------------từ chối----> CANCELLED
  *
  * Từ chối và huỷ đều bắt buộc có lý do, Biên tập viên nhận email để giao cho người khác.
+ * Sau khi nộp báo cáo, CTV sửa bài hoặc bổ sung tư liệu khi Biên tập viên yêu cầu (FieldReportService).
  * Mọi thao tác chỉ áp dụng cho nhiệm vụ CỦA CHÍNH CTV đó: nhiệm vụ của người khác trả về 404
  * như không tồn tại, để không ai dò được id nhiệm vụ.
  */
@@ -58,9 +63,10 @@ public class ContributorTaskService {
     @Transactional(readOnly = true)
     public PageResponse<ContributorTaskItem> list(String contributorId, AssignmentStatus status, int page, int size) {
         Set<AssignmentStatus> statuses = status == null ? EnumSet.allOf(AssignmentStatus.class) : EnumSet.of(status);
-        return PageResponse.from(assignmentRepository
-                .findByContributorIdAndStatusIn(contributorId, statuses, Paging.of(page, size, Paging.NEWEST_FIRST))
-                .map(ContributorTaskItem::from));
+        Page<FieldAssignment> tasks = assignmentRepository
+                .findByContributorIdAndStatusIn(contributorId, statuses, Paging.of(page, size, Paging.NEWEST_FIRST));
+        Map<Long, ReviewStatus> reviews = fieldReportService.reviewStatuses(tasks.map(FieldAssignment::getId).getContent());
+        return PageResponse.from(tasks.map(task -> ContributorTaskItem.from(task, reviews.get(task.getId()))));
     }
 
     /** Số nhiệm vụ theo từng trạng thái, hiện cạnh các thẻ lọc. */
@@ -132,6 +138,23 @@ public class ContributorTaskService {
         submissionEventService.record(submission, submission.getStatus(), SubmissionEvent.Actor.CONTRIBUTOR,
                 "Cộng tác viên đã nộp báo cáo xác minh hiện trường.", null);
         notifyReportSubmitted(task);
+        return toDetail(task);
+    }
+
+    /** Sửa bài viết theo yêu cầu của Biên tập viên. */
+    @Transactional
+    public ContributorTaskDetail updateArticle(String contributorId, Long taskId, UpdateReportArticleRequest request) {
+        FieldAssignment task = findTask(contributorId, taskId);
+        fieldReportService.updateArticle(task, request);
+        return toDetail(task);
+    }
+
+    /** Bổ sung tư liệu theo yêu cầu của Biên tập viên. */
+    @Transactional
+    public ContributorTaskDetail addEvidence(String contributorId, Long taskId, AdditionalEvidenceRequest request,
+                                             List<MultipartFile> files) {
+        FieldAssignment task = findTask(contributorId, taskId);
+        fieldReportService.addEvidence(task, request, files);
         return toDetail(task);
     }
 

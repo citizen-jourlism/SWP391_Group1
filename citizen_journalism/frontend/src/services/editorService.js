@@ -52,6 +52,10 @@ export const editorService = {
   assign: (payload) => api.post('/editor/assignments', payload),
   /** Báo cáo hiện trường CTV đã nộp cho 1 nhiệm vụ. */
   getAssignmentReport: (id) => api.get(`/editor/assignments/${id}/report`),
+  /** Phản hồi báo cáo: trả về báo cáo mới nhất. reason là nội dung yêu cầu gửi Cộng tác viên. */
+  requestReportRevision: (id, reason) => api.post(`/editor/assignments/${id}/report/revision`, { reason }),
+  requestReportEvidence: (id, reason) => api.post(`/editor/assignments/${id}/report/evidence`, { reason }),
+  approveReport: (id) => api.post(`/editor/assignments/${id}/report/approve`),
   cancelAssignment: (id, reason) => api.post(`/editor/assignments/${id}/cancel`, { reason }),
 
   // ----- Đơn đăng ký Cộng tác viên -----
