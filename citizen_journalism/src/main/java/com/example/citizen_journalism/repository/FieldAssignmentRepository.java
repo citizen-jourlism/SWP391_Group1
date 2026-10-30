@@ -1,6 +1,7 @@
 package com.example.citizen_journalism.repository;
 
 import com.example.citizen_journalism.entity.FieldAssignment;
+import com.example.citizen_journalism.entity.Submission;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +14,7 @@ import org.springframework.data.repository.query.Param;
 
 /**
  * REPOSITORY cho bảng "field_assignments" (nhiệm vụ xác minh hiện trường giao cho Cộng tác viên).
- * Dùng ở FieldAssignmentService.
+ * Dùng ở FieldAssignmentService, ContributorTaskService, SubmissionVerificationReviewService, SubmissionApprovalService.
  *
  * @EntityGraph: lấy luôn hồ sơ + Cộng tác viên trong CÙNG câu SQL (JOIN), tránh hiện danh sách 10 nhiệm vụ
  * lại phải chạy thêm hàng chục câu SQL để lấy tên từng người.
@@ -48,6 +49,9 @@ public interface FieldAssignmentRepository extends JpaRepository<FieldAssignment
     /** Mọi nhiệm vụ của 1 hồ sơ từ cũ đến mới, cho lịch sử nhiệm vụ. */
     @EntityGraph(attributePaths = {"contributor", "createdBy", "cancelledBy"})
     List<FieldAssignment> findBySubmissionIdOrderByIdAsc(Long submissionId);
+
+    /** Các nhiệm vụ của 1 hồ sơ, mới nhất trước (1 hồ sơ có thể bị giao lại sau khi nhiệm vụ cũ bị huỷ). */
+    List<FieldAssignment> findBySubmissionOrderByCreatedAtDescIdDesc(Submission submission);
 
     /** Danh sách nhiệm vụ của 1 Cộng tác viên, lọc theo các trạng thái, có phân trang. */
     @EntityGraph(attributePaths = {"submission"})

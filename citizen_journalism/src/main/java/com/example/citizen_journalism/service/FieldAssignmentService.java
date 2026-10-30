@@ -115,7 +115,7 @@ public class FieldAssignmentService {
         User editor = userRepository.getActiveById(editorId);
         Submission submission = findSubmission(request.trackingCode());
         if (!ASSIGNABLE_STATUSES.contains(submission.getStatus())) {
-            throw AppException.conflict("Hồ sơ này đã được xử lý xong, không thể giao nhiệm vụ.");
+            throw AppException.conflict("Hồ sơ không ở bước tiếp nhận / thẩm định, không thể giao nhiệm vụ.");
         }
         if (assignmentRepository.existsBySubmissionIdAndStatusIn(submission.getId(), ACTIVE_STATUSES)) {
             throw AppException.conflict("Hồ sơ này đã được giao cho một Cộng tác viên.");
@@ -172,6 +172,17 @@ public class FieldAssignmentService {
                 .map(assignment -> AssignmentView.from(assignment,
                         fieldReportService.reviewStatuses(List.of(assignment.getId())).get(assignment.getId())))
                 .orElse(null);
+    }
+
+    /** Hồ sơ kết thúc giữa chừng: thu hồi mọi nhiệm vụ còn hiệu lực và báo cho CTV. Dùng ở SubmissionRejectionService. */
+    @Transactional
+    public void revokeActive(Submission submission, User editor, String reason) {
+        assignmentRepository.findBySubmissionIdOrderByIdAsc(submission.getId()).stream()
+                .filter(assignment -> ACTIVE_STATUSES.contains(assignment.getStatus()))
+                .forEach(assignment -> {
+                    assignment.cancel(FieldAssignment.CancelType.EDITOR_CANCELLED, reason, editor);
+                    notifyCancelled(assignment);
+                });
     }
 
     /** Báo cáo hiện trường của 1 nhiệm vụ. */

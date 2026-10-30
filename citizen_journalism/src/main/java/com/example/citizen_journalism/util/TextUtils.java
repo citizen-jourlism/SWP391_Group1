@@ -20,4 +20,20 @@ public final class TextUtils {
     public static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
+
+    /**
+     * Che bớt email để hiển thị cho nhân sự, ví dụ "nguyenvanb@gmail.com" -> "ng***@gmail.com".
+     * Giữ tối đa 2 ký tự đầu (tên ngắn quá thì giữ 1). Không phải email (không có @) -> trả nguyên.
+     */
+    public static String maskEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        int at = email.indexOf('@');
+        if (at <= 0) {
+            return email;
+        }
+        int keep = Math.min(2, Math.max(1, at - 1));
+        return email.substring(0, keep) + "***" + email.substring(at);
+    }
 }

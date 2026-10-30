@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Hiện có: số liệu trang Tổng quan, HÀNG ĐỢI TIN BÀI (xem danh sách + chi tiết, CHƯA có thao tác xử lý).
  * Các thao tác xử lý tin (tiếp nhận, yêu cầu bổ sung, giao CTV xác minh...) sẽ thêm ở các bản sau;
  * khi đổi trạng thái hồ sơ nhớ dùng SubmissionEventService.record để người gửi theo dõi được.
- * Phần đơn đăng ký CTV nằm ở ContributorApplicationService.
+ * Từ chối hồ sơ nằm ở SubmissionRejectionService. Phần đơn đăng ký CTV nằm ở ContributorApplicationService.
  */
 @Service
 @RequiredArgsConstructor

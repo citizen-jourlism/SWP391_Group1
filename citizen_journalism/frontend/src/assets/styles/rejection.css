@@ -1,0 +1,170 @@
+/* ===== TỪ CHỐI HỒ SƠ (Reject Submission) =====
+ * Màn Biên tập viên: routes/editor/EditorRejectSubmission.jsx. Phía người gửi: components/submission/RejectionCard.jsx.
+ * Phần lớn giao diện dùng lại class có sẵn (admin.css, editor.css, tracking.css, ui.css);
+ * file này chỉ thêm những chỗ chưa có. Màu lấy từ design tokens trong src/index.css.
+ */
+
+/* ---------- Cột trái: tóm tắt hồ sơ ---------- */
+.reject-title {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.applicant__stats .is-danger {
+  color: var(--danger);
+}
+
+.applicant > .btn {
+  align-self: flex-start;
+}
+
+/* ---------- Nhóm lý do (radio .role-option nằm trong .field) ---------- */
+.reject-reasons .role-options {
+  margin-bottom: 0;
+}
+
+.field--error .role-option:not(.is-selected) {
+  border-color: #fca5a5;
+}
+
+/* Ô trừ điểm uy tín: chỉ hiện khi lý do là tin rác */
+.reject-penalty {
+  padding: 12px 14px;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: var(--warning-bg);
+}
+
+/* ---------- Khung xem trước những gì người gửi nhận được ---------- */
+.reject-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px dashed var(--input-border);
+  border-radius: 10px;
+  background: #f8fafc;
+  color: var(--text);
+  font-size: 13.5px;
+}
+
+.reject-preview__label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.reject-preview strong {
+  color: var(--navy-900);
+}
+
+.reject-preview p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+  white-space: pre-line; /* giữ xuống dòng của phản hồi */
+}
+
+/* ---------- Kết quả (đã từ chối / không thể từ chối): ResultView trong khối trắng ---------- */
+.reject-result {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px 0;
+}
+
+.reject-result .result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Bảng tóm tắt (dùng khung .credential-box của admin.css) */
+.reject-summary {
+  width: 100%;
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+.reject-summary dd {
+  white-space: pre-line;
+  word-break: normal; /* .credential-box dd ngắt giữa từ (dành cho mật khẩu), phản hồi thì ngắt theo từ */
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Phía người gửi: hộp phản hồi từ chối (cùng khuôn với .request-card, tông đỏ) ---------- */
+.reject-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px 24px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-lg);
+  background: var(--danger-bg);
+}
+
+.reject-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.reject-card__title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0;
+  color: var(--danger);
+  font-size: 17px;
+}
+
+.reject-card__from {
+  margin: 4px 0 0 30px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.reject-card__text {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.reject-card__penalty {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  color: var(--warning);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.reject-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .reject-card {
+    padding: 18px 16px;
+  }
+
+  .reject-card__from {
+    margin-left: 0;
+  }
+}

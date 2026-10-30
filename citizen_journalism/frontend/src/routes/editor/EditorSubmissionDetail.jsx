@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import FieldReportCard from '../../components/contributor/FieldReportCard'
+import ApproveSubmissionDialog from '../../components/editor/ApproveSubmissionDialog'
 import AssignmentHistoryDialog from '../../components/editor/AssignmentHistoryDialog'
 import { ReasonDialog } from '../../components/research/ResearchEditorial'
 import SubmissionDetail from '../../components/submission/SubmissionDetail'
@@ -19,7 +20,10 @@ import {
   isOverdue,
 } from '../../lib/assignment'
 import { formatDateTime } from '../../lib/format'
+import { REJECTABLE_STATUSES } from '../../lib/rejection'
+import { REQUESTABLE_STATUSES } from '../../lib/requestInfo'
 import { editorService } from '../../services/editorService'
+import { reviewStartService } from '../../services/reviewStartService'
 import '../../assets/styles/assignment.css'
 
 /*
@@ -27,33 +31,52 @@ import '../../assets/styles/assignment.css'
  * Dữ liệu: GET /api/editor/submissions/{mã}; hiển thị bằng SubmissionDetail (dùng chung với trang người dân theo dõi).
  *
  * Thanh thao tác phía trên:
+ *   - "Tiếp nhận thẩm định" (chỉ hồ sơ Đã tiếp nhận) hỏi xác nhận rồi gọi POST .../start-review: hồ sơ chuyển
+ *     "Đang thẩm định" và BTV đang đăng nhập thành người phụ trách.
  *   - "Kiểm tra tin trùng" mở /editor/screening/<mã> (EditorDuplicateCheck).
  *   - "Giao CTV xác minh" mở /editor/queue/<mã>/assign (EditorAssignContributor), chỉ hiện khi hồ sơ chưa từng được giao.
  *     Hồ sơ từng được giao thì có ô nhiệm vụ ngay dưới thanh này: nút "Thu hồi" khi nhiệm vụ còn hiệu lực,
  *     nút "Giao CTV khác" khi CTV từ chối / huỷ hoặc nhiệm vụ đã bị thu hồi.
+ *   - "Yêu cầu bổ sung" mở /editor/queue/<mã>/request-info (EditorRequestInfo), hiện khi hồ sơ Đã tiếp nhận / Đang thẩm định;
+ *     hồ sơ đang "Cần bổ sung" thì thành "Xem yêu cầu bổ sung".
+ *   - "Duyệt & chuyển Phó TBT" (tin nóng Đang thẩm định, chưa giao CTV) mở hộp thoại ApproveSubmissionDialog.
+ *   - "Duyệt kết quả xác minh" (CTV đã nộp báo cáo) mở /editor/queue/<mã>/verification (EditorVerificationReview).
+ *   - "Từ chối" mở /editor/queue/<mã>/reject (EditorRejectSubmission), chỉ bật khi hồ sơ còn ở bước biên tập.
  *   - "Lịch sử" mở AssignmentHistoryDialog: giao cho ai, ai nhận, ai từ chối, lý do...
  * Nhiệm vụ đã nộp báo cáo thì hiện báo cáo (FieldReportCard) ngay dưới ô nhiệm vụ. Báo cáo đang chờ xem thì có
  * 3 nút phản hồi: yêu cầu sửa bài, yêu cầu bổ sung tư liệu, duyệt.
- *   - Các nút còn lại (tiếp nhận thẩm định, yêu cầu bổ sung, từ chối) đã ĐẶT SẴN nhưng đang KHOÁ:
- *     backend xử lý tin sẽ làm ở bản sau.
  */
-
-const PLANNED_ACTIONS = [
-  { icon: 'checkCircle', label: 'Tiếp nhận thẩm định' },
-  { icon: 'info', label: 'Yêu cầu bổ sung' },
-  { icon: 'x', label: 'Từ chối', danger: true },
-]
 
 function EditorSubmissionDetail() {
   const { code } = useParams()
   const { state } = useLocation() // state.notice: thông báo từ trang chọn CTV sau khi giao xong
-  const { data, error } = useAsyncData(() => editorService.getSubmission(code), code)
+  const { data, error, setData } = useAsyncData(() => editorService.getSubmission(code), code)
   const { data: assignment, setData: setAssignment, loading: assignmentLoading, reload: reloadAssignment } = useAsyncData(
     () => editorService.getLatestAssignment(code),
     `assignment|${code}`,
   )
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [approveOpen, setApproveOpen] = useState(false)
+  const [startOpen, setStartOpen] = useState(false)
+  const [notice, setNotice] = useState('') // Thông báo thành công sau khi tiếp nhận / duyệt
   const canAssignFirst = !assignment && !assignmentLoading && ASSIGNABLE_SUBMISSION_STATUSES.includes(data?.status)
+  const assignmentRunning = ACTIVE_ASSIGNMENT_STATUSES.includes(assignment?.status)
+  // Duyệt chuyển Phó TBT: tin nóng Đang thẩm định chưa giao CTV. Đã giao thì đi qua "Duyệt kết quả xác minh"
+  const canApprove =
+    data?.category === 'HOT_NEWS' && data.status === 'IN_REVIEW' && !assignmentRunning && assignment?.status !== 'COMPLETED'
+
+  const handleApproved = (response) => {
+    setData(response.data.submission)
+    setNotice(response.message)
+    setApproveOpen(false)
+  }
+
+  // ConfirmDialog tự hiện lỗi (409 khi BTV khác đã nhận trước...) và tự đóng khi thành công
+  const startReview = async () => {
+    const response = await reviewStartService.startReview(code)
+    setData(response.data)
+    setNotice(response.message)
+  }
 
   return (
     <div className="desk-detail">
@@ -64,7 +87,7 @@ function EditorSubmissionDetail() {
 
       {error && <Alert type="error">{error}</Alert>}
       {/* Thu hồi xong thì thông báo "đã giao" không còn đúng nữa */}
-      <Alert type="success">{ACTIVE_ASSIGNMENT_STATUSES.includes(assignment?.status) && state?.notice}</Alert>
+      <Alert type="success">{notice || (assignmentRunning && state?.notice)}</Alert>
       {!data && !error && <div className="skeleton skeleton--page" />}
 
       {data && (
@@ -72,10 +95,16 @@ function EditorSubmissionDetail() {
           <section className="admin-panel desk-actions">
             <div>
               <strong>Xử lý hồ sơ</strong>
-              <small>Kiểm tra tin trùng trước khi tiếp nhận. Các thao tác khác sẽ có ở bản sau.</small>
+              <small>Tiếp nhận hồ sơ mới, giao CTV xác minh khi cần, yêu cầu bổ sung nếu còn thiếu thông tin, duyệt để chuyển Phó Tổng biên tập hoặc từ chối nếu không đạt yêu cầu.</small>
             </div>
             <div className="desk-actions__buttons">
-              <Button to={`/editor/screening/${code}`} className="btn--sm">
+              {data.status === 'PENDING' && (
+                <Button variant="secondary" className="btn--sm" onClick={() => setStartOpen(true)}>
+                  <Icon name="checkCircle" size={14} />
+                  Tiếp nhận thẩm định
+                </Button>
+              )}
+              <Button to={`/editor/screening/${code}`} variant="secondary" className="btn--sm">
                 <Icon name="copy" size={14} />
                 Kiểm tra tin trùng
               </Button>
@@ -85,18 +114,30 @@ function EditorSubmissionDetail() {
                   Giao CTV xác minh
                 </Button>
               )}
-              {PLANNED_ACTIONS.map((action) => (
-                <Button
-                  key={action.label}
-                  variant={action.danger ? 'danger' : 'secondary'}
-                  className="btn--sm"
-                  disabled
-                  title="Sắp có"
-                >
-                  <Icon name={action.icon} size={14} />
-                  {action.label}
+              {(REQUESTABLE_STATUSES.includes(data.status) || data.status === 'NEED_MORE_INFO') && (
+                <Button to={`/editor/queue/${code}/request-info`} variant="secondary" className="btn--sm">
+                  <Icon name="info" size={14} />
+                  {data.status === 'NEED_MORE_INFO' ? 'Xem yêu cầu bổ sung' : 'Yêu cầu bổ sung'}
                 </Button>
-              ))}
+              )}
+              {data.status === 'IN_REVIEW' && assignment?.status === 'COMPLETED' && (
+                <Button to={`/editor/queue/${code}/verification`} variant="secondary" className="btn--sm">
+                  <Icon name="mapPin" size={14} />
+                  Duyệt kết quả xác minh
+                </Button>
+              )}
+              {canApprove && (
+                <Button className="btn--sm" onClick={() => setApproveOpen(true)}>
+                  <Icon name="send" size={14} />
+                  Duyệt & chuyển Phó TBT
+                </Button>
+              )}
+              {REJECTABLE_STATUSES.includes(data.status) && (
+                <Button to={`/editor/queue/${code}/reject`} variant="danger" className="btn--sm">
+                  <Icon name="x" size={14} />
+                  Từ chối
+                </Button>
+              )}
               <Button variant="secondary" className="btn--sm" onClick={() => setHistoryOpen(true)}>
                 <Icon name="clock" size={14} />
                 Lịch sử
@@ -106,6 +147,17 @@ function EditorSubmissionDetail() {
           {assignment && <CurrentAssignment assignment={assignment} onCancelled={setAssignment} />}
           {assignment?.status === 'COMPLETED' && <AssignmentReport assignmentId={assignment.id} onReviewed={reloadAssignment} />}
           <SubmissionDetail detail={data} />
+          <ConfirmDialog
+            open={startOpen}
+            title="Tiếp nhận thẩm định"
+            message={`Bạn sẽ là Biên tập viên phụ trách hồ sơ ${data.trackingCode}. Hồ sơ chuyển sang trạng thái "Đang thẩm định" và người gửi thấy bước này trong nhật ký xử lý.`}
+            confirmLabel="Tiếp nhận"
+            onConfirm={startReview}
+            onClose={() => setStartOpen(false)}
+          />
+          {approveOpen && (
+            <ApproveSubmissionDialog code={code} onClose={() => setApproveOpen(false)} onApproved={handleApproved} />
+          )}
         </>
       )}
 

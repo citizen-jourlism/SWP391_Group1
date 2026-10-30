@@ -3,7 +3,7 @@ import { AuthContext } from '../context/authContext'
 
 /**
  * Lấy thông tin đăng nhập ở bất kỳ component nào:
- *   const { user, status, login, logout } = useAuth()
+ *   const { user, status, login, logout, loggedOut } = useAuth()
  *   if (user) { ... đã đăng nhập ... }
  * Chi tiết các giá trị: xem context/AuthProvider.jsx.
  */

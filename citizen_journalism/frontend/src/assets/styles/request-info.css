@@ -1,0 +1,152 @@
+/* ===== YÊU CẦU BỔ SUNG THÔNG TIN (Request Additional Information) =====
+ * Màn Biên tập viên: routes/editor/EditorRequestInfo.jsx. Hộp lời nhắn người gửi thấy: supplement.css (.request-card).
+ * Phần lớn giao diện dùng lại class có sẵn (admin.css, editor.css, tracking.css, ui.css);
+ * file này chỉ thêm những chỗ chưa có. Màu lấy từ design tokens trong src/index.css.
+ */
+
+/* ---------- Cột trái: tóm tắt hồ sơ ---------- */
+.info-request-title {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.applicant > .btn {
+  align-self: flex-start;
+}
+
+/* ---------- Danh sách mục cần bổ sung, mỗi mục 1 ô nhập ---------- */
+.info-items {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.info-item {
+  display: grid;
+  grid-template-columns: 26px 1fr 34px;
+  gap: 10px;
+  align-items: start;
+}
+
+.info-item__num {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 9px;
+  border-radius: 50%;
+  background: #fff1ea;
+  color: var(--orange-strong);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.info-item .field__textarea {
+  min-height: 0;
+  resize: vertical;
+  field-sizing: content; /* ô tự cao theo nội dung, không cắt chữ trên màn hẹp */
+}
+
+.info-item.is-invalid .field__input {
+  border-color: #f3b4b4;
+}
+
+.info-item .field__error {
+  margin-top: 4px;
+}
+
+.info-item__remove {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.info-item__remove:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.info-items__empty {
+  padding: 14px;
+  border: 1px dashed var(--input-border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 13.5px;
+  text-align: center;
+}
+
+.field--error .info-items__empty {
+  border-color: #f3b4b4;
+}
+
+.info-items__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* ---------- Khung xem trước những gì người gửi thấy ---------- */
+.info-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px dashed var(--input-border);
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.info-preview__label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ---------- Kết quả (đã gửi / không thể yêu cầu): ResultView trong khối trắng ---------- */
+.info-request-result {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px 0;
+}
+
+.info-request-result .result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Bảng tóm tắt (dùng khung .credential-box của admin.css) */
+.info-request-summary {
+  width: 100%;
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+.info-request-summary dd {
+  word-break: normal; /* .credential-box dd ngắt giữa từ (dành cho mật khẩu), ở đây ngắt theo từ */
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .info-item {
+    grid-template-columns: 22px 1fr 30px;
+    gap: 8px;
+  }
+}

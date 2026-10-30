@@ -24,10 +24,12 @@ import com.example.citizen_journalism.repository.ReputationLogRepository;
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,7 +52,8 @@ import tools.jackson.databind.ObjectMapper;
  *   Biên tập viên yêu cầu sửa bài  -> CTV sửa bài         -> quay lại chờ Biên tập viên xem
  *   Biên tập viên yêu cầu tư liệu  -> CTV bổ sung tư liệu -> quay lại chờ Biên tập viên xem
  *   Biên tập viên duyệt            -> kết thúc, không sửa được nữa
- * Trong lúc chờ CTV, hồ sơ đầu ra ở trạng thái NEED_MORE_INFO.
+ * Trong lúc chờ CTV, hồ sơ đầu ra ở trạng thái NEED_MORE_INFO. Hồ sơ gốc đã kết thúc (bị từ chối, đã chuyển Phó TBT...)
+ * thì vòng phản hồi dừng lại.
  */
 @Service
 @RequiredArgsConstructor
@@ -59,6 +62,10 @@ public class FieldReportService {
     /** Muốn đổi mức thưởng / phạt chỉ cần sửa 2 số này. */
     private static final int ON_TIME_POINTS = 5;
     private static final int LATE_POINTS = -5;
+
+    /** Hồ sơ gốc còn ở bước biên tập. */
+    private static final Set<Submission.SubmissionStatus> IN_PROGRESS_STATUSES =
+            EnumSet.of(Submission.SubmissionStatus.IN_REVIEW, Submission.SubmissionStatus.NEED_MORE_INFO);
 
     private final FieldReportRepository reportRepository;
     private final SubmissionRepository submissionRepository;
@@ -89,7 +96,7 @@ public class FieldReportService {
                 .address(original.getAddress())
                 .status(Submission.SubmissionStatus.IN_REVIEW)
                 .build());
-        submissionService.saveEvidences(article, contributor, original.getTrackingCode() + "-BC", evidenceFiles);
+        submissionService.attachEvidences(article, contributor, original.getTrackingCode() + "-BC", evidenceFiles);
         task.setOutputSubmission(article);
 
         reportRepository.save(FieldReport.builder()
@@ -165,7 +172,7 @@ public class FieldReportService {
         FieldReportFeedback feedback = findOpenFeedback(task, FieldReportFeedback.Type.REQUEST_EVIDENCE);
         List<MultipartFile> evidenceFiles = files == null ? List.of() : files;
         checkFiles(evidenceFiles);
-        submissionService.saveEvidences(task.getOutputSubmission(), task.getContributor(),
+        submissionService.attachEvidences(task.getOutputSubmission(), task.getContributor(),
                 task.getSubmission().getTrackingCode() + "-BC", evidenceFiles);
         resolve(task, feedback, request.note(), "bổ sung tư liệu");
     }
@@ -182,12 +189,20 @@ public class FieldReportService {
                 .orElseThrow(() -> AppException.notFound("Nhiệm vụ này chưa có báo cáo."));
     }
 
+    /** Hồ sơ gốc còn ở bước biên tập; đã kết thúc thì không phản hồi, sửa bài hay bổ sung tư liệu nữa. */
+    private static void requireSubmissionInProgress(FieldAssignment task) {
+        if (!IN_PROGRESS_STATUSES.contains(task.getSubmission().getStatus())) {
+            throw AppException.conflict("Hồ sơ này đã kết thúc bước biên tập.");
+        }
+    }
+
     private FieldReportFeedback latestFeedback(FieldReport report) {
         return feedbackRepository.findTopByReportIdOrderByIdDesc(report.getId()).orElse(null);
     }
 
     /** Báo cáo đang chờ Biên tập viên xem; đang chờ CTV xử lý hoặc đã duyệt thì không phản hồi thêm được. */
     private FieldReport findWaitingReport(FieldAssignment task) {
+        requireSubmissionInProgress(task);
         FieldReport report = findReport(task);
         if (ReviewStatus.of(latestFeedback(report)) != ReviewStatus.PENDING_REVIEW) {
             throw AppException.conflict("Báo cáo này không ở trạng thái chờ xem xét.");
@@ -197,6 +212,7 @@ public class FieldReportService {
 
     /** Yêu cầu đang chờ CTV xử lý, phải đúng loại: chỉ được sửa / bổ sung khi toà soạn yêu cầu. */
     private FieldReportFeedback findOpenFeedback(FieldAssignment task, FieldReportFeedback.Type type) {
+        requireSubmissionInProgress(task);
         FieldReportFeedback latest = latestFeedback(findReport(task));
         if (latest == null || !latest.isOpen() || latest.getType() != type) {
             throw AppException.conflict("Toà soạn không có yêu cầu này cho báo cáo của bạn.");
@@ -248,7 +264,7 @@ public class FieldReportService {
 
     private void checkFiles(List<MultipartFile> files) {
         Map<String, String> errors = new LinkedHashMap<>();
-        submissionService.checkEvidenceFiles(files, errors);
+        submissionService.requireEvidenceFiles(files, errors);
         if (!errors.isEmpty()) {
             throw AppException.invalidFields(errors);
         }
