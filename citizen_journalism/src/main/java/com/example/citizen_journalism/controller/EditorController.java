@@ -12,6 +12,8 @@ import com.example.citizen_journalism.dto.editor.RejectSubmissionRequest;
 import com.example.citizen_journalism.dto.editor.RequestInfoRequest;
 import com.example.citizen_journalism.dto.editor.RejectSubmissionResponse;
 import com.example.citizen_journalism.dto.editor.ReviewApplicationRequest;
+import com.example.citizen_journalism.dto.editor.VerificationReviewRequest;
+import com.example.citizen_journalism.dto.editor.VerificationReviewResponse;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
 import com.example.citizen_journalism.dto.submission.SubmissionSummary;
 import com.example.citizen_journalism.entity.ContributorApplication;
@@ -22,6 +24,7 @@ import com.example.citizen_journalism.service.SubmissionApprovalService;
 import com.example.citizen_journalism.service.SubmissionInfoRequestService;
 import com.example.citizen_journalism.service.SubmissionRejectionService;
 import com.example.citizen_journalism.service.SubmissionReviewStartService;
+import com.example.citizen_journalism.service.SubmissionVerificationReviewService;
 import com.example.citizen_journalism.util.FileResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +53,8 @@ import org.springframework.web.bind.annotation.RestController;
  *   POST /api/editor/submissions/{mã hồ sơ}/request-info    -> yêu cầu người gửi bổ sung, hồ sơ chuyển "Cần bổ sung"
  *   GET  /api/editor/submissions/{mã hồ sơ}/approval        -> dữ liệu hộp thoại Duyệt tin nóng
  *   POST /api/editor/submissions/{mã hồ sơ}/approve         -> duyệt tin nóng, chuyển Phó Tổng biên tập phê duyệt
+ *   GET  /api/editor/submissions/{mã hồ sơ}/verification-review -> dữ liệu màn Duyệt kết quả xác minh (bài CTV + tin gốc)
+ *   POST /api/editor/submissions/{mã hồ sơ}/verification-review -> duyệt kết quả xác minh, chuyển Phó Tổng biên tập phê duyệt
  *   GET  /api/editor/applications?status=&page=             -> đơn đăng ký Cộng tác viên
  *   GET  /api/editor/applications/{id}                      -> chi tiết đơn + hồ sơ người nộp
  *   POST /api/editor/applications/{id}/review               -> xét duyệt: chuyển Phó TBT / từ chối
@@ -68,6 +73,7 @@ public class EditorController {
     private final SubmissionInfoRequestService infoRequestService;
     private final SubmissionApprovalService approvalService;
     private final SubmissionReviewStartService reviewStartService;
+    private final SubmissionVerificationReviewService verificationReviewService;
 
     @GetMapping("/overview")
     public ApiResponse<EditorOverview> overview() {
@@ -130,6 +136,18 @@ public class EditorController {
                                                           @Valid @RequestBody ApproveSubmissionRequest request) {
         ApproveSubmissionResponse result = approvalService.approve(jwt.getSubject(), trackingCode, request);
         return ApiResponse.ok("Đã duyệt hồ sơ " + result.submission().trackingCode() + " và chuyển Phó Tổng biên tập.", result);
+    }
+
+    @GetMapping("/submissions/{trackingCode}/verification-review")
+    public ApiResponse<VerificationReviewResponse> getVerificationReview(@PathVariable String trackingCode) {
+        return ApiResponse.ok("OK", verificationReviewService.getContext(trackingCode));
+    }
+
+    @PostMapping("/submissions/{trackingCode}/verification-review")
+    public ApiResponse<VerificationReviewResponse> reviewVerification(@AuthenticationPrincipal Jwt jwt, @PathVariable String trackingCode,
+                                                                      @Valid @RequestBody VerificationReviewRequest request) {
+        VerificationReviewResponse result = verificationReviewService.review(jwt.getSubject(), trackingCode, request);
+        return ApiResponse.ok("Đã duyệt kết quả xác minh hồ sơ " + result.submission().trackingCode() + " và chuyển Phó Tổng biên tập.", result);
     }
 
     // ----------------------------- Đơn đăng ký CTV -----------------------------

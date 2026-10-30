@@ -1,0 +1,398 @@
+/* ===== DUYỆT KẾT QUẢ XÁC MINH (Review Verification Result, Biên tập viên) — routes/editor/EditorVerificationReview.jsx =====
+ * Khung, thẻ, bố cục dùng lại class có sẵn: admin.css (.admin-panel, .admin-stack, .credential-box),
+ * editor.css (.review-grid, .applicant*, .review-box), submit.css (.evidence-list), tracking.css (.detail-*),
+ * ui.css (.badge, .alert, .field, .modal, .result). File này chỉ thêm phần riêng của màn:
+ * số thứ tự khối, thanh tiến độ, bài + báo cáo CTV, kết quả sàng lọc, danh sách tiêu chí Đạt / Chưa đạt.
+ */
+
+.vr-title {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.vr-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Số thứ tự cạnh tiêu đề mỗi khối (1. Bài CTV, 2. Tin gốc, 3. Sàng lọc, 4. Kết luận); chỉ áp dụng trong màn này */
+.vr-page .admin-panel__header h2 {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.vr-step {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff1ea;
+  color: var(--orange-strong);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.vr-head-link {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ---------- Thanh tiến độ duyệt (cột trái) ---------- */
+.vr-progress {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f5f7fb;
+}
+
+.vr-progress__top {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.vr-progress__top strong {
+  color: var(--navy-900);
+}
+
+.vr-progress__bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e7ef;
+}
+
+.vr-progress__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gradient-primary);
+  transition: width 0.2s;
+}
+
+.vr-progress.is-pass .vr-progress__bar span {
+  background: var(--success);
+}
+
+.vr-progress.is-fail .vr-progress__bar span {
+  background: var(--danger);
+}
+
+/* ---------- 1. Nội dung bài ---------- */
+.vr-article h3 {
+  margin: 0 0 8px;
+  color: var(--navy-900);
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.vr-article__sapo {
+  margin: 0 0 10px;
+  color: var(--navy-800);
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+/* ---------- 2. Báo cáo xác minh ---------- */
+.vr-report {
+  display: grid;
+  gap: 14px;
+}
+
+.vr-report__head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.vr-report__head strong {
+  display: block;
+  color: var(--navy-900);
+}
+
+.vr-report__head small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.vr-report__facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+
+.vr-report__facts div {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f5f7fb;
+}
+
+.vr-report__facts dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.vr-report__facts dd {
+  margin: 2px 0 0;
+  color: var(--navy-900);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.vr-report__text {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--orange);
+  border-radius: 0 10px 10px 0;
+  background: #fffaf7;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.vr-gps-list li > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.vr-gps {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.vr-gps--warn {
+  color: var(--warning) !important;
+}
+
+.vr-ok,
+.vr-warn {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--success-bg);
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.vr-warn {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+/* ---------- 3. Kết quả sàng lọc tự động ---------- */
+.vr-flags {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vr-flags li {
+  display: grid;
+  grid-template-columns: 110px auto 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f5f7fb;
+}
+
+.vr-flags__label {
+  color: var(--navy-900);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.vr-flags small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.vr-flags .vr-flags__wide {
+  grid-template-columns: 110px 1fr;
+  align-items: start;
+}
+
+.vr-flags__wide p {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ---------- 4. Kết luận: danh sách tiêu chí ---------- */
+.vr-checks {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: check;
+}
+
+.vr-check {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px 16px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  background: #fff;
+  counter-increment: check;
+}
+
+.vr-check__text strong {
+  display: block;
+  color: var(--navy-900);
+  font-size: 14.5px;
+}
+
+.vr-check__text strong::before {
+  content: counter(check) '. ';
+  color: var(--muted);
+}
+
+.vr-check__text small {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.vr-seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #e6eaf1;
+}
+
+.vr-seg button {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--navy-700);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vr-seg button.is-active {
+  background: #fff;
+  color: var(--navy-900);
+  box-shadow: 0 2px 6px rgba(13, 31, 53, 0.1);
+}
+
+.vr-check.is-pass {
+  border-color: #bbe5c8;
+  background: var(--success-bg);
+}
+
+.vr-check.is-pass .vr-seg button.is-active {
+  color: var(--success);
+}
+
+.vr-check.is-fail {
+  border-color: #f3b4b4;
+  background: var(--danger-bg);
+}
+
+.vr-check.is-fail .vr-seg button.is-active {
+  color: var(--danger);
+}
+
+.vr-check.is-missing,
+.vr-check.is-invalid {
+  border-color: #f3b4b4;
+  border-style: dashed;
+}
+
+/* Ô ghi vấn đề, chỉ hiện khi chọn Chưa đạt */
+.vr-check__issue {
+  grid-column: 1 / -1;
+}
+
+.vr-check__issue .field__textarea {
+  min-height: 0;
+  background: #fff;
+  field-sizing: content; /* ô tự cao theo nội dung */
+}
+
+/* ResultView đặt trong khối trắng: thu hẹp lại, nút xếp ngang */
+.vr-result {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px 0;
+}
+
+.vr-result .result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.vr-saved,
+.vr-confirm {
+  width: 100%;
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+.vr-page .review-box__actions {
+  flex-wrap: wrap;
+}
+
+/* ---------- Màn hình hẹp ---------- */
+@media (max-width: 760px) {
+  .vr-page .admin-panel__header {
+    flex-wrap: wrap;
+  }
+
+  .vr-page .admin-panel__header h2 {
+    flex: 1 0 100%;
+  }
+
+  .vr-check {
+    grid-template-columns: 1fr;
+  }
+
+  .vr-seg {
+    justify-self: start;
+  }
+
+  .vr-report__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .vr-flags li,
+  .vr-flags .vr-flags__wide {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    justify-items: start;
+  }
+}
+
+/* Kết quả từng tiêu chí đã lưu: giữ xuống dòng */
+.vr-saved__comments {
+  font-weight: 600 !important;
+  white-space: pre-line;
+  word-break: normal !important;
+}

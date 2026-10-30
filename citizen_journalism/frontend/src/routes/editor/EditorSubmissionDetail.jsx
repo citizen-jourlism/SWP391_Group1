@@ -23,6 +23,8 @@ import { reviewStartService } from '../../services/reviewStartService'
  * duyệt xong hồ sơ chuyển "Chờ Phó TBT duyệt", trang cập nhật ngay bằng dữ liệu API trả về (không tải lại).
  * Nút "Tiếp nhận thẩm định" (chỉ hồ sơ Đã tiếp nhận) hỏi xác nhận rồi gọi POST .../start-review: hồ sơ chuyển
  * "Đang thẩm định" và BTV đang đăng nhập thành người phụ trách.
+ * Nút "Duyệt kết quả xác minh" (hồ sơ Đang thẩm định) mở /editor/queue/<mã>/verification (EditorVerificationReview):
+ * dùng sau khi CTV xác minh thực địa và nộp bài; CTV chưa nộp thì trang đó tự báo chưa thể duyệt.
  * Nút "Giao CTV xác minh" đã ĐẶT SẴN nhưng đang KHOÁ: backend sẽ làm ở bản sau.
  */
 
@@ -89,6 +91,12 @@ function EditorSubmissionDetail() {
                 <Button to={`/editor/queue/${code}/request-info`} variant="secondary" className="btn--sm">
                   <Icon name="info" size={14} />
                   {data.status === 'NEED_MORE_INFO' ? 'Xem yêu cầu bổ sung' : 'Yêu cầu bổ sung'}
+                </Button>
+              )}
+              {data.status === 'IN_REVIEW' && (
+                <Button to={`/editor/queue/${code}/verification`} variant="secondary" className="btn--sm">
+                  <Icon name="mapPin" size={14} />
+                  Duyệt kết quả xác minh
                 </Button>
               )}
               {canApprove && (
