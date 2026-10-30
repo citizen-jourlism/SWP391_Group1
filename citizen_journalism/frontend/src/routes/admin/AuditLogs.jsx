@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react'
 import { auditHistoryService } from '../../services/auditHistoryService'
+import '../../assets/styles/audit-logs.css'
 
 const PAGE_SIZE = 20
 
@@ -59,138 +60,182 @@ export default function AuditLogs() {
   }
 
   return (
-    <section style={{ padding: 24 }}>
-      <h1>Lịch sử hiện có</h1>
+    <section className="audit-page">
+      <div className="audit-heading">
+        <div>
+          <h1>Lịch sử hoạt động</h1>
+          <p>
+            Theo dõi lịch sử xử lý hồ sơ và thay đổi điểm uy tín
+            trong hệ thống.
+          </p>
+        </div>
 
-      <p>
-        Chỉ gồm lịch sử xử lý hồ sơ và thay đổi điểm uy tín;
-        không phải audit log toàn hệ thống.
-      </p>
+        <span className="audit-count">
+          {data?.totalItems ?? 0} bản ghi
+        </span>
+      </div>
 
-      <div
-        style={{
-          display: 'flex',
-          gap: 12,
-          flexWrap: 'wrap',
-          alignItems: 'end',
-        }}
-      >
-        <label>
-          Nguồn dữ liệu{' '}
-          <select
-            value={source}
-            onChange={(e) => {
-              setSource(e.target.value)
-              setPage(0)
-            }}
+      <div className="audit-panel">
+        <div className="audit-panel-header">
+          <div>
+            <h2>Bộ lọc lịch sử</h2>
+            <p>Lọc theo nguồn dữ liệu và khoảng thời gian</p>
+          </div>
+        </div>
+
+        <div className="audit-filters">
+          <label className="audit-field">
+            <span>Nguồn dữ liệu</span>
+            <select
+              value={source}
+              onChange={(e) => {
+                setSource(e.target.value)
+                setPage(0)
+              }}
+            >
+              <option value="">Tất cả</option>
+              <option value="SUBMISSION">Lịch sử hồ sơ</option>
+              <option value="REPUTATION">Điểm uy tín</option>
+            </select>
+          </label>
+
+          <label className="audit-field">
+            <span>Từ ngày</span>
+            <input
+              type="datetime-local"
+              value={from}
+              onChange={(e) => {
+                setFrom(e.target.value)
+                setPage(0)
+              }}
+            />
+          </label>
+
+          <label className="audit-field">
+            <span>Đến ngày</span>
+            <input
+              type="datetime-local"
+              value={to}
+              onChange={(e) => {
+                setTo(e.target.value)
+                setPage(0)
+              }}
+            />
+          </label>
+
+          <button
+            type="button"
+            className="audit-export-btn"
+            onClick={exportCsv}
+            disabled={exporting}
           >
-            <option value="">Tất cả</option>
-            <option value="SUBMISSION">Lịch sử hồ sơ</option>
-            <option value="REPUTATION">Điểm uy tín</option>
-          </select>
-        </label>
-
-        <label>
-          Từ{' '}
-          <input
-            type="datetime-local"
-            value={from}
-            onChange={(e) => {
-              setFrom(e.target.value)
-              setPage(0)
-            }}
-          />
-        </label>
-
-        <label>
-          Đến{' '}
-          <input
-            type="datetime-local"
-            value={to}
-            onChange={(e) => {
-              setTo(e.target.value)
-              setPage(0)
-            }}
-          />
-        </label>
-
-        <button onClick={exportCsv} disabled={exporting}>
-          {exporting ? 'Đang xuất...' : 'Xuất CSV'}
-        </button>
+            {exporting ? 'Đang xuất...' : 'Xuất CSV'}
+          </button>
+        </div>
       </div>
 
       {error && (
-        <p role="alert" style={{ color: 'crimson' }}>
+        <div className="audit-error" role="alert">
           {error}
-        </p>
+        </div>
       )}
 
-      {loading && <p>Đang tải...</p>}
+      <div className="audit-panel audit-table-panel">
+        <div className="audit-panel-header">
+          <div>
+            <h2>Danh sách lịch sử</h2>
+            <p>Các hoạt động được ghi nhận trong hệ thống</p>
+          </div>
+        </div>
 
-      <div style={{ overflowX: 'auto', marginTop: 16 }}>
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-          }}
-        >
-          <thead>
-            <tr>
-              <th>Nguồn</th>
-              <th>Thời gian</th>
-              <th>Vai trò</th>
-              <th>Hành động</th>
-              <th>Đối tượng</th>
-              <th>Mô tả</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {(data?.items || []).map((item) => (
-              <tr key={`${item.source}-${item.id}`}>
-                <td>{item.source}</td>
-                <td>
-                  {item.occurredAt?.replace('T', ' ')}
-                </td>
-                <td>
-                  {item.actorRole || 'Không ghi nhận'}
-                </td>
-                <td>{item.action}</td>
-                <td>{item.targetId}</td>
-                <td>{item.description}</td>
+        <div className="audit-table-wrap">
+          <table className="audit-table">
+            <thead>
+              <tr>
+                <th>Nguồn</th>
+                <th>Thời gian</th>
+                <th>Vai trò</th>
+                <th>Hành động</th>
+                <th>Đối tượng</th>
+                <th>Mô tả</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
 
-        {!loading && data?.items?.length === 0 && (
-          <p>Không có lịch sử phù hợp.</p>
-        )}
+            <tbody>
+              {(data?.items || []).map((item) => (
+                <tr key={`${item.source}-${item.id}`}>
+                  <td>
+                    <span className="audit-source-badge">
+                      {item.source}
+                    </span>
+                  </td>
+
+                  <td className="audit-date">
+                    {item.occurredAt?.replace('T', ' ') || '—'}
+                  </td>
+
+                  <td>
+                    <span className="audit-role">
+                      {item.actorRole || 'Không ghi nhận'}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span className="audit-action">
+                      {item.action}
+                    </span>
+                  </td>
+
+                  <td>{item.targetId || '—'}</td>
+                  <td className="audit-description">
+                    {item.description}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {loading && (
+            <div className="audit-empty">Đang tải dữ liệu...</div>
+          )}
+
+          {!loading && data?.items?.length === 0 && (
+            <div className="audit-empty">
+              Không có lịch sử phù hợp.
+            </div>
+          )}
+        </div>
+
+        <div className="audit-pagination">
+          <span>
+            Tổng số: <strong>{data?.totalItems ?? 0}</strong> bản ghi
+          </span>
+
+          <div className="audit-pagination-controls">
+            <button
+              type="button"
+              disabled={page === 0 || loading}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Trang trước
+            </button>
+
+            <span>
+              Trang {page + 1} / {Math.max(1, data?.totalPages || 1)}
+            </span>
+
+            <button
+              type="button"
+              disabled={
+                loading || page + 1 >= (data?.totalPages || 0)
+              }
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Trang sau
+            </button>
+          </div>
+        </div>
       </div>
-
-      <p>Tổng số: {data?.totalItems ?? 0}</p>
-
-      <button
-        disabled={page === 0 || loading}
-        onClick={() => setPage((p) => p - 1)}
-      >
-        Trang trước
-      </button>
-
-      {' '}
-      <span>
-        Trang {page + 1} / {Math.max(1, data?.totalPages || 1)}
-      </span>
-      {' '}
-
-      <button
-        disabled={
-          loading || page + 1 >= (data?.totalPages || 0)
-        }
-        onClick={() => setPage((p) => p + 1)}
-      >
-        Trang sau
-      </button>
     </section>
   )
 }
