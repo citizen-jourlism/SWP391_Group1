@@ -16,6 +16,7 @@ import java.time.LocalDate;
  * Các trường thông tin giống hệt UpdateProfileRequest (người dùng tự sửa ở trang Hồ sơ), thêm role.
  * KHÔNG có email / tên đăng nhập: đó là thông tin đăng nhập, email đổi qua luồng OTP riêng của người dùng.
  * role không được là SYSTEM_ADMIN (AdminService kiểm tra).
+ * province, ward: tỉnh + phường/xã, AdminService kiểm tra phường/xã có thuộc tỉnh không.
  */
 public record AdminUpdateUserRequest(
         @NotBlank(message = "Vui lòng nhập họ và tên.")
@@ -36,6 +37,10 @@ public record AdminUpdateUserRequest(
         LocalDate dateOfBirth,
 
         @NotNull(message = "Vui lòng chọn vai trò.")
-        User.Role role
+        User.Role role,
+
+        String province,
+
+        String ward
 ) {
 }

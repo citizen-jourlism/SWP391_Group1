@@ -37,13 +37,16 @@ public interface ResearchEditorialRepository extends JpaRepository<EditoralRevie
     /**
      * Hồ sơ phản ánh theo trạng thái / loại / lĩnh vực (= tên chuyên mục toà soạn).
      * "left join" để hồ sơ CHƯA có chuyên mục vẫn hiện khi không lọc lĩnh vực.
+     * Bài CTV nộp (CONTRIBUTOR_POST) xem ở nhiệm vụ của hồ sơ gốc, không vào hàng đợi.
      */
     @Query(value = "select s from Submission s left join s.category c "
-            + "where (:status is null or s.status = :status) "
+            + "where s.type <> com.example.citizen_journalism.entity.Submission.SubmissionType.CONTRIBUTOR_POST "
+            + "and (:status is null or s.status = :status) "
             + "and (:category is null or s.reportCategory = :category) "
             + "and (:field is null or c.name = :field)",
             countQuery = "select count(s) from Submission s left join s.category c "
-            + "where (:status is null or s.status = :status) "
+            + "where s.type <> com.example.citizen_journalism.entity.Submission.SubmissionType.CONTRIBUTOR_POST "
+            + "and (:status is null or s.status = :status) "
             + "and (:category is null or s.reportCategory = :category) "
             + "and (:field is null or c.name = :field)")
     Page<Submission> searchSubmissions(@Param("status") Submission.SubmissionStatus status,

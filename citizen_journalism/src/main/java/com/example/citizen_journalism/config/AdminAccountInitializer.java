@@ -2,6 +2,7 @@ package com.example.citizen_journalism.config;
 
 import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.repository.UserRepository;
+import com.example.citizen_journalism.util.TextUtils;
 import com.example.citizen_journalism.util.UserIdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,7 @@ public class AdminAccountInitializer implements ApplicationRunner {
                 .status(User.Status.ACTIVE)
                 .isVerified(true)
                 .username(username.trim())
-                .email(email.trim().toLowerCase())
+                .email(TextUtils.normalizeEmail(email))
                 .phone(phone.trim())
                 .fullName(fullName.trim())
                 .passwordHash(passwordEncoder.encode(password))

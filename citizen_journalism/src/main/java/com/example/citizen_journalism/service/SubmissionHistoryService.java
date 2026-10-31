@@ -74,7 +74,7 @@ public class SubmissionHistoryService {
         List<Supplement> supplements = new ArrayList<>();
         SubmissionEvent lastRequest = null;
         for (SubmissionEvent event : events) {
-            if (event.getStatus() == SubmissionStatus.NEED_MORE_INFO) {
+            if (event.getStatus() == SubmissionStatus.NEED_MORE_INFO && event.getActor() == SubmissionEvent.Actor.EDITOR) {
                 lastRequest = event;
             } else if (event.getActor() == SubmissionEvent.Actor.REPORTER && event.getStatus() == SubmissionStatus.IN_REVIEW) {
                 supplements.add(new Supplement(event, lastRequest));

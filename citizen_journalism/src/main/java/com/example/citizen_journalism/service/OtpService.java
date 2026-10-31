@@ -13,14 +13,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.HtmlUtils;
 
 /**
  * Tạo, gửi và kiểm tra mã OTP 6 số qua email.
  *
- * VỊ TRÍ: được AuthService gọi. DÙNG CHUNG cho mọi luồng cần OTP thông qua OtpToken.Purpose:
- *   - REGISTER       : xác thực tài khoản khi đăng ký (đang dùng)
- *   - RESET_PASSWORD : quên mật khẩu (sẽ dùng sau, không phải viết lại code OTP)
+ * VỊ TRÍ: được AuthService và UserService gọi. DÙNG CHUNG cho mọi luồng cần OTP thông qua OtpToken.Purpose:
+ *   - REGISTER       : xác thực tài khoản khi đăng ký
+ *   - RESET_PASSWORD : quên mật khẩu
+ *   - CHANGE_EMAIL   : đổi email ở trang Hồ sơ (mã gửi tới EMAIL MỚI)
  *
  * CÁC QUY TẮC BẢO MẬT (cấu hình trong application.properties, mục "OTP"):
  *   - Mã hết hạn sau app.otp.ttl-seconds (mặc định 300 giây = 5 phút)
@@ -150,8 +150,9 @@ public class OtpService {
     }
 
     /**
-     * Nội dung email dạng HTML (dùng text block """ ... """ của Java 15+, %s/%d được thay bằng .formatted()).
-     * HtmlUtils.htmlEscape(fullName): tên do người dùng tự nhập, nếu họ cố tình gõ mã HTML
+     * Nội dung email dạng HTML (dùng text block """ ... """ của Java 15+, %s/%d được thay bằng .formatted()),
+     * đặt trong khung chung MailService.layout.
+     * MailService.escape(fullName): tên do người dùng tự nhập, nếu họ cố tình gõ mã HTML
      * (ví dụ thẻ <a> lừa đảo) thì sẽ bị biến thành chữ thường, không chạy được trong email.
      */
     private String buildEmail(String fullName, String code, OtpToken.Purpose purpose) {
@@ -160,16 +161,12 @@ public class OtpService {
             case RESET_PASSWORD -> "đặt lại mật khẩu";
             case CHANGE_EMAIL -> "xác nhận đổi sang email này";
         };
-        return """
-                <div style="font-family:Segoe UI,Arial,sans-serif;max-width:480px;margin:auto;padding:24px;
-                            border:1px solid #dfe5ef;border-radius:12px;color:#172339">
-                  <h2 style="margin:0 0 4px;color:#0d1f35">TIN NÓNG DÂN SINH</h2>
+        return MailService.layout("""
                   <p>Xin chào <b>%s</b>,</p>
                   <p>Mã OTP để %s của bạn là:</p>
                   <p style="font-size:32px;font-weight:800;letter-spacing:10px;color:#ff4500;margin:16px 0">%s</p>
                   <p>Mã có hiệu lực trong <b>%d phút</b>. Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>
                   <p style="color:#7a8190;font-size:12px">Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.</p>
-                </div>
-                """.formatted(HtmlUtils.htmlEscape(fullName), action, code, ttlSeconds / 60);
+                """.formatted(MailService.escape(fullName), action, code, ttlSeconds / 60));
     }
 }

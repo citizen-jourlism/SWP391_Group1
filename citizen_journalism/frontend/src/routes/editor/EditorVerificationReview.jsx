@@ -10,6 +10,7 @@ import Modal from '../../components/ui/Modal'
 import ResultView from '../../components/ui/ResultView'
 import TextField from '../../components/ui/TextField'
 import { useAsyncData } from '../../hooks/useAsyncData'
+import { REPORT_CONCLUSION_BY_VALUE, REPORT_RECOMMENDATION_BY_VALUE } from '../../lib/assignment'
 import { formatDateTime } from '../../lib/format'
 import { ROLE_LABELS } from '../../lib/roles'
 import { CATEGORY_BY_VALUE, FILE_TYPE_INFO, SUBMISSION_STATUS } from '../../lib/submission'
@@ -288,7 +289,7 @@ function EditorVerificationReview() {
                   <strong>{assignment.contributorName ?? 'Chưa rõ CTV'}</strong>
                   <small>
                     Cộng tác viên{assignment.contributorId && ` · ${assignment.contributorId}`}
-                    {assignment.contributorReputation != null && ` · Uy tín ${assignment.contributorReputation}`}
+                    {assignment.contributorScore != null && ` · Điểm hiệu suất ${assignment.contributorScore}`}
                   </small>
                 </div>
                 <Badge tone="green">Nhiệm vụ hoàn thành</Badge>
@@ -318,6 +319,17 @@ function EditorVerificationReview() {
                 <h3>{report.title}</h3>
                 {report.summary && <p className="vr-article__sapo">{report.summary}</p>}
                 <p className="detail-content">{report.content}</p>
+                {report.conclusion && (
+                  <>
+                    <h3>Báo cáo hiện trường</h3>
+                    <p>
+                      Kết luận: <strong>{REPORT_CONCLUSION_BY_VALUE[report.conclusion]?.label ?? report.conclusion}</strong> · Đề xuất:{' '}
+                      <strong>{REPORT_RECOMMENDATION_BY_VALUE[report.recommendation]?.label ?? report.recommendation}</strong>
+                    </p>
+                    <p className="detail-content">{report.findings}</p>
+                    <p className="detail-content">{report.witnessStatements}</p>
+                  </>
+                )}
               </div>
 
               {report.evidences.length === 0 ? (

@@ -36,8 +36,8 @@ public class EditorService {
         return new EditorOverview(
                 submissionRepository.countByTypeAndStatus(Submission.SubmissionType.HOT_NEWS, SubmissionStatus.PENDING),
                 submissionRepository.countByTypeAndStatus(Submission.SubmissionType.COMPLAINT, SubmissionStatus.PENDING),
-                submissionRepository.countByStatus(SubmissionStatus.IN_REVIEW),
-                submissionRepository.countByStatus(SubmissionStatus.NEED_MORE_INFO),
+                submissionRepository.countByTypeNotAndStatus(Submission.SubmissionType.CONTRIBUTOR_POST, SubmissionStatus.IN_REVIEW),
+                submissionRepository.countByTypeNotAndStatus(Submission.SubmissionType.CONTRIBUTOR_POST, SubmissionStatus.NEED_MORE_INFO),
                 applicationService.countPendingForEditor(),
                 submissionRepository.searchForStaff(SubmissionStatus.PENDING, null, latest).map(SubmissionSummary::from).getContent(),
                 applicationService.latestPending(5));

@@ -76,7 +76,7 @@ button {
   margin: 24px auto 18px;
   text-align: center;
   font-size: clamp(32px, 4vw, 62px);
-  line-height: 1.05;
+  line-height: 1.4; /* Dấu tiếng Việt cao / thấp hơn chữ: dòng sát quá thì dấu của 2 dòng chạm nhau */
   letter-spacing: -2px;
   font-weight: 900;
   color: #f4f7ff;

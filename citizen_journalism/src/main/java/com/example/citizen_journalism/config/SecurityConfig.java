@@ -1,5 +1,6 @@
 package com.example.citizen_journalism.config;
 
+import com.example.citizen_journalism.security.ActiveUserJwtConverter;
 import com.example.citizen_journalism.security.RestAuthenticationHandler;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
@@ -25,6 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
  *      /api/submissions/**                         -> CITIZEN, CONTRIBUTOR, EXPERT (gửi tin / khiếu nại)
  *      /api/contributor-applications/**            -> CITIZEN, CONTRIBUTOR (đơn đăng ký Cộng tác viên)
  *      /api/editor/**                              -> chỉ EDITOR (bàn làm việc Biên tập viên)
+ *      /api/contributor/**                         -> chỉ CONTRIBUTOR (nhiệm vụ xác minh của Cộng tác viên)
  *      /api/research/**                            -> chỉ EXPERT (bài nghiên cứu, bản nháp)
  *   3. /api/** còn lại                              -> phải đăng nhập (có token hợp lệ)
  *   4. Mọi thứ khác (file tĩnh...)                  -> mở, TRỪ /uploads/applications/** (giấy tờ tuỳ thân) bị chặn
@@ -49,7 +50,7 @@ public class SecurityConfig {
             "/api/tracking"); // Tra cứu hồ sơ bằng mã + PIN (TrackingController)
 
     private final RestAuthenticationHandler restAuthenticationHandler;
-    private final JwtAuthenticationConverter jwtAuthenticationConverter;
+    private final ActiveUserJwtConverter activeUserJwtConverter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -69,15 +70,17 @@ public class SecurityConfig {
                 .requestMatchers("/api/research/**", "/api/research").hasRole("EXPERT")
                 // Bàn làm việc Biên tập viên
                 .requestMatchers("/api/editor/**").hasRole("EDITOR")
+                .requestMatchers("/api/contributor/**").hasRole("CONTRIBUTOR")
                 .requestMatchers("/api/**").authenticated()
                 // Giấy tờ tuỳ thân của đơn CTV: KHÔNG cho xem trực tiếp qua /uploads, chỉ xem qua API có kiểm tra quyền
                 .requestMatchers("/uploads/applications/**").denyAll()
                 .anyRequest().permitAll()
             )
-            // Bật chế độ "resource server": tự đọc + kiểm tra JWT ở mỗi request.
+            // Bật chế độ "resource server": tự đọc + kiểm tra JWT ở mỗi request,
+            // rồi đối chiếu tài khoản trong DB (bị khoá / đổi vai trò thì có hiệu lực ngay, xem ActiveUserJwtConverter).
             .oauth2ResourceServer(oauth2 -> oauth2
                 .bearerTokenResolver(bearerTokenResolver())
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(activeUserJwtConverter))
                 .authenticationEntryPoint(restAuthenticationHandler) // token sai/hết hạn -> 401 JSON
             )
             .exceptionHandling(errors -> errors

@@ -14,6 +14,7 @@ import com.example.citizen_journalism.exception.AppException;
 import com.example.citizen_journalism.repository.ResearchArticleRepository;
 import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.util.ExpertiseFields;
+import com.example.citizen_journalism.util.Paging;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -84,8 +85,7 @@ public class ResearchArticleService {
     /** Danh sách bài theo trạng thái, bài sửa / nộp gần nhất lên đầu. */
     @Transactional(readOnly = true)
     public PageResponse<ResearchArticleSummary> list(String userId, Status status, int page, int size) {
-        PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50),
-                Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.desc("id")));
+        PageRequest pageable = Paging.of(page, size, Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.desc("id")));
         return PageResponse.from(articleRepository.findByAuthorIdAndStatus(userId, status, pageable).map(this::toSummary));
     }
 
@@ -160,7 +160,7 @@ public class ResearchArticleService {
                     String url = fileStorageService.store(file, IMAGE_FOLDER, article.getAuthor().getId(),
                             FileStorageService.IMAGE_TYPES, MAX_IMAGE_BYTES);
                     storedUrls.add(url);
-                    images.add(new StoredImage(url, nameOf(file), file.getSize(), caption));
+                    images.add(new StoredImage(url, FileStorageService.originalName(file, "hinh-anh"), file.getSize(), caption));
                 }
             }
         } catch (RuntimeException ex) {
@@ -287,11 +287,6 @@ public class ResearchArticleService {
 
     private static int length(String text) {
         return text == null ? 0 : text.trim().length();
-    }
-
-    private static String nameOf(MultipartFile file) {
-        String name = blankToNull(file.getOriginalFilename());
-        return name == null ? "hinh-anh" : name.length() > 150 ? name.substring(0, 150) : name;
     }
 
     private ResearchArticleView toView(ResearchArticle article) {

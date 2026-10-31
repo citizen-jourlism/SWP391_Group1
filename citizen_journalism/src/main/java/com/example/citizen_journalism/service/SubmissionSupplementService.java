@@ -103,7 +103,7 @@ public class SubmissionSupplementService {
         if (address != null) {
             submission.setAddress(address);
         }
-        submissionService.attachEvidences(submission, author, evidenceFiles);
+        submissionService.attachEvidences(submission, author, submission.getTrackingCode(), evidenceFiles);
 
         String description = evidenceFiles.isEmpty()
                 ? "Người gửi đã bổ sung thông tin."
@@ -146,10 +146,10 @@ public class SubmissionSupplementService {
         return parts.isEmpty() ? null : String.join("\n\n", parts);
     }
 
-    /** Số mục đánh số trong lời nhắn đề nghị bổ sung (ghi chú của bước nhật ký gần nhất). */
+    /** Số mục đánh số trong lời nhắn đề nghị bổ sung gần nhất. */
     private int countRequestItems(Submission submission) {
-        List<SubmissionEvent> events = eventRepository.findBySubmissionOrderByCreatedAtAscIdAsc(submission);
-        String note = events.isEmpty() ? null : events.get(events.size() - 1).getNote();
+        SubmissionEvent request = SubmissionEventService.latestInfoRequest(eventRepository.findBySubmissionOrderByCreatedAtAscIdAsc(submission));
+        String note = request == null ? null : request.getNote();
         if (note == null) {
             return 0;
         }

@@ -58,6 +58,8 @@ export const rules = {
   // Ngày giờ (dạng "YYYY-MM-DDTHH:mm" của ô type="datetime-local") không được sau thời điểm hiện tại.
   // So sánh chuỗi vẫn đúng thứ tự thời gian vì cùng định dạng, số có đủ 2 chữ số.
   notFuture: (message = 'Thời điểm không được ở tương lai.') => (value) => (value <= nowLocalIso() ? '' : message),
+  // Ngược lại với notFuture, ví dụ hạn hoàn thành nhiệm vụ phải sau thời điểm hiện tại.
+  future: (message = 'Thời điểm phải ở tương lai.') => (value) => (value > nowLocalIso() ? '' : message),
   // Khớp một biểu thức chính quy (regex), ví dụ CMND/CCCD 9 hoặc 12 số.
   pattern: (regex, message) => (value) => (regex.test(value.trim()) ? '' : message),
   // Bọc một rule để chỉ kiểm tra KHI CÓ NHẬP (ô không bắt buộc). Ví dụ: rules.optional(rules.digits(12))

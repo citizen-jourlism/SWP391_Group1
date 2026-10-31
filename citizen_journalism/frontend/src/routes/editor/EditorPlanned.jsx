@@ -22,18 +22,6 @@ const PLANNED_PAGES = {
     ],
     actions: ['Gộp tin trùng', 'Đánh dấu tin rác'],
   },
-  assignments: {
-    icon: 'mapPin',
-    title: 'Nhiệm vụ xác minh hiện trường',
-    description: 'Giao nhiệm vụ cho Cộng tác viên đi xác minh tại hiện trường và theo dõi tiến độ, hạn chót.',
-    features: [
-      'Giao đích danh một Cộng tác viên hoặc phát cho cả mạng lưới khu vực (ai nhận trước làm trước)',
-      'Đặt hạn chót và chỉ dẫn tác nghiệp cho từng nhiệm vụ',
-      'Theo dõi trạng thái: đang mở, đã nhận, hoàn thành, quá hạn',
-      'Xem báo cáo hiện trường và tư liệu Cộng tác viên gửi về',
-    ],
-    actions: ['Tạo nhiệm vụ', 'Giao cho CTV'],
-  },
   articles: {
     icon: 'edit',
     title: 'Biên tập bài viết',

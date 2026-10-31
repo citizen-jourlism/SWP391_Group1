@@ -1,6 +1,12 @@
 import api from '../lib/api'
 
 /**
+ * Các API gửi mã OTP phải chờ Gmail xử lý xong (thường khoảng 6 giây, mạng chậm có thể hơn), nên không dùng
+ * giới hạn 15 giây mặc định: hết giờ thì web báo lỗi trong khi mail vẫn đang được gửi đi.
+ */
+export const MAIL_REQUEST = { timeout: 60000 }
+
+/**
  * SERVICE phía frontend: gom các lời gọi API liên quan tới TÀI KHOẢN vào một chỗ.
  * Các trang (Register.jsx, VerifyOtp.jsx...) chỉ gọi authService.register(...) mà không cần
  * biết đường dẫn API cụ thể. Đổi đường dẫn thì chỉ sửa ở đây.
@@ -9,12 +15,12 @@ import api from '../lib/api'
  * (xem lib/api.js). Mỗi hàm ứng với một endpoint trong backend AuthController.java.
  */
 export const authService = {
-  register: (payload) => api.post('/auth/register', payload),           // payload = { fullName, email, phone, password }
+  register: (payload) => api.post('/auth/register', payload, MAIL_REQUEST), // payload = { fullName, email, phone, password }
   verifyOtp: (email, otp) => api.post('/auth/verify-otp', { email, otp }),
-  resendOtp: (email) => api.post('/auth/resend-otp', { email }),
+  resendOtp: (email) => api.post('/auth/resend-otp', { email }, MAIL_REQUEST),
   login: (payload) => api.post('/auth/login', payload),                 // payload = { email, password, rememberMe }
   me: () => api.get('/auth/me'),                                        // cần token (api.js tự gắn)
-  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }, MAIL_REQUEST),
   resetPassword: (payload) => api.post('/auth/reset-password', payload), // payload = { email, otp, newPassword }
   changePassword: (payload) => api.put('/auth/change-password', payload), // cần token; payload = { currentPassword, newPassword }
 }

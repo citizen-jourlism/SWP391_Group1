@@ -24,12 +24,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.HtmlUtils;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -53,7 +51,6 @@ import tools.jackson.databind.ObjectMapper;
  * giải mật khi có căn cứ (chức năng sau). Email biên nhận khi đó gửi về email
  * TÀI KHOẢN của người gửi.
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubmissionService {
@@ -84,8 +81,8 @@ public class SubmissionService {
 
     /**
      * Tổng dung lượng tối đa của tất cả tệp (byte).
-     * spring.servlet.multipart.max-request-size để lớn hơn một chút (chừa chỗ cho phần "data")
-     * để lỗi vượt tổng do hàm này báo bằng tiếng Việt, không bị Spring chặn trước.
+     * Giới hạn của server (config/UploadConfig) lớn hơn một chút để lỗi vượt tổng do hàm này
+     * báo bằng tiếng Việt, không bị Spring chặn trước.
      */
     public static final long MAX_TOTAL_BYTES = 300 * MB;
 
@@ -155,7 +152,7 @@ public class SubmissionService {
                 "Gửi hồ sơ thành công, toà soạn đã tiếp nhận.", null);
 
         // ----- 3. Lưu tệp tư liệu -----
-        List<EvidenceInfo> evidences = attachEvidences(submission, author, evidenceFiles);
+        List<EvidenceInfo> evidences = attachEvidences(submission, author, submission.getTrackingCode(), evidenceFiles);
 
         // ----- 4. Gửi email biên nhận -----
         String recipient = anonymous ? author.getEmail() : submission.getContactEmail();
@@ -177,13 +174,15 @@ public class SubmissionService {
 
     /**
      * Lưu các tệp tư liệu của 1 hồ sơ (ghi file + bảng evidences). Gọi TRONG transaction của hàm gọi.
-     * Dùng ở: create() và SubmissionSupplementService (tệp bổ sung khi toà soạn đề nghị).
+     * Dùng ở: create(), SubmissionSupplementService (tệp bổ sung), FieldReportService (báo cáo hiện trường).
      * Tệp phải đã qua validateEvidenceFiles.
+     *
+     * @param namePrefix phần đầu tên file trên ổ đĩa, ví dụ "KB-2026-0007"
      */
-    public List<EvidenceInfo> attachEvidences(Submission submission, User uploader, List<MultipartFile> files) {
+    public List<EvidenceInfo> attachEvidences(Submission submission, User uploader, String namePrefix, List<MultipartFile> files) {
         List<String> storedUrls = new ArrayList<>();
         try {
-            return files.stream().map(file -> saveEvidence(submission, uploader, file, storedUrls)).toList();
+            return files.stream().map(file -> saveEvidence(submission, uploader, namePrefix, file, storedUrls)).toList();
         } catch (RuntimeException ex) {
             // Lỗi giữa chừng: DB tự huỷ (rollback) nhờ @Transactional, còn file đã ghi ra ổ đĩa thì phải tự xoá.
             storedUrls.forEach(fileStorageService::delete);
@@ -193,7 +192,7 @@ public class SubmissionService {
 
     /**
      * Kiểm tra số lượng, định dạng, dung lượng các tệp (KHÔNG bắt buộc có tệp). Lỗi ghi vào errors với khoá "files".
-     * Dùng ở: validate() của create() và SubmissionSupplementService.
+     * Dùng ở: requireEvidenceFiles và SubmissionSupplementService.
      * Thứ tự: tổng số tệp -> từng tệp (định dạng, dung lượng theo loại) -> số tệp theo loại -> tổng dung lượng.
      */
     public void validateEvidenceFiles(List<MultipartFile> files, Map<String, String> errors) {
@@ -227,6 +226,15 @@ public class SubmissionService {
         }
         if (totalBytes > MAX_TOTAL_BYTES) {
             errors.put("files", "Tổng dung lượng các tệp vượt quá " + (MAX_TOTAL_BYTES / MB) + "MB.");
+        }
+    }
+
+    /** Như validateEvidenceFiles nhưng BẮT BUỘC có ít nhất 1 tệp. Dùng ở form gửi tin và báo cáo hiện trường. */
+    public void requireEvidenceFiles(List<MultipartFile> files, Map<String, String> errors) {
+        if (files.isEmpty()) {
+            errors.put("files", "Vui lòng đính kèm ít nhất 1 tệp tư liệu.");
+        } else {
+            validateEvidenceFiles(files, errors);
         }
     }
 
@@ -264,11 +272,7 @@ public class SubmissionService {
             }
         }
 
-        if (files.isEmpty()) {
-            errors.put("files", "Vui lòng đính kèm ít nhất 1 tệp tư liệu.");
-        } else {
-            validateEvidenceFiles(files, errors);
-        }
+        requireEvidenceFiles(files, errors);
 
         if (!errors.isEmpty()) {
             throw AppException.invalidFields(errors);
@@ -276,18 +280,18 @@ public class SubmissionService {
     }
 
     /** Lưu 1 tệp: ghi file ra ổ đĩa rồi thêm 1 dòng vào bảng evidences. */
-    private EvidenceInfo saveEvidence(Submission submission, User author, MultipartFile file, List<String> storedUrls) {
+    private EvidenceInfo saveEvidence(Submission submission, User author, String namePrefix, MultipartFile file,
+                                      List<String> storedUrls) {
         FileType fileType = fileTypeOf(file.getContentType());
 
         // Tên file trên ổ đĩa bắt đầu bằng mã hồ sơ, ví dụ "KB-2026-0007-1a2b3c4d.jpg"
         // (dễ tìm khi cần)
-        String url = fileStorageService.store(file, EVIDENCE_FOLDER, submission.getTrackingCode(),
+        String url = fileStorageService.store(file, EVIDENCE_FOLDER, namePrefix,
                 FileStorageService.EVIDENCE_TYPES, MAX_FILE_BYTES_BY_TYPE.get(fileType));
         storedUrls.add(url);
 
-        String originalName = originalNameOf(file);
         Map<String, Object> metadata = new LinkedHashMap<>();
-        metadata.put("originalName", originalName);
+        metadata.put("originalName", FileStorageService.originalName(file, "tep-dinh-kem"));
         metadata.put("size", file.getSize());
         metadata.put("contentType", file.getContentType());
 
@@ -333,15 +337,6 @@ public class SubmissionService {
         return FileType.DOCUMENT;
     }
 
-    /** Tên gốc của tệp (chỉ để hiển thị), cắt bớt nếu quá dài. */
-    private static String originalNameOf(MultipartFile file) {
-        String name = blankToNull(file.getOriginalFilename());
-        if (name == null) {
-            return "tep-dinh-kem";
-        }
-        return name.length() > 150 ? name.substring(0, 150) : name;
-    }
-
     /**
      * Gửi email biên nhận. Trả về false nếu gửi lỗi.
      * TẠI SAO không báo lỗi cho người dùng? Hồ sơ đã lưu thành công; mã hồ sơ + PIN
@@ -350,25 +345,13 @@ public class SubmissionService {
      * lưu lại mã).
      */
     private boolean sendReceipt(String recipient, Submission submission, String pin) {
-        try {
-            mailService.send(recipient, "[Tin Nóng Dân Sinh] Biên nhận hồ sơ " + submission.getTrackingCode(),
-                    buildReceiptEmail(submission, pin));
-            return true;
-        } catch (AppException ex) {
-            log.warn("Cannot send receipt for {}", submission.getTrackingCode());
-            return false;
-        }
+        return mailService.trySend(recipient, "[Tin Nóng Dân Sinh] Biên nhận hồ sơ " + submission.getTrackingCode(),
+                buildReceiptEmail(submission, pin));
     }
 
-    /**
-     * Nội dung email biên nhận. htmlEscape: tiêu đề do người dùng nhập, chặn chèn
-     * mã HTML vào email.
-     */
+    /** Nội dung email biên nhận. MailService.escape: tiêu đề do người dùng nhập, chặn chèn mã HTML vào email. */
     private String buildReceiptEmail(Submission submission, String pin) {
-        return """
-                <div style="font-family:Segoe UI,Arial,sans-serif;max-width:520px;margin:auto;padding:24px;
-                            border:1px solid #dfe5ef;border-radius:12px;color:#172339">
-                  <h2 style="margin:0 0 4px;color:#0d1f35">TIN NÓNG DÂN SINH</h2>
+        return MailService.layout("""
                   <p>Toà soạn đã tiếp nhận phản ánh của bạn:</p>
                   <p style="padding:12px 16px;background:#f5f7fb;border-radius:8px"><b>%s</b></p>
                   <table style="margin:16px 0;font-size:15px">
@@ -379,7 +362,6 @@ public class SubmissionService {
                   </table>
                   <p>Dùng <b>mã hồ sơ + mã PIN</b> để tra cứu tiến độ xử lý. Vui lòng giữ bí mật mã PIN.</p>
                   <p style="color:#7a8190;font-size:12px">Đây là email tự động, vui lòng không trả lời.</p>
-                </div>
-                """.formatted(HtmlUtils.htmlEscape(submission.getTitle()), submission.getTrackingCode(), pin);
+                """.formatted(MailService.escape(submission.getTitle()), submission.getTrackingCode(), pin));
     }
 }

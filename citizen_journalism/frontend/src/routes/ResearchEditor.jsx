@@ -131,8 +131,14 @@ function EditorWorkspace({ options, article, initialNotice }) {
     setNotice('')
   }
 
-  /** Lưu nháp (DRAFT) hoặc nộp (SUBMIT). */
+  // Chặn lưu chồng lên nhau: bấm Ctrl+S liên tục (hoặc vừa bấm "Lưu nháp" vừa Ctrl+S) khi lần trước chưa xong
+  // có thể tạo ra 2 bài trùng nhau. Dùng ref vì state `saving` chỉ được cập nhật ở lần vẽ lại sau.
+  const savingRef = useRef(false)
+
+  /** Lưu nháp (DRAFT) hoặc nộp (SUBMIT). Bài đã nộp thì không lưu được nữa. */
   const save = async (action) => {
+    if (savingRef.current || submitted) return
+    savingRef.current = true
     setSaving(action)
     setFormError('')
     setNotice('')
@@ -168,6 +174,7 @@ function EditorWorkspace({ options, article, initialNotice }) {
       setFormError(error.message)
       throw error // Để hộp xác nhận (khi nộp) biết là lỗi
     } finally {
+      savingRef.current = false
       setSaving(null)
     }
   }

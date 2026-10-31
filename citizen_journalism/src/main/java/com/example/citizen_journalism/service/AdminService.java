@@ -8,11 +8,14 @@ import com.example.citizen_journalism.dto.admin.AdminStats;
 import com.example.citizen_journalism.dto.admin.AdminUpdateUserRequest;
 import com.example.citizen_journalism.dto.admin.AdminUserItem;
 import com.example.citizen_journalism.dto.admin.CreateUserRequest;
+import com.example.citizen_journalism.entity.ContributorApplication;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.exception.AppException;
+import com.example.citizen_journalism.repository.ContributorApplicationRepository;
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
+import com.example.citizen_journalism.util.Paging;
 import com.example.citizen_journalism.util.UserIdGenerator;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -23,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,9 +47,9 @@ import org.springframework.web.util.HtmlUtils;
 @RequiredArgsConstructor
 public class AdminService {
 
-    private static final int MAX_PAGE_SIZE = 50;
-
     private final UserRepository userRepository;
+    private final ContributorApplicationRepository applicationRepository;
+    private final LocationService locationService;
     private final SubmissionRepository submissionRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserIdGenerator userIdGenerator;
@@ -72,7 +73,7 @@ public class AdminService {
                 userRepository.countByStatus(User.Status.LOCKED),
                 userRepository.countByCreatedAtAfter(LocalDateTime.now().minusDays(7)),
                 byRole,
-                submissionRepository.count(),
+                submissionRepository.countByTypeNot(Submission.SubmissionType.CONTRIBUTOR_POST),
                 submissionRepository.countByStatus(Submission.SubmissionStatus.PENDING),
                 userRepository.findTop5ByOrderByCreatedAtDesc().stream().map(AdminUserItem::from).toList());
     }
@@ -81,15 +82,12 @@ public class AdminService {
 
     /**
      * Tìm kiếm + lọc + phân trang, mới nhất lên trước.
-     * @param page trang (bắt đầu từ 0); size số dòng mỗi trang (tối đa MAX_PAGE_SIZE để tránh tải quá nhiều)
+     * @param page trang (bắt đầu từ 0); size số dòng mỗi trang (Paging tự giới hạn để tránh tải quá nhiều)
      */
     @Transactional(readOnly = true)
     public PageResponse<AdminUserItem> searchUsers(String keyword, User.Role role, User.Status status, int page, int size) {
-        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE); // giới hạn trong khoảng 1..MAX_PAGE_SIZE
-        PageRequest pageRequest = PageRequest.of(Math.max(page, 0), safeSize,
-                Sort.by(Sort.Direction.DESC, "createdAt"));
-        return PageResponse.from(userRepository.search(blankToNull(keyword), role, status, pageRequest)
-                .map(AdminUserItem::from));
+        return PageResponse.from(userRepository.search(blankToNull(keyword), role, status,
+                Paging.of(page, size, Paging.NEWEST_FIRST)).map(AdminUserItem::from));
     }
 
     // =========================== TẠO / SỬA TÀI KHOẢN ===========================
@@ -147,7 +145,7 @@ public class AdminService {
     /**
      * Sửa thông tin cá nhân + vai trò trong MỘT lần lưu (cùng transaction: lỗi thì không đổi gì cả).
      * Đổi vai trò: mã người dùng giữ nguyên (CT0001 vẫn là CT0001) vì mã là định danh cố định, đã được dùng ở các bảng khác;
-     * vai trò mới có hiệu lực khi người đó đăng nhập lại (vai trò nằm trong token).
+     * vai trò mới có hiệu lực ngay ở request tiếp theo (ActiveUserJwtConverter lấy vai trò từ DB).
      */
     @Transactional
     public AdminUserItem updateUser(String userId, AdminUpdateUserRequest request) {
@@ -160,9 +158,15 @@ public class AdminService {
             throw AppException.invalidFields(Map.of("citizenId", "Số CCCD này đã được đăng ký cho một tài khoản khác."));
         }
 
+        String province = blankToNull(request.province());
+        String ward = blankToNull(request.ward());
+        locationService.checkAddress(province, ward);
+
         user.setFullName(request.fullName().trim());
         user.setPhone(request.phone().trim());
         user.setCitizenId(citizenId);
+        user.setProvince(province != null ? province : defaultProvince(user, request.role()));
+        user.setWard(ward);
         user.setAddress(blankToNull(request.address()));
         user.setDateOfBirth(request.dateOfBirth());
         user.setRole(request.role());
@@ -197,6 +201,18 @@ public class AdminService {
     }
 
     // ================================= HÀM PHỤ =================================
+
+    /**
+     * Tỉnh khi admin bỏ trống ô tỉnh: Cộng tác viên lấy theo đơn đăng ký CTV gần nhất (nếu có),
+     * để CTV mới được nâng cấp xuất hiện ngay ở đúng khu vực khi giao nhiệm vụ.
+     */
+    private String defaultProvince(User user, User.Role role) {
+        if (role != User.Role.CONTRIBUTOR) {
+            return null;
+        }
+        return applicationRepository.findByApplicantIdOrderByCreatedAtDescIdDesc(user.getId()).stream()
+                .findFirst().map(ContributorApplication::getProvince).orElse(null);
+    }
 
     /**
      * Mật khẩu tạm 12 ký tự, luôn có chữ HOA, chữ thường, số và ký tự đặc biệt (đạt quy tắc @StrongPassword).

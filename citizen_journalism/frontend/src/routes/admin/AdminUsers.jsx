@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CreateUserDialog from '../../components/admin/CreateUserDialog'
 import UserCell from '../../components/admin/UserCell'
@@ -9,6 +9,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import Icon from '../../components/ui/Icon'
 import Pagination from '../../components/ui/Pagination'
 import SelectField from '../../components/ui/SelectField'
+import { useAsyncData } from '../../hooks/useAsyncData'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { formatDate } from '../../lib/format'
 import { ROLE_LABELS, ROLE_TONES, STATUS_INFO } from '../../lib/roles'
@@ -25,8 +26,8 @@ import { adminService } from '../../services/adminService'
  *   - Nút sửa -> trang chi tiết /admin/users/:id (AdminUserDetail: xem đủ thông tin, sửa thông tin + vai trò)
  *   - Hàng của tài khoản quản trị bị khoá thao tác (hệ thống chỉ có 1 admin, không được tự khoá mình)
  *
- * CÁCH TẢI DỮ LIỆU: mọi điều kiện tìm kiếm gom vào `queryKey`. queryKey đổi -> useEffect gọi API.
- * `loading` = kết quả đang hiển thị thuộc về queryKey CŨ (vẫn giữ bảng cũ, chỉ làm mờ, để trang không bị giật).
+ * CÁCH TẢI DỮ LIỆU (hook useAsyncData): mọi điều kiện tìm kiếm gom vào 1 `key`. key đổi -> tự gọi lại API.
+ * `loading` = bảng đang hiển thị thuộc về điều kiện CŨ (vẫn giữ bảng cũ, chỉ làm mờ, để trang không bị giật).
  */
 
 const PAGE_SIZE = 10
@@ -39,30 +40,16 @@ function AdminUsers() {
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(0)
-  const [reloadToken, setReloadToken] = useState(0) // Tăng lên để buộc tải lại (sau khi tạo / sửa tài khoản)
   const debouncedKeyword = useDebouncedValue(keyword.trim())
 
-  const [result, setResult] = useState({ key: null, data: null, error: '' })
   const [notice, setNotice] = useState('')
   const [creating, setCreating] = useState(false)
   const [statusTarget, setStatusTarget] = useState(null) // Tài khoản đang khoá / mở khoá
 
-  const queryKey = JSON.stringify({ keyword: debouncedKeyword, role, status, page, reloadToken })
-
-  useEffect(() => {
-    let cancelled = false // Bỏ qua kết quả của request cũ nếu người dùng đã đổi điều kiện trong lúc chờ
-    const { reloadToken: _ignored, ...params } = JSON.parse(queryKey)
-    adminService
-      .searchUsers({ ...params, size: PAGE_SIZE })
-      .then((response) => !cancelled && setResult({ key: queryKey, data: response.data, error: '' }))
-      .catch((error) => !cancelled && setResult({ key: queryKey, data: null, error: error.message }))
-    return () => {
-      cancelled = true
-    }
-  }, [queryKey])
-
-  const loading = result.key !== queryKey
-  const data = result.data
+  const { data, error, loading, reload } = useAsyncData(
+    () => adminService.searchUsers({ keyword: debouncedKeyword, role, status, page, size: PAGE_SIZE }),
+    JSON.stringify([debouncedKeyword, role, status, page]),
+  )
 
   /** Đổi bộ lọc thì quay về trang đầu. */
   const changeFilter = (setter) => (event) => {
@@ -73,7 +60,7 @@ function AdminUsers() {
   /** Sau mỗi thao tác thành công: hiện thông báo + tải lại bảng. */
   const afterChange = (message) => {
     setNotice(message)
-    setReloadToken((value) => value + 1)
+    reload()
   }
 
   const toggleLock = async () => {
@@ -109,7 +96,7 @@ function AdminUsers() {
         </div>
 
         <Alert type="success">{notice}</Alert>
-        <Alert type="error">{result.error}</Alert>
+        <Alert type="error">{error}</Alert>
 
         {/* ----- Bảng tài khoản (cuộn ngang trên màn hình hẹp) ----- */}
         <div className={`table-wrap ${loading && data ? 'is-loading' : ''}`}>

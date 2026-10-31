@@ -12,7 +12,8 @@ import java.time.LocalDate;
  *
  * Chỉ gồm các trường người dùng ĐƯỢC SỬA. Không có email (đổi email có luồng xác nhận OTP riêng),
  * không có điểm uy tín / điểm thưởng (chỉ hệ thống thay đổi).
- * citizenId, address, dateOfBirth không bắt buộc: để trống (null) là hợp lệ.
+ * citizenId, province, ward, address, dateOfBirth không bắt buộc: để trống (null) là hợp lệ.
+ * province, ward: UserService kiểm tra phường/xã có thuộc tỉnh không.
  * (@Pattern và @Past bỏ qua giá trị null, chỉ kiểm tra khi có nhập.)
  */
 public record UpdateProfileRequest(
@@ -26,6 +27,10 @@ public record UpdateProfileRequest(
 
         @Pattern(regexp = ValidationRules.CITIZEN_ID_REGEX, message = ValidationRules.CITIZEN_ID_MESSAGE)
         String citizenId,
+
+        String province,
+
+        String ward,
 
         @Size(max = 255, message = "Địa chỉ tối đa 255 ký tự.")
         String address,

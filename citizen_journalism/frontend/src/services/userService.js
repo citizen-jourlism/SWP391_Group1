@@ -1,4 +1,5 @@
 import api from '../lib/api'
+import { MAIL_REQUEST } from './authService'
 
 /**
  * Các lời gọi API về HỒ SƠ CÁ NHÂN của người đang đăng nhập (backend: UserController.java).
@@ -8,7 +9,7 @@ export const userService = {
   getProfile: () => api.get('/users/me'),
   // payload = { fullName, phone, citizenId, address, dateOfBirth } (ô bỏ trống gửi null)
   updateProfile: (payload) => api.put('/users/me', payload),
-  requestEmailChange: (email) => api.post('/users/me/email', { email }),
+  requestEmailChange: (email) => api.post('/users/me/email', { email }, MAIL_REQUEST),
   verifyEmailChange: (otp) => api.post('/users/me/email/verify', { otp }),
 
   /**
