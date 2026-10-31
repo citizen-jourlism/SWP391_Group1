@@ -11,7 +11,8 @@ import lombok.*;
 
     // 2. Thống kê nhanh theo loại lý do
     @Index(name = "idx_reputation_logs_reason", columnList = "reason")
-})
+}, uniqueConstraints = @UniqueConstraint(name = "uk_reputation_contribution",
+        columnNames = {"contribution_type", "contribution_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -37,9 +38,27 @@ public class ReputationLog extends BaseEntity {
     @JoinColumn(name = "related_submission_id")
     private Submission relatedSubmission;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "contribution_type", length = 40)
+    private ContributionType contributionType;
+
+    @Column(name = "contribution_id")
+    private Long contributionId;
+
+    public enum ContributionType {
+        CITIZEN_SUBMISSION,
+        EXPERT_RESEARCH_ARTICLE
+    }
+
     public enum ReputationReason {
         INITIAL_CONTRIBUTOR_ONBOARDING,
         SUBMISSION_APPROVED,
+        EDITOR_APPROVED_SUBMISSION,
+        CITIZEN_SUBMISSION_PUBLISHED,
+        CITIZEN_SUBMISSION_FAKE_NEWS,
+        EXPERT_ARTICLE_FAKE_NEWS,
+        ACCOUNT_APPEAL_RESTORED,
+        EXPERT_RESEARCH_APPROVED,
         TASK_COMPLETED_ON_TIME,
         TASK_LATE,
         INACCURATE_EVIDENCE,

@@ -5,21 +5,35 @@ import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.editor.ApproveSubmissionRequest;
 import com.example.citizen_journalism.dto.editor.ApproveSubmissionResponse;
 import com.example.citizen_journalism.dto.editor.ApplicationListItem;
+import com.example.citizen_journalism.dto.editor.EditorSubmissionDetail;
 import com.example.citizen_journalism.dto.editor.EditorApplicationDetail;
 import com.example.citizen_journalism.dto.editor.EditorOverview;
+import com.example.citizen_journalism.dto.editor.EditorSubmissionSummary;
 import com.example.citizen_journalism.dto.editor.InfoRequestResponse;
 import com.example.citizen_journalism.dto.editor.RejectSubmissionRequest;
 import com.example.citizen_journalism.dto.editor.RequestInfoRequest;
 import com.example.citizen_journalism.dto.editor.RejectSubmissionResponse;
+import com.example.citizen_journalism.dto.editor.ReputationAccountSummary;
+import com.example.citizen_journalism.dto.editor.ReputationResearchItem;
+import com.example.citizen_journalism.dto.editor.ReputationReviewResult;
+import com.example.citizen_journalism.dto.editor.ReputationSubmissionItem;
+import com.example.citizen_journalism.dto.editor.ReputationResearchDetail;
+import com.example.citizen_journalism.dto.editor.ReviewSubmissionRequest;
 import com.example.citizen_journalism.dto.editor.ReviewApplicationRequest;
+import com.example.citizen_journalism.dto.editor.ResearchReviewDetail;
 import com.example.citizen_journalism.dto.editor.VerificationReviewRequest;
 import com.example.citizen_journalism.dto.editor.VerificationReviewResponse;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
+import com.example.citizen_journalism.dto.violation.ReviewAppealRequest;
+import com.example.citizen_journalism.dto.violation.ViolationAppealView;
 import com.example.citizen_journalism.dto.submission.SubmissionSummary;
 import com.example.citizen_journalism.entity.ContributorApplication;
 import com.example.citizen_journalism.entity.Submission;
+import com.example.citizen_journalism.entity.User;
+import com.example.citizen_journalism.entity.ViolationAppeal;
 import com.example.citizen_journalism.service.ContributorApplicationService;
 import com.example.citizen_journalism.service.EditorService;
+import com.example.citizen_journalism.service.ViolationAppealService;
 import com.example.citizen_journalism.service.SubmissionApprovalService;
 import com.example.citizen_journalism.service.SubmissionInfoRequestService;
 import com.example.citizen_journalism.service.SubmissionRejectionService;
@@ -44,8 +58,11 @@ import org.springframework.web.bind.annotation.RestController;
  * API BÀN LÀM VIỆC BIÊN TẬP VIÊN — chỉ vai trò EDITOR (luật "/api/editor/**" trong SecurityConfig).
  *
  *   GET  /api/editor/overview                               -> số liệu trang Tổng quan
- *   GET  /api/editor/submissions?status=&category=&page=    -> hàng đợi tin bài (chỉ xem)
+ *   GET  /api/editor/submissions?status=&category=&page=    -> hàng đợi tin bài
  *   GET  /api/editor/submissions/{mã hồ sơ}                 -> chi tiết 1 hồ sơ
+ *   GET  /api/editor/reputation/accounts                    -> danh sách Citizen / Expert
+ *   GET  /api/editor/reputation/accounts/{id}/submissions   -> bài gửi của tài khoản
+ *   GET  /api/editor/reputation/accounts/{id}/research      -> bài nghiên cứu của Expert
  *   POST /api/editor/submissions/{mã hồ sơ}/start-review    -> tiếp nhận thẩm định: hồ sơ chuyển "Đang thẩm định", BTV phụ trách
  *   GET  /api/editor/submissions/{mã hồ sơ}/rejection       -> dữ liệu màn Từ chối hồ sơ
  *   POST /api/editor/submissions/{mã hồ sơ}/reject          -> từ chối hồ sơ, kèm phản hồi cho người gửi
@@ -69,6 +86,7 @@ public class EditorController {
 
     private final EditorService editorService;
     private final ContributorApplicationService applicationService;
+    private final ViolationAppealService appealService;
     private final SubmissionRejectionService rejectionService;
     private final SubmissionInfoRequestService infoRequestService;
     private final SubmissionApprovalService approvalService;
@@ -83,7 +101,7 @@ public class EditorController {
     // ----------------------------- Hàng đợi tin bài -----------------------------
 
     @GetMapping("/submissions")
-    public ApiResponse<PageResponse<SubmissionSummary>> listSubmissions(
+    public ApiResponse<PageResponse<EditorSubmissionSummary>> listSubmissions(
             @RequestParam(required = false) Submission.SubmissionStatus status,
             @RequestParam(required = false) Submission.ReportCategory category,
             @RequestParam(defaultValue = "0") int page,
@@ -92,8 +110,73 @@ public class EditorController {
     }
 
     @GetMapping("/submissions/{trackingCode}")
-    public ApiResponse<SubmissionDetail> getSubmission(@PathVariable String trackingCode) {
+    public ApiResponse<EditorSubmissionDetail> getSubmission(@PathVariable String trackingCode) {
         return ApiResponse.ok("OK", editorService.getSubmission(trackingCode));
+    }
+
+    @GetMapping("/reputation/accounts")
+    public ApiResponse<PageResponse<ReputationAccountSummary>> listReputationAccounts(
+            @RequestParam User.Role role,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", editorService.listReputationAccounts(role, keyword, page, size));
+    }
+
+    @GetMapping("/reputation/accounts/{accountId}")
+    public ApiResponse<ReputationAccountSummary> getReputationAccount(@PathVariable String accountId) {
+        return ApiResponse.ok("OK", editorService.getReputationAccount(accountId));
+    }
+
+    @GetMapping("/reputation/accounts/{accountId}/submissions")
+    public ApiResponse<PageResponse<ReputationSubmissionItem>> listReputationSubmissions(
+            @PathVariable String accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", editorService.listReputationSubmissions(accountId, page, size));
+    }
+
+    @GetMapping("/reputation/accounts/{accountId}/research")
+    public ApiResponse<PageResponse<ReputationResearchItem>> listReputationResearch(
+            @PathVariable String accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", editorService.listReputationResearch(accountId, page, size));
+    }
+
+    @GetMapping("/reputation/research/{id}")
+    public ApiResponse<ReputationResearchDetail> getReputationResearch(@PathVariable Long id) {
+        return ApiResponse.ok("OK", editorService.getReputationResearch(id));
+    }
+
+    @PostMapping("/reputation/submissions/{trackingCode}/review")
+    public ApiResponse<ReputationReviewResult<EditorSubmissionDetail>> reviewReputationSubmission(
+            @PathVariable String trackingCode, @Valid @RequestBody ReviewSubmissionRequest request) {
+        ReputationReviewResult<EditorSubmissionDetail> result =
+                editorService.reviewSubmission(trackingCode, request);
+        return reputationReviewResponse(result);
+    }
+
+    @PostMapping("/reputation/research/{id}/review")
+    public ApiResponse<ReputationReviewResult<com.example.citizen_journalism.dto.editor.ResearchReviewDetail>>
+    reviewReputationResearch(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                             @Valid @RequestBody ReviewSubmissionRequest request) {
+        return reputationReviewResponse(editorService.reviewResearch(jwt.getSubject(), id, request));
+    }
+
+    private static <T> ApiResponse<ReputationReviewResult<T>> reputationReviewResponse(
+            ReputationReviewResult<T> result) {
+        String message;
+        if (result.pointsChange() < 0) {
+            message = "Đã ghi nhận tin sai, trừ 10 điểm uy tín và gỡ bài."
+                    + (result.accountStatus() == User.Status.LOCKED
+                            ? " Tài khoản đã bị khóa vì điểm uy tín dưới 80." : "");
+        } else if (result.pointsChange() > 0) {
+            message = "Đã ghi nhận bài viết hợp lệ và cộng " + result.pointsChange() + " điểm uy tín.";
+        } else {
+            message = "Đã xử lý bài viết. Tài khoản đã đạt mức điểm uy tín tối đa 100, không được cộng thêm.";
+        }
+        return ApiResponse.ok(message, result);
     }
 
     @PostMapping("/submissions/{trackingCode}/start-review")
@@ -177,5 +260,29 @@ public class EditorController {
     @GetMapping("/applications/{id}/documents/{index}")
     public ResponseEntity<Resource> openApplicationDocument(@PathVariable Long id, @PathVariable int index) {
         return FileResponses.inline(applicationService.openDocumentForStaff(id, index));
+    }
+
+    @GetMapping("/appeals")
+    public ApiResponse<PageResponse<ViolationAppealView>> listAppeals(
+            @RequestParam(required = false) ViolationAppeal.Status status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", appealService.list(status, keyword, page, size));
+    }
+
+    @GetMapping("/appeals/{id}")
+    public ApiResponse<ViolationAppealView> getAppeal(@PathVariable Long id) {
+        return ApiResponse.ok("OK", appealService.get(id));
+    }
+
+    @PostMapping("/appeals/{id}/review")
+    public ApiResponse<ViolationAppealView> reviewAppeal(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                                          @Valid @RequestBody ReviewAppealRequest request) {
+        ViolationAppealView appeal = appealService.review(jwt.getSubject(), id, request);
+        String message = request.decision() == ReviewAppealRequest.Decision.FORWARD
+                ? "Đã chuyển khiếu nại đến bước phê duyệt cuối."
+                : "Đã từ chối khiếu nại.";
+        return ApiResponse.ok(message, appeal);
     }
 }

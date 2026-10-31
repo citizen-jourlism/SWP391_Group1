@@ -153,6 +153,30 @@ public class User {
 
     /** Điểm uy tín mặc định của mọi tài khoản mới. */
     public static final int DEFAULT_REPUTATION_SCORE = 100;
+    public static final int MIN_REPUTATION_SCORE = 80;
+    public static final int MAX_REPUTATION_SCORE = 100;
+
+    public int applyReputationAward(int points) {
+        if (points < 0) {
+            throw new IllegalArgumentException("Reputation award must not be negative.");
+        }
+        int currentScore = reputationScore == null ? DEFAULT_REPUTATION_SCORE : reputationScore;
+        int boundedCurrentScore = Math.max(0, Math.min(currentScore, MAX_REPUTATION_SCORE));
+        int updatedScore = points >= MAX_REPUTATION_SCORE - boundedCurrentScore
+                ? MAX_REPUTATION_SCORE : boundedCurrentScore + points;
+        reputationScore = updatedScore;
+        return updatedScore - boundedCurrentScore;
+    }
+
+    public boolean hasBelowMinimumReputation() {
+        return reputationScore != null && reputationScore < MIN_REPUTATION_SCORE;
+    }
+
+    public void lockIfBelowMinimumReputation() {
+        if (hasBelowMinimumReputation() && status == Status.ACTIVE) {
+            status = Status.LOCKED;
+        }
+    }
 
     /** Điểm hiệu suất khởi đầu khi một tài khoản trở thành Cộng tác viên. */
     public static final int DEFAULT_PERFORMANCE_SCORE = 100;

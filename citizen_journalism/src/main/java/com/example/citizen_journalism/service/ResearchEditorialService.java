@@ -236,10 +236,10 @@ public class ResearchEditorialService {
         }
 
         boolean researchStatus = status == null || status == SubmissionStatus.PENDING
-                || status == SubmissionStatus.DEPUTY_PENDING || status == SubmissionStatus.REJECTED;
+                || java.util.Arrays.stream(ResearchArticle.ReviewStatus.values()).anyMatch(value -> value.name().equals(status.name()));
         if ((type == null || type == QueueType.RESEARCH) && researchStatus) {
-            ResearchArticle.ReviewStatus review = status == SubmissionStatus.DEPUTY_PENDING ? ResearchArticle.ReviewStatus.DEPUTY_PENDING
-                    : status == SubmissionStatus.REJECTED ? ResearchArticle.ReviewStatus.REJECTED : null;
+            ResearchArticle.ReviewStatus review = status == null || status == SubmissionStatus.PENDING
+                    ? null : ResearchArticle.ReviewStatus.valueOf(status.name());
             Page<ResearchArticle> rows = repository.searchResearch(ResearchArticle.Status.SUBMITTED, safeField,
                     status == null, review, firstRows.withSort(byTime("submittedAt", oldestFirst)));
             totalItems += rows.getTotalElements();
@@ -526,7 +526,8 @@ public class ResearchEditorialService {
 
     /** Dòng Duyệt / Từ chối của bài (mỗi bài có tối đa 1 dòng), chưa có thì null. */
     private static EditoralReview decisionOf(List<EditoralReview> rows) {
-        return rows.stream().filter(row -> row.getAction() != ReviewAction.REQUEST_EDIT).findFirst().orElse(null);
+        return rows.stream().filter(row -> row.getReviewRole() == EditoralReview.ReviewRole.EDITOR
+                && (row.getAction() == ReviewAction.APPROVE || row.getAction() == ReviewAction.REJECT)).findFirst().orElse(null);
     }
 
     private static boolean hasPendingRequest(List<EditoralReview> rows) {
@@ -662,8 +663,7 @@ public class ResearchEditorialService {
 
     private static QueueItem queueItemOf(ResearchArticle article) {
         SubmissionStatus status = article.getReviewStatus() == null ? SubmissionStatus.PENDING
-                : article.getReviewStatus() == ResearchArticle.ReviewStatus.DEPUTY_PENDING
-                ? SubmissionStatus.DEPUTY_PENDING : SubmissionStatus.REJECTED;
+                : SubmissionStatus.valueOf(article.getReviewStatus().name());
         LocalDateTime sentAt = article.getSubmittedAt() != null ? article.getSubmittedAt() : article.getCreatedAt();
         return new QueueItem(QueueType.RESEARCH, "NC-" + article.getId(), article.getId(), article.getTitle(), status,
                 false, null, article.getField(), sentAt);

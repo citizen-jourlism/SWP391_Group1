@@ -70,7 +70,12 @@ const REVIEW_STATUS = {
 }
 
 /** Nhãn kết quả duyệt; null (chưa duyệt) -> "Chờ duyệt". */
-export const reviewStatusInfo = (status) => REVIEW_STATUS[status ?? 'PENDING_REVIEW']
+export const reviewStatusInfo = (status) => ({
+  EIC_PENDING: { label: 'Chờ Tổng biên tập duyệt', tone: 'orange' },
+  READY_FOR_PUBLISHING: { label: 'Sẵn sàng xuất bản', tone: 'green' },
+  DEPUTY_REJECTED: { label: 'Phó Tổng biên tập từ chối', tone: 'red' },
+  EIC_REJECTED: { label: 'Tổng biên tập từ chối', tone: 'red' },
+}[status] ?? REVIEW_STATUS[status ?? 'PENDING_REVIEW'])
 
 // ============================== 4. TIÊU CHUẨN CHẤM ĐIỂM ==============================
 // BẢN SAO của backend (ResearchEditorialService, khu "TIÊU CHUẨN CHẤM ĐIỂM") để tính NGAY khi BTV chọn.

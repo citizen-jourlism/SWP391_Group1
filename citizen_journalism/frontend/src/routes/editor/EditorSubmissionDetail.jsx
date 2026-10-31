@@ -11,6 +11,7 @@ import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import Icon from '../../components/ui/Icon'
+import TextField from '../../components/ui/TextField'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import {
   ACTIVE_ASSIGNMENT_STATUSES,
@@ -26,44 +27,46 @@ import { editorService } from '../../services/editorService'
 import { reviewStartService } from '../../services/reviewStartService'
 import '../../assets/styles/assignment.css'
 
-/*
- * CHI TIẾT 1 HỒ SƠ TRONG HÀNG ĐỢI — /editor/queue/:code (Biên tập viên).
- * Dữ liệu: GET /api/editor/submissions/{mã}; hiển thị bằng SubmissionDetail (dùng chung với trang người dân theo dõi).
- *
- * Thanh thao tác phía trên:
- *   - "Tiếp nhận thẩm định" (chỉ hồ sơ Đã tiếp nhận) hỏi xác nhận rồi gọi POST .../start-review: hồ sơ chuyển
- *     "Đang thẩm định" và BTV đang đăng nhập thành người phụ trách.
- *   - "Kiểm tra tin trùng" mở /editor/screening/<mã> (EditorDuplicateCheck).
- *   - "Giao CTV xác minh" mở /editor/queue/<mã>/assign (EditorAssignContributor), chỉ hiện khi hồ sơ chưa từng được giao.
- *     Hồ sơ từng được giao thì có ô nhiệm vụ ngay dưới thanh này: nút "Thu hồi" khi nhiệm vụ còn hiệu lực,
- *     nút "Giao CTV khác" khi CTV từ chối / huỷ hoặc nhiệm vụ đã bị thu hồi.
- *   - "Yêu cầu bổ sung" mở /editor/queue/<mã>/request-info (EditorRequestInfo), hiện khi hồ sơ Đã tiếp nhận / Đang thẩm định;
- *     hồ sơ đang "Cần bổ sung" thì thành "Xem yêu cầu bổ sung".
- *   - "Duyệt & chuyển Phó TBT" (tin nóng Đang thẩm định, chưa giao CTV) mở hộp thoại ApproveSubmissionDialog.
- *   - "Duyệt kết quả xác minh" (CTV đã nộp báo cáo) mở /editor/queue/<mã>/verification (EditorVerificationReview).
- *   - "Từ chối" mở /editor/queue/<mã>/reject (EditorRejectSubmission), chỉ bật khi hồ sơ còn ở bước biên tập.
- *   - "Lịch sử" mở AssignmentHistoryDialog: giao cho ai, ai nhận, ai từ chối, lý do...
- * Nhiệm vụ đã nộp báo cáo thì hiện báo cáo (FieldReportCard) ngay dưới ô nhiệm vụ. Báo cáo đang chờ xem thì có
- * 3 nút phản hồi: yêu cầu sửa bài, yêu cầu bổ sung tư liệu, duyệt.
- */
-
-function EditorSubmissionDetail() {
-  const { code } = useParams()
-  const { state } = useLocation() // state.notice: thông báo từ trang chọn CTV sau khi giao xong
-  const { data, error, setData } = useAsyncData(() => editorService.getSubmission(code), code)
+function EditorSubmissionDetail({ reputationMode = false }) {
+  const { code, accountId } = useParams()
+  const { state } = useLocation()
+  const { data: editorData, error, setData } = useAsyncData(() => editorService.getSubmission(code), code)
+  const data = editorData?.detail ?? editorData
+  const reputationReviewed = editorData?.reputationReviewed
   const { data: assignment, setData: setAssignment, loading: assignmentLoading, reload: reloadAssignment } = useAsyncData(
     () => editorService.getLatestAssignment(code),
     `assignment|${code}`,
   )
+  const [decision, setDecision] = useState('')
+  const [reason, setReason] = useState('')
+  const [formError, setFormError] = useState('')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [approveOpen, setApproveOpen] = useState(false)
   const [startOpen, setStartOpen] = useState(false)
-  const [notice, setNotice] = useState('') // Thông báo thành công sau khi tiếp nhận / duyệt
+  const [notice, setNotice] = useState('')
   const canAssignFirst = !assignment && !assignmentLoading && ASSIGNABLE_SUBMISSION_STATUSES.includes(data?.status)
   const assignmentRunning = ACTIVE_ASSIGNMENT_STATUSES.includes(assignment?.status)
-  // Duyệt chuyển Phó TBT: tin nóng Đang thẩm định chưa giao CTV. Đã giao thì đi qua "Duyệt kết quả xác minh"
   const canApprove =
     data?.category === 'HOT_NEWS' && data.status === 'IN_REVIEW' && !assignmentRunning && assignment?.status !== 'COMPLETED'
+
+  const submitReview = (value) => {
+    if (value === 'FAKE_NEWS' && reason.trim().length < 10) {
+      setFormError('Vui lòng ghi lý do tin giả, ít nhất 10 ký tự.')
+      return
+    }
+    setFormError('')
+    setDecision(value)
+  }
+
+  const confirmReview = async () => {
+    const response = await editorService.reviewReputationSubmission(code, {
+      decision,
+      reason: decision === 'FAKE_NEWS' ? reason.trim() : null,
+    })
+    setData({ ...editorData, detail: response.data.article, reputationReviewed: true })
+    setNotice(`${response.message} Điểm uy tín hiện tại: ${response.data.reputationScore}.`)
+    setReason('')
+  }
 
   const handleApproved = (response) => {
     setData(response.data.submission)
@@ -80,9 +83,9 @@ function EditorSubmissionDetail() {
 
   return (
     <div className="desk-detail">
-      <Link to="/editor/queue" className="desk-back">
+      <Link to={reputationMode ? `/editor/reputation/accounts/${accountId}` : '/editor/queue'} className="desk-back">
         <Icon name="arrowLeft" size={16} />
-        Hàng đợi tin bài
+        {reputationMode ? 'Danh sách bài và uy tín' : 'Hàng đợi tin bài'}
       </Link>
 
       {error && <Alert type="error">{error}</Alert>}
@@ -92,76 +95,130 @@ function EditorSubmissionDetail() {
 
       {data && (
         <>
-          <section className="admin-panel desk-actions">
-            <div>
-              <strong>Xử lý hồ sơ</strong>
-              <small>Tiếp nhận hồ sơ mới, giao CTV xác minh khi cần, yêu cầu bổ sung nếu còn thiếu thông tin, duyệt để chuyển Phó Tổng biên tập hoặc từ chối nếu không đạt yêu cầu.</small>
-            </div>
-            <div className="desk-actions__buttons">
-              {data.status === 'PENDING' && (
-                <Button variant="secondary" className="btn--sm" onClick={() => setStartOpen(true)}>
-                  <Icon name="checkCircle" size={14} />
-                  Tiếp nhận thẩm định
-                </Button>
-              )}
-              <Button to={`/editor/screening/${code}`} variant="secondary" className="btn--sm">
-                <Icon name="copy" size={14} />
-                Kiểm tra tin trùng
-              </Button>
-              {canAssignFirst && (
-                <Button to={`/editor/queue/${code}/assign`} variant="secondary" className="btn--sm">
-                  <Icon name="mapPin" size={14} />
-                  Giao CTV xác minh
-                </Button>
-              )}
-              {(REQUESTABLE_STATUSES.includes(data.status) || data.status === 'NEED_MORE_INFO') && (
-                <Button to={`/editor/queue/${code}/request-info`} variant="secondary" className="btn--sm">
-                  <Icon name="info" size={14} />
-                  {data.status === 'NEED_MORE_INFO' ? 'Xem yêu cầu bổ sung' : 'Yêu cầu bổ sung'}
-                </Button>
-              )}
-              {data.status === 'IN_REVIEW' && assignment?.status === 'COMPLETED' && (
-                <Button to={`/editor/queue/${code}/verification`} variant="secondary" className="btn--sm">
-                  <Icon name="mapPin" size={14} />
-                  Duyệt kết quả xác minh
-                </Button>
-              )}
-              {canApprove && (
-                <Button className="btn--sm" onClick={() => setApproveOpen(true)}>
-                  <Icon name="send" size={14} />
-                  Duyệt & chuyển Phó TBT
-                </Button>
-              )}
-              {REJECTABLE_STATUSES.includes(data.status) && (
-                <Button to={`/editor/queue/${code}/reject`} variant="danger" className="btn--sm">
+          {reputationMode && !reputationReviewed && (
+            <section className="admin-panel desk-actions">
+              <div>
+                <strong>Đánh giá uy tín bài viết</strong>
+                <small>Bài hợp lệ: +5 điểm. Tin giả: gỡ bài và -10 điểm.</small>
+              </div>
+              <TextField
+                label="Lý do từ chối tin giả"
+                multiline
+                rows={3}
+                counter={2000}
+                value={reason}
+                onChange={(event) => { setReason(event.target.value); setFormError('') }}
+                hint="Bắt buộc, tối thiểu 10 ký tự khi chọn tin giả."
+                error={formError}
+              />
+              <div className="desk-actions__buttons">
+                <Button variant="danger" className="btn--sm" onClick={() => submitReview('FAKE_NEWS')}>
                   <Icon name="x" size={14} />
-                  Từ chối
+                  Từ chối tin giả, gỡ bài và trừ 10 điểm
                 </Button>
+                <Button className="btn--sm" onClick={() => submitReview('APPROVE')}>
+                  <Icon name="checkCircle" size={14} />
+                  Xác nhận tin chuẩn, cộng 5 điểm
+                </Button>
+              </div>
+            </section>
+          )}
+          {reputationMode && reputationReviewed && (
+            <Alert type="info">Bài viết này đã được tính điểm uy tín và không thể xử lý lần nữa.</Alert>
+          )}
+          {!reputationMode && (
+            <>
+              <section className="admin-panel desk-actions">
+                <div>
+                  <strong>Xử lý hồ sơ</strong>
+                  <small>
+                    Tiếp nhận hồ sơ mới, giao CTV xác minh khi cần, yêu cầu bổ sung nếu còn thiếu thông tin, duyệt để
+                    chuyển Phó Tổng biên tập hoặc từ chối nếu không đạt yêu cầu.
+                  </small>
+                </div>
+                <div className="desk-actions__buttons">
+                  {data.status === 'PENDING' && (
+                    <Button variant="secondary" className="btn--sm" onClick={() => setStartOpen(true)}>
+                      <Icon name="checkCircle" size={14} />
+                      Tiếp nhận thẩm định
+                    </Button>
+                  )}
+                  <Button to={`/editor/screening/${code}`} variant="secondary" className="btn--sm">
+                    <Icon name="copy" size={14} />
+                    Kiểm tra tin trùng
+                  </Button>
+                  {canAssignFirst && (
+                    <Button to={`/editor/queue/${code}/assign`} variant="secondary" className="btn--sm">
+                      <Icon name="mapPin" size={14} />
+                      Giao CTV xác minh
+                    </Button>
+                  )}
+                  {(REQUESTABLE_STATUSES.includes(data.status) || data.status === 'NEED_MORE_INFO') && (
+                    <Button to={`/editor/queue/${code}/request-info`} variant="secondary" className="btn--sm">
+                      <Icon name="info" size={14} />
+                      {data.status === 'NEED_MORE_INFO' ? 'Xem yêu cầu bổ sung' : 'Yêu cầu bổ sung'}
+                    </Button>
+                  )}
+                  {data.status === 'IN_REVIEW' && assignment?.status === 'COMPLETED' && (
+                    <Button to={`/editor/queue/${code}/verification`} variant="secondary" className="btn--sm">
+                      <Icon name="mapPin" size={14} />
+                      Duyệt kết quả xác minh
+                    </Button>
+                  )}
+                  {canApprove && (
+                    <Button className="btn--sm" onClick={() => setApproveOpen(true)}>
+                      <Icon name="send" size={14} />
+                      Duyệt & chuyển Phó TBT
+                    </Button>
+                  )}
+                  {REJECTABLE_STATUSES.includes(data.status) && (
+                    <Button to={`/editor/queue/${code}/reject`} variant="danger" className="btn--sm">
+                      <Icon name="x" size={14} />
+                      Từ chối
+                    </Button>
+                  )}
+                  <Button variant="secondary" className="btn--sm" onClick={() => setHistoryOpen(true)}>
+                    <Icon name="clock" size={14} />
+                    Lịch sử
+                  </Button>
+                </div>
+              </section>
+              {assignment && <CurrentAssignment assignment={assignment} onCancelled={setAssignment} />}
+              {assignment?.status === 'COMPLETED' && (
+                <AssignmentReport assignmentId={assignment.id} onReviewed={reloadAssignment} />
               )}
-              <Button variant="secondary" className="btn--sm" onClick={() => setHistoryOpen(true)}>
-                <Icon name="clock" size={14} />
-                Lịch sử
-              </Button>
-            </div>
-          </section>
-          {assignment && <CurrentAssignment assignment={assignment} onCancelled={setAssignment} />}
-          {assignment?.status === 'COMPLETED' && <AssignmentReport assignmentId={assignment.id} onReviewed={reloadAssignment} />}
+            </>
+          )}
           <SubmissionDetail detail={data} />
-          <ConfirmDialog
-            open={startOpen}
-            title="Tiếp nhận thẩm định"
-            message={`Bạn sẽ là Biên tập viên phụ trách hồ sơ ${data.trackingCode}. Hồ sơ chuyển sang trạng thái "Đang thẩm định" và người gửi thấy bước này trong nhật ký xử lý.`}
-            confirmLabel="Tiếp nhận"
-            onConfirm={startReview}
-            onClose={() => setStartOpen(false)}
-          />
-          {approveOpen && (
-            <ApproveSubmissionDialog code={code} onClose={() => setApproveOpen(false)} onApproved={handleApproved} />
+          {!reputationMode && (
+            <>
+              <ConfirmDialog
+                open={startOpen}
+                title="Tiếp nhận thẩm định"
+                message={`Bạn sẽ là Biên tập viên phụ trách hồ sơ ${data.trackingCode}. Hồ sơ chuyển sang trạng thái "Đang thẩm định" và người gửi thấy bước này trong nhật ký xử lý.`}
+                confirmLabel="Tiếp nhận"
+                onConfirm={startReview}
+                onClose={() => setStartOpen(false)}
+              />
+              {approveOpen && (
+                <ApproveSubmissionDialog code={code} onClose={() => setApproveOpen(false)} onApproved={handleApproved} />
+              )}
+            </>
           )}
         </>
       )}
-
-      {historyOpen && <AssignmentHistoryDialog code={code} onClose={() => setHistoryOpen(false)} />}
+      <ConfirmDialog
+        open={Boolean(decision)}
+        title={decision === 'FAKE_NEWS' ? 'Từ chối tin giả' : 'Duyệt tin chuẩn'}
+        message={decision === 'FAKE_NEWS'
+          ? 'Bài viết sẽ bị gỡ và tác giả bị trừ 10 điểm. Tài khoản sẽ khóa nếu điểm xuống dưới 80.'
+          : 'Bài viết sẽ được chấp thuận và tác giả được cộng tối đa 5 điểm, không vượt quá 100.'}
+        confirmLabel={decision === 'FAKE_NEWS' ? 'Từ chối và gỡ bài' : 'Duyệt tin'}
+        danger={decision === 'FAKE_NEWS'}
+        onConfirm={confirmReview}
+        onClose={() => setDecision('')}
+      />
+      {!reputationMode && historyOpen && <AssignmentHistoryDialog code={code} onClose={() => setHistoryOpen(false)} />}
     </div>
   )
 }

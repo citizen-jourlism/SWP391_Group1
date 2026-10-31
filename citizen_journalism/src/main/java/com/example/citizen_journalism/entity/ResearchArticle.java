@@ -12,7 +12,9 @@ import lombok.*;
  * VÒNG ĐỜI:
  *   DRAFT     : bản nháp - chuyên gia viết dần, lưu bao nhiêu lần cũng được, sửa / xoá thoải mái
  *               (chức năng "Quản lý bản nháp"). Bản nháp chưa cần đủ các ô bắt buộc.
- *   SUBMITTED : đã nộp cho toà soạn - KHÔNG sửa / xoá được nữa. Khi nộp phải đủ các ô (ResearchArticleService.validateForSubmit).
+ *   SUBMITTED : đã nộp, chờ Biên tập viên xét duyệt.
+ *   APPROVED  : đã được Biên tập viên xác minh là bài hợp lệ.
+ *   Bài đã nộp không được tác giả sửa / xoá.
  *
  * TẠI SAO bảng riêng mà không dùng chung bảng submissions? Bản nháp cần lưu khi còn dở dang (thiếu tiêu đề, nội dung...)
  * và có nhiều trường riêng (tóm tắt, từ khoá, tài liệu tham khảo, xung đột lợi ích). Để riêng thì bảng submissions
@@ -79,6 +81,16 @@ public class ResearchArticle extends BaseEntity {
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by")
+    private User approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "editorial_note", columnDefinition = "TEXT")
+    private String editorialNote;
+
     // ----- KẾT QUẢ DUYỆT CỦA BIÊN TẬP VIÊN (ResearchEditorialService) -----
     // Chỉ giữ 2 cột để lọc hàng đợi và hiện nhãn nhanh. Chi tiết (ai duyệt, lúc nào, ghi chú / lý do, điểm, Phó TBT)
     // nằm ở dòng APPROVE / REJECT của bảng editorial_reviews.
@@ -96,11 +108,17 @@ public class ResearchArticle extends BaseEntity {
 
     public enum Status {
         DRAFT,
-        SUBMITTED
+        SUBMITTED,
+        APPROVED,
+        REJECTED
     }
 
     public enum ReviewStatus {
         DEPUTY_PENDING,
+        EIC_PENDING,
+        READY_FOR_PUBLISHING,
+        DEPUTY_REJECTED,
+        EIC_REJECTED,
         REJECTED
     }
 

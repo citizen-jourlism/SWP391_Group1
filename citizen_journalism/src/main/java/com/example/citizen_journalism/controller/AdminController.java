@@ -46,7 +46,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
 
     private final AdminService adminService;
-
     @GetMapping("/stats")
     public ApiResponse<AdminStats> stats() {
         return ApiResponse.ok("OK", adminService.getStats());
@@ -94,4 +93,5 @@ public class AdminController {
         String temporaryPassword = adminService.resetPassword(jwt.getSubject(), id, request.adminPassword());
         return ApiResponse.ok("Đã đặt lại mật khẩu cho tài khoản " + id + ".", temporaryPassword);
     }
+
 }

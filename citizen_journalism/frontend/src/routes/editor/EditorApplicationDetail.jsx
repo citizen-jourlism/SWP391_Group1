@@ -115,10 +115,6 @@ function EditorApplicationDetail() {
               <span>Uy tín</span>
             </div>
             <div>
-              <strong>{applicant.rewardPoints}</strong>
-              <span>Điểm thưởng</span>
-            </div>
-            <div>
               <strong>{applicant.submissionCount}</strong>
               <span>Tin đã gửi</span>
             </div>

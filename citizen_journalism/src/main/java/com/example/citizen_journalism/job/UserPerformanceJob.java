@@ -14,7 +14,7 @@ import java.util.Map;
  * Iteration 2 / TungTT: read-only snapshot of Citizen reputation and
  * Contributor activity. Does not calculate, award, or deduct scores.
  *
- * No timer is registered: the team must approve a schedule or trigger separately.
+ * Evaluated on demand through UserPerformanceController using current database data.
  */
 @Component
 public class UserPerformanceJob {
@@ -30,10 +30,13 @@ public class UserPerformanceJob {
             String fullName,
             User.Role role,
             Integer reputationScore,
+            Integer performanceScore,
             long totalSubmissions,
             long publishedSubmissions,
             long totalAssignments,
-            long completedAssignments
+            long completedAssignments,
+            double completionRate,
+            String evaluation
     ) { }
 
     @Transactional(readOnly = true)
@@ -41,7 +44,7 @@ public class UserPerformanceJob {
         Map<String, MutableStats> stats = new LinkedHashMap<>();
 
         List<Object[]> users = entityManager.createQuery("""
-                select u.id, u.fullName, u.role, u.reputationScore
+                select u.id, u.fullName, u.role, u.reputationScore, u.performanceScore
                 from User u
                 where u.role in :roles
                 order by u.id
@@ -52,7 +55,7 @@ public class UserPerformanceJob {
         for (Object[] row : users) {
             String id = (String) row[0];
             stats.put(id, new MutableStats(
-                    id, (String) row[1], (User.Role) row[2], (Integer) row[3]));
+                    id, (String) row[1], (User.Role) row[2], (Integer) row[3], (Integer) row[4]));
         }
 
         List<Object[]> submissionCounts = entityManager.createQuery("""
@@ -97,9 +100,14 @@ public class UserPerformanceJob {
         List<PerformanceSnapshot> result = new ArrayList<>(stats.size());
         for (MutableStats item : stats.values()) {
             result.add(new PerformanceSnapshot(
-                    item.userId, item.fullName, item.role, item.reputationScore,
+                    item.userId, item.fullName, item.role, item.reputationScore, item.performanceScore,
                     item.totalSubmissions, item.publishedSubmissions,
-                    item.totalAssignments, item.completedAssignments));
+                    item.totalAssignments, item.completedAssignments,
+                    item.totalAssignments == 0 ? 0 : Math.round(1000.0 * item.completedAssignments / item.totalAssignments) / 10.0,
+                    item.totalAssignments == 0 && item.totalSubmissions == 0 ? "Chưa có hoạt động"
+                            : item.role == User.Role.CONTRIBUTOR
+                            ? (item.totalAssignments == 0 ? "Chưa có nhiệm vụ" : item.completedAssignments * 100.0 / item.totalAssignments >= 80 ? "Hoàn thành tốt" : "Cần theo dõi tiến độ")
+                            : (item.reputationScore != null && item.reputationScore >= 80 ? "Đạt yêu cầu uy tín" : "Cần xem xét uy tín")));
         }
         return List.copyOf(result);
     }
@@ -109,16 +117,19 @@ public class UserPerformanceJob {
         final String fullName;
         final User.Role role;
         final Integer reputationScore;
+        final Integer performanceScore;
         long totalSubmissions;
         long publishedSubmissions;
         long totalAssignments;
         long completedAssignments;
 
-        MutableStats(String userId, String fullName, User.Role role, Integer reputationScore) {
+        MutableStats(String userId, String fullName, User.Role role, Integer reputationScore, Integer performanceScore) {
             this.userId = userId;
             this.fullName = fullName;
             this.role = role;
             this.reputationScore = reputationScore;
+            this.performanceScore = role == User.Role.CONTRIBUTOR && performanceScore == null
+                    ? Integer.valueOf(User.DEFAULT_PERFORMANCE_SCORE) : performanceScore;
         }
     }
 }

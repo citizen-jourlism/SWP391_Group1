@@ -1,14 +1,18 @@
 package com.example.citizen_journalism.repository;
 
 import com.example.citizen_journalism.entity.Submission;
+import com.example.citizen_journalism.entity.User;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 
 /**
  * REPOSITORY cho bảng "submissions" (tin nóng, khiếu nại, bài viết...).
@@ -22,13 +26,23 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     /** Tra cứu theo mã hồ sơ, ví dụ "KB-2026-0001". */
     Optional<Submission> findByTrackingCode(String trackingCode);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = "author")
+    @Query("select s from Submission s where s.trackingCode = :trackingCode")
+    Optional<Submission> findForReviewByTrackingCode(@Param("trackingCode") String trackingCode);
+
     /** Hồ sơ theo mã, CHỈ khi đúng người gửi (để người khác không xem được hồ sơ của mình bằng cách đổi mã trên URL). */
     Optional<Submission> findByTrackingCodeAndAuthorId(String trackingCode, String authorId);
+
+    /** Các hồ sơ của 1 người gửi, có phân trang (thứ tự sắp xếp truyền qua Pageable). */
+    @EntityGraph(attributePaths = "author")
+    Page<Submission> findByAuthorId(String authorId, Pageable pageable);
 
     /**
      * Các hồ sơ của 1 người gửi, có phân trang (thứ tự sắp xếp truyền qua Pageable).
      * type: loại cần bỏ qua. Bài CTV nộp kèm báo cáo (CONTRIBUTOR_POST) không phải hồ sơ họ gửi tới toà soạn.
      */
+    @EntityGraph(attributePaths = "author")
     Page<Submission> findByAuthorIdAndTypeNot(String authorId, Submission.SubmissionType type, Pageable pageable);
 
     long countByAuthorId(String authorId);
@@ -37,6 +51,9 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     long countByAuthorIdAndStatusAndIdNot(String authorId, Submission.SubmissionStatus status, Long id);
 
     long countByTypeAndStatus(Submission.SubmissionType type, Submission.SubmissionStatus status);
+
+    @EntityGraph(attributePaths = "author")
+    Page<Submission> findByStatusAndAuthorRole(Submission.SubmissionStatus status, User.Role role, Pageable pageable);
 
     /** Đếm bỏ qua 1 loại, dùng để không tính bài CTV nộp (CONTRIBUTOR_POST) vào số hồ sơ. */
     long countByTypeNotAndStatus(Submission.SubmissionType type, Submission.SubmissionStatus status);

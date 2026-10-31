@@ -5,10 +5,10 @@ import { toMultipart } from '../lib/payload'
  * API BÀI NGHIÊN CỨU + BẢN NHÁP của Chuyên gia (backend: ResearchController.java, chỉ vai trò EXPERT).
  */
 export const researchService = {
-  /** { fields, minTitleLength, minAbstractLength, minWords, maxImages, maxImageSizeMb, acceptedImageTypes, draftCount, submittedCount } */
+  /** { fields, minTitleLength, minAbstractLength, minWords, maxImages, maxImageSizeMb, acceptedImageTypes, draftCount, submittedCount, approvedCount, rejectedCount } */
   getOptions: () => api.get('/research/options'),
 
-  /** status: 'DRAFT' (bản nháp) | 'SUBMITTED' (đã nộp) */
+  /** status: 'DRAFT' (bản nháp) | 'SUBMITTED' (chờ duyệt) | 'APPROVED' (đã duyệt) */
   list: (status, page = 0) => api.get('/research', { params: { status, page } }),
 
   get: (id) => api.get(`/research/${id}`),
