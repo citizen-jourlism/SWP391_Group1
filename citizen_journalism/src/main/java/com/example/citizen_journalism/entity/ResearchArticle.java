@@ -115,6 +115,10 @@ public class ResearchArticle extends BaseEntity {
 
     public enum ReviewStatus {
         DEPUTY_PENDING,
+        EIC_PENDING,
+        READY_FOR_PUBLISHING,
+        DEPUTY_REJECTED,
+        EIC_REJECTED,
         REJECTED
     }
 

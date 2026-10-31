@@ -31,6 +31,10 @@ import lombok.Setter;
 @Builder
 public class UserViolation extends BaseEntity {
 
+    @jakarta.persistence.Version
+    @Column(nullable = false, columnDefinition = "bigint not null default 0")
+    private long version;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     @NotNull

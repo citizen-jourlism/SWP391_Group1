@@ -269,7 +269,7 @@ public class SubmissionVerificationReviewService {
     /** Lần duyệt kết quả xác minh gần nhất: editorial_reviews APPROVE của EDITOR có mã đánh dấu. */
     private VerificationReviewResponse.Review reviewOf(Submission submission) {
         return reviewRepository
-                .findFirstBySubmissionAndActionOrderByCreatedAtDescIdDesc(submission, EditoralReview.ReviewAction.APPROVE)
+                .findFirstBySubmissionAndActionAndReviewRoleOrderByCreatedAtDescIdDesc(submission, EditoralReview.ReviewAction.APPROVE, EditoralReview.ReviewRole.EDITOR)
                 .filter(review -> review.getReviewRole() == EditoralReview.ReviewRole.EDITOR)
                 .filter(review -> review.getComments() != null && review.getComments().startsWith(COMMENT_MARKER))
                 .map(review -> new VerificationReviewResponse.Review(

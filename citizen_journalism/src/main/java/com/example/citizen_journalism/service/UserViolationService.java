@@ -76,7 +76,7 @@ public class UserViolationService {
         if (trackingCode != null) {
             submission = submissionRepository.findByTrackingCode(trackingCode.toUpperCase())
                     .orElseThrow(() -> AppException.notFound("Không tìm thấy hồ sơ " + trackingCode + "."));
-            if (!submission.getAuthor().getId().equals(subject.getId())) {
+            if (!submission.getAuthor().getId().equalsIgnoreCase(subject.getId())) {
                 throw AppException.badRequest("Hồ sơ này không thuộc tài khoản bị báo cáo.");
             }
         }
@@ -97,10 +97,14 @@ public class UserViolationService {
     @Transactional
     public ViolationDetail review(String editorId, Long id, ReviewViolationRequest request) {
         UserViolation violation = find(id);
-        if (violation.getStatus() != UserViolation.Status.PENDING_REVIEW) {
+        if (violation.getStatus() != UserViolation.Status.PENDING_REVIEW
+                && violation.getStatus() != UserViolation.Status.PENDING_APPROVAL) {
             throw AppException.conflict("Báo cáo này đã được xử lý.");
         }
         User editor = userRepository.getActiveById(editorId);
+        if (violation.getProposedAction() != null && requiresApproval(violation.getProposedAction())) {
+            throw AppException.conflict("Đề xuất đã trình lãnh đạo, không thể sửa quyết định sơ duyệt.");
+        }
         String note = blankToNull(request.note());
         violation.setReviewedBy(editor);
         violation.setReviewNote(note);
@@ -176,6 +180,15 @@ public class UserViolationService {
                     violation.setRetractionSnapshot(violation.getRelatedSubmission().getContent());
                 }
                 violation.setProposedAction(action);
+            }
+            if (!requiresApproval(action)) {
+                throw AppException.badRequest("Biện pháp này phải được biên tập viên xử lý.");
+            }
+            validateAction(violation, action, null);
+            if (action == UserViolation.Action.RETRACT_CONTENT
+                    && (request.note() == null || request.note().trim().length() < 20)
+                    && (violation.getReviewNote() == null || violation.getReviewNote().trim().length() < 20)) {
+                throw AppException.invalidFields(Map.of("note", "Vui lòng ghi căn cứ gỡ nội dung, ít nhất 20 ký tự."));
             }
             if (action == UserViolation.Action.LOCK_ACCOUNT && admin.getRole() != User.Role.DEPUTY_EIC) {
                 throw AppException.forbidden("Chỉ Phó Tổng biên tập được phê duyệt khóa tài khoản.", ErrorCode.FORBIDDEN);

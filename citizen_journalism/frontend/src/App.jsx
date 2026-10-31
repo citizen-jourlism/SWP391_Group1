@@ -45,6 +45,11 @@ import ContributorTasks from './routes/contributor/ContributorTasks.jsx'
 import EditorAssignContributor from './routes/editor/EditorAssignContributor.jsx'
 import EditorAssignments from './routes/editor/EditorAssignments.jsx'
 import EditorPlanned from './routes/editor/EditorPlanned.jsx'
+import ViolationReports, { ViolationReportDetail } from './routes/editor/ViolationReports.jsx'
+import LeadershipContent, { LeadershipContentDetail } from './routes/leadership/LeadershipContent.jsx'
+import UserPerformance from './routes/editor/UserPerformance.jsx'
+import ExpertApplications from './routes/editor/ExpertApplications.jsx'
+import LeadershipApplications from './routes/leadership/LeadershipApplications.jsx'
 import EditorQueue from './routes/editor/EditorQueue.jsx'
 import EditorRejectSubmission from './routes/editor/EditorRejectSubmission.jsx'
 import EditorRequestInfo from './routes/editor/EditorRequestInfo.jsx'
@@ -236,14 +241,19 @@ function App() {
           <Route
             path="/leadership"
             element={
-              <ProtectedRoute roles={['DEPUTY_EIC']}>
+              <ProtectedRoute roles={['DEPUTY_EIC', 'EIC']}>
                 <LeadershipLayout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<LeadershipApprovals initialKind="appeals" />} />
-            <Route path="appeals" element={<LeadershipApprovals initialKind="appeals" />} />
-            <Route path="approvals/appeals/:id" element={<LeadershipAppealDetail />} />
+            <Route index element={<LeadershipContent />} />
+            <Route path="appeals" element={<ProtectedRoute roles={['DEPUTY_EIC']}><LeadershipApprovals /></ProtectedRoute>} />
+            <Route path="violations" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ViolationReports leadership /></ProtectedRoute>} />
+            <Route path="content" element={<LeadershipContent />} />
+            <Route path="applications" element={<ProtectedRoute roles={['DEPUTY_EIC']}><LeadershipApplications /></ProtectedRoute>} />
+            <Route path="content/:kind/:id" element={<LeadershipContentDetail />} />
+            <Route path="violations/:id" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ViolationReportDetail leadership /></ProtectedRoute>} />
+            <Route path="approvals/appeals/:id" element={<ProtectedRoute roles={['DEPUTY_EIC']}><LeadershipAppealDetail /></ProtectedRoute>} />
           </Route>
 
           {/* ----- Bàn làm việc Biên tập viên: chỉ EDITOR. Cũng là route lồng nhau trong EditorLayout ----- */}
@@ -277,7 +287,11 @@ function App() {
             <Route path="screening" element={<EditorPlanned page="screening" />} />
             <Route path="assignments" element={<EditorAssignments />} />                 {/* Nhiệm vụ đã giao */}
             <Route path="articles" element={<EditorArticles />} />                       {/* Biên tập bài viết */}
-            <Route path="members" element={<EditorPlanned page="members" />} />
+            <Route path="members" element={<ViolationReports />} />
+            <Route path="performance" element={<UserPerformance />} />
+            <Route path="expert-applications" element={<ExpertApplications />} />
+            <Route path="violations" element={<ViolationReports />} />
+            <Route path="violations/:id" element={<ViolationReportDetail />} />
           </Route>
 
           {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link...): về trang chính theo vai trò */}

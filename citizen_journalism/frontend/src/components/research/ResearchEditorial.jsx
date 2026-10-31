@@ -318,7 +318,15 @@ export function PendingRevisionsBanner() {
  */
 export function ReviewResultNote({ result }) {
   if (!result) return null
-  const rejected = result.status === 'REJECTED'
+  const rejected = ['REJECTED', 'DEPUTY_REJECTED', 'EIC_REJECTED'].includes(result.status)
+  const stage = {
+    DEPUTY_PENDING: 'Đã chuyển Phó Tổng biên tập xem xét',
+    EIC_PENDING: 'Đã chuyển Tổng biên tập xem xét',
+    READY_FOR_PUBLISHING: 'Đã phê duyệt, sẵn sàng xuất bản',
+    DEPUTY_REJECTED: 'Phó Tổng biên tập không duyệt',
+    EIC_REJECTED: 'Tổng biên tập không duyệt',
+    REJECTED: 'Biên tập viên không duyệt',
+  }[result.status] ?? result.status
 
   return (
     <div className={`review-note ${rejected ? 'review-note--rejected' : 'review-note--approved'}`}>
@@ -326,7 +334,7 @@ export function ReviewResultNote({ result }) {
         <Icon name={rejected ? 'alertCircle' : 'checkCircle'} size={15} />
         <strong>{rejected ? 'Bị từ chối' : 'Đã duyệt'}</strong>
         <small>
-          {rejected ? 'Biên tập viên không duyệt' : 'Đã chuyển Phó Tổng biên tập xem xét'} · {formatDateTime(result.reviewedAt)}
+          {stage} · {formatDateTime(result.reviewedAt)}
         </small>
       </div>
       {/* Lý do giữ nguyên xuống dòng như Biên tập viên đã nhập (white-space: pre-wrap trong CSS) */}

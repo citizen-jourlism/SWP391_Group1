@@ -63,7 +63,7 @@ const HOME_PATHS = {
   SYSTEM_ADMIN: '/admin',
   EDITOR: '/editor', // Bàn làm việc Biên tập viên
   DEPUTY_EIC: '/leadership',
-  EIC: '/',
+  EIC: '/leadership/content',
 }
 
 export const homePathFor = (role) => HOME_PATHS[role] ?? '/'

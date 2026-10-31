@@ -237,6 +237,35 @@ public class ContributorApplicationService {
 
     // ================================ HÀM PHỤ ================================
 
+    @Transactional(readOnly = true)
+    public PageResponse<ApplicationListItem> listForLeadership(int page, int size) {
+        return PageResponse.from(applicationRepository.findByStatusIn(List.of(Status.PENDING_DEPUTY),
+                Paging.of(page, size, Paging.NEWEST_FIRST)).map(this::toListItem));
+    }
+
+    @Transactional
+    public EditorApplicationDetail finalReview(String deputyId, Long applicationId, boolean approve, String note) {
+        User deputy = userRepository.getActiveById(deputyId);
+        if (deputy.getRole() != User.Role.DEPUTY_EIC) {
+            throw AppException.badRequest("Chỉ Phó Tổng biên tập được duyệt đơn CTV.");
+        }
+        ContributorApplication application = applicationRepository.findForDecision(applicationId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn."));
+        if (application.getStatus() != Status.PENDING_DEPUTY) throw AppException.conflict("Đơn không còn chờ duyệt.");
+        String message = blankToNull(note);
+        if (!approve && (message == null || message.length() < 10)) throw AppException.badRequest("Lý do từ chối cần ít nhất 10 ký tự.");
+        User applicant = application.getApplicant();
+        if (approve && (applicant.getRole() != User.Role.CITIZEN || applicant.getStatus() != User.Status.ACTIVE))
+            throw AppException.conflict("Tài khoản không còn đủ điều kiện nâng cấp CTV.");
+        application.setDeputy(deputy); application.setDeputyNote(message); application.setDeputyReviewedAt(LocalDateTime.now());
+        application.setStatus(approve ? Status.APPROVED : Status.REJECTED);
+        applicant.setUpgradeStatus(approve ? User.UpgradeStatus.APPROVED : User.UpgradeStatus.REJECTED);
+        if (approve) applicant.setRole(User.Role.CONTRIBUTOR);
+        mailService.trySend(applicant.getEmail(), "Kết quả đăng ký Cộng tác viên", MailService.layout(
+                "<p>Đơn đăng ký: " + (approve ? "Đã phê duyệt" : "Đã từ chối") + "</p><p>" + MailService.escape(message == null ? "" : message) + "</p>"));
+        return toEditorDetail(application);
+    }
+
     /** Từng điều kiện đăng ký (thứ tự = thứ tự hiển thị). */
     private ContributorEligibility checkEligibility(User user, List<ContributorApplication> applications) {
         boolean profileComplete = blankToNull(user.getCitizenId()) != null && user.getDateOfBirth() != null

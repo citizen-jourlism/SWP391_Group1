@@ -65,6 +65,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
+                .requestMatchers("/api/leadership/content/**").hasAnyRole("DEPUTY_EIC", "EIC")
                 .requestMatchers("/api/leadership/**").hasRole("DEPUTY_EIC")
                 // Gửi tin / khiếu nại: người dân, cộng tác viên, chuyên gia (nhân sự toà soạn và admin thì không)
                 .requestMatchers("/api/submissions/**").hasAnyRole("CITIZEN", "CONTRIBUTOR", "EXPERT")
