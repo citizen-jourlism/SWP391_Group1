@@ -9,6 +9,7 @@ import TextField from '../../components/ui/TextField'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { formatDateTime } from '../../lib/format'
 import { editorService } from '../../services/editorService'
+import { reviewWithReconciliation } from '../../lib/reputationReview'
 
 function EditorReputationResearchDetail() {
   const { id, accountId } = useParams()
@@ -32,11 +33,11 @@ function EditorReputationResearchDetail() {
   }
 
   const review = async () => {
-    const response = await editorService.reviewResearchReputation(id, {
+    const response = await reviewWithReconciliation(() => editorService.reviewResearchReputation(id, {
       decision,
       reason: decision === 'FAKE_NEWS' ? reason.trim() : null,
-    })
-    setData({ detail: response.data.article, reputationReviewed: true })
+    }), () => editorService.getReputationResearch(id), (result) => ({ detail: result.article, reputationReviewed: true }))
+    setData(response.data)
     setNotice(response.message)
     setReason('')
   }

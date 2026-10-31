@@ -25,6 +25,7 @@ import { REJECTABLE_STATUSES } from '../../lib/rejection'
 import { REQUESTABLE_STATUSES } from '../../lib/requestInfo'
 import { editorService } from '../../services/editorService'
 import { reviewStartService } from '../../services/reviewStartService'
+import { reviewWithReconciliation } from '../../lib/reputationReview'
 import '../../assets/styles/assignment.css'
 
 function EditorSubmissionDetail({ reputationMode = false }) {
@@ -59,12 +60,14 @@ function EditorSubmissionDetail({ reputationMode = false }) {
   }
 
   const confirmReview = async () => {
-    const response = await editorService.reviewReputationSubmission(code, {
+    const response = await reviewWithReconciliation(() => editorService.reviewReputationSubmission(code, {
       decision,
       reason: decision === 'FAKE_NEWS' ? reason.trim() : null,
-    })
-    setData({ ...editorData, detail: response.data.article, reputationReviewed: true })
-    setNotice(`${response.message} Điểm uy tín hiện tại: ${response.data.reputationScore}.`)
+    }), () => editorService.getSubmission(code), (result) => result.article)
+    // article is already EditorSubmissionDetail { detail, senderRole, reputationReviewed }.
+    setData(response.data)
+    setNotice(response.reputationScore == null ? response.message
+      : `${response.message} Điểm uy tín hiện tại: ${response.reputationScore}.`)
     setReason('')
   }
 
