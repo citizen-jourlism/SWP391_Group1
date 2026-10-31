@@ -2,20 +2,24 @@ package com.example.citizen_journalism.controller;
 
 import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.PageResponse;
+import com.example.citizen_journalism.dto.admin.AdminResetPasswordRequest;
 import com.example.citizen_journalism.dto.admin.AdminStats;
+import com.example.citizen_journalism.dto.admin.AdminUpdateUserRequest;
 import com.example.citizen_journalism.dto.admin.AdminUserItem;
 import com.example.citizen_journalism.dto.admin.CreateUserRequest;
-import com.example.citizen_journalism.dto.admin.UpdateRoleRequest;
 import com.example.citizen_journalism.dto.admin.UpdateStatusRequest;
 import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.service.AdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,8 +35,10 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET   /api/admin/users?keyword=&role=&status=&page=0&size=10   -> danh sách có tìm kiếm, lọc, phân trang
  *   POST  /api/admin/users                 -> tạo tài khoản nội bộ
  *   PATCH /api/admin/users/{id}/status     -> khoá / mở khoá
- *   PATCH /api/admin/users/{id}/role       -> đổi vai trò
- * PATCH: cập nhật MỘT PHẦN của tài khoản (chỉ trạng thái, hoặc chỉ vai trò).
+ *   GET   /api/admin/users/{id}            -> chi tiết một tài khoản (không có mật khẩu)
+ *   PUT   /api/admin/users/{id}            -> sửa thông tin cá nhân + vai trò
+ *   POST  /api/admin/users/{id}/reset-password -> đặt lại mật khẩu (admin nhập lại mật khẩu của mình)
+ * PATCH: cập nhật MỘT PHẦN của tài khoản (chỉ trạng thái). PUT: ghi lại toàn bộ các ô của form sửa.
  */
 @RestController
 @RequestMapping("/api/admin")
@@ -69,10 +75,23 @@ public class AdminController {
         return ApiResponse.ok(action + " tài khoản " + user.fullName() + ".", user);
     }
 
-    @PatchMapping("/users/{id}/role")
-    public ApiResponse<AdminUserItem> updateRole(@PathVariable String id, @Valid @RequestBody UpdateRoleRequest request) {
-        AdminUserItem user = adminService.updateRole(id, request.role());
-        return ApiResponse.ok("Đã đổi vai trò của " + user.fullName() + ".", user);
+    @GetMapping("/users/{id}")
+    public ApiResponse<AdminUserItem> getUser(@PathVariable String id) {
+        return ApiResponse.ok("OK", adminService.getUser(id));
+    }
+
+    @PutMapping("/users/{id}")
+    public ApiResponse<AdminUserItem> updateUser(@PathVariable String id, @Valid @RequestBody AdminUpdateUserRequest request) {
+        AdminUserItem user = adminService.updateUser(id, request);
+        return ApiResponse.ok("Đã cập nhật tài khoản " + user.fullName() + ".", user);
+    }
+
+    /** Trả về MẬT KHẨU TẠM (bản gốc, chỉ lần này) để admin chuyển cho người dùng. DB chỉ lưu bản băm. */
+    @PostMapping("/users/{id}/reset-password")
+    public ApiResponse<String> resetPassword(@AuthenticationPrincipal Jwt jwt, @PathVariable String id,
+                                             @Valid @RequestBody AdminResetPasswordRequest request) {
+        String temporaryPassword = adminService.resetPassword(jwt.getSubject(), id, request.adminPassword());
+        return ApiResponse.ok("Đã đặt lại mật khẩu cho tài khoản " + id + ".", temporaryPassword);
     }
 
 }

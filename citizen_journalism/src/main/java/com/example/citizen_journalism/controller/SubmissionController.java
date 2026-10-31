@@ -2,12 +2,16 @@ package com.example.citizen_journalism.controller;
 
 import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.PageResponse;
+import com.example.citizen_journalism.dto.submission.CancelSubmissionRequest;
 import com.example.citizen_journalism.dto.submission.CreateSubmissionRequest;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
 import com.example.citizen_journalism.dto.submission.SubmissionFormOptions;
 import com.example.citizen_journalism.dto.submission.SubmissionReceipt;
 import com.example.citizen_journalism.dto.submission.SubmissionSummary;
+import com.example.citizen_journalism.dto.submission.SupplementSubmissionRequest;
+import com.example.citizen_journalism.service.SubmissionCancelService;
 import com.example.citizen_journalism.service.SubmissionService;
+import com.example.citizen_journalism.service.SubmissionSupplementService;
 import com.example.citizen_journalism.service.SubmissionTrackingService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -19,6 +23,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -35,6 +40,9 @@ import org.springframework.web.multipart.MultipartFile;
  *                                      - "files": các tệp tư liệu (1..10 tệp)
  *   GET  /api/submissions/mine?page=&size=  -> danh sách "Thông tin đã gửi" của tôi (mới nhất trước)
  *   GET  /api/submissions/mine/{mã hồ sơ}   -> chi tiết + nhật ký xử lý 1 hồ sơ của tôi (không cần PIN)
+ *   POST /api/submissions/mine/{mã hồ sơ}/supplement -> bổ sung thông tin khi toà soạn đề nghị (multipart:
+ *                                      "data" = SupplementSubmissionRequest, "files" = tệp bổ sung, 0..10 tệp)
+ *   POST /api/submissions/mine/{mã hồ sơ}/cancel -> huỷ hồ sơ còn đang chờ xử lý (JSON CancelSubmissionRequest)
  *
  * TẠI SAO multipart mà không phải JSON? JSON không chở được file; multipart cho phép gửi
  * chữ + nhiều file trong CÙNG một request -> hồ sơ và tư liệu được lưu cùng lúc, không bị "nửa vời".
@@ -46,6 +54,8 @@ public class SubmissionController {
 
     private final SubmissionService submissionService;
     private final SubmissionTrackingService trackingService;
+    private final SubmissionSupplementService supplementService;
+    private final SubmissionCancelService cancelService;
 
     @GetMapping("/options")
     public ApiResponse<SubmissionFormOptions> getFormOptions(@AuthenticationPrincipal Jwt jwt) {
@@ -78,5 +88,29 @@ public class SubmissionController {
     @GetMapping("/mine/{trackingCode}")
     public ApiResponse<SubmissionDetail> getMine(@AuthenticationPrincipal Jwt jwt, @PathVariable String trackingCode) {
         return ApiResponse.ok("OK", trackingService.getMine(jwt.getSubject(), trackingCode));
+    }
+
+    /**
+     * Bổ sung thông tin cho hồ sơ đang "Cần bổ sung" (chỉ chủ hồ sơ). Trả về chi tiết hồ sơ sau khi bổ sung.
+     * Cùng kiểu multipart với create(); "files" không bắt buộc (có thể chỉ gửi chữ).
+     */
+    @PostMapping(value = "/mine/{trackingCode}/supplement", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<SubmissionDetail> supplement(@AuthenticationPrincipal Jwt jwt,
+                                                    @PathVariable String trackingCode,
+                                                    @Valid @RequestPart("data") SupplementSubmissionRequest request,
+                                                    @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+        return ApiResponse.ok("Đã gửi bổ sung cho toà soạn.",
+                supplementService.supplement(jwt.getSubject(), trackingCode, request, files));
+    }
+
+    /**
+     * Huỷ hồ sơ đang chờ xử lý (chỉ chủ hồ sơ, chỉ khi PENDING). Không có tệp nên gửi JSON thường (@RequestBody).
+     * Trả về chi tiết hồ sơ sau khi huỷ.
+     */
+    @PostMapping("/mine/{trackingCode}/cancel")
+    public ApiResponse<SubmissionDetail> cancel(@AuthenticationPrincipal Jwt jwt,
+                                                @PathVariable String trackingCode,
+                                                @Valid @RequestBody CancelSubmissionRequest request) {
+        return ApiResponse.ok("Đã huỷ hồ sơ.", cancelService.cancel(jwt.getSubject(), trackingCode, request));
     }
 }

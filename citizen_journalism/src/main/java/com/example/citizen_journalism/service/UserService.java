@@ -39,6 +39,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final OtpService otpService;
     private final FileStorageService fileStorageService;
+    private final LocationService locationService;
 
     // ============================ 1. XEM / SỬA THÔNG TIN ============================
 
@@ -56,9 +57,15 @@ public class UserService {
             throw AppException.conflict("Số CCCD này đã được đăng ký cho một tài khoản khác.");
         }
 
+        String province = blankToNull(request.province());
+        String ward = blankToNull(request.ward());
+        locationService.checkAddress(province, ward);
+
         user.setFullName(request.fullName().trim());
         user.setPhone(request.phone().trim());
         user.setCitizenId(citizenId);
+        user.setProvince(province);
+        user.setWard(ward);
         user.setAddress(blankToNull(request.address()));
         user.setDateOfBirth(request.dateOfBirth());
         // Không cần save(): user đang được JPA quản lý trong transaction, tự ghi xuống DB khi hàm kết thúc.

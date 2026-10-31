@@ -14,6 +14,8 @@ import java.util.List;
  * ai biết mã + PIN cũng chỉ xem được nội dung và tiến độ, không lộ danh tính người gửi.
  *
  * @param requestNote lời nhắn "Toà soạn đề nghị bổ sung"; chỉ có khi trạng thái là NEED_MORE_INFO, còn lại null
+ * @param rejection   lý do + phản hồi khi hồ sơ bị từ chối (REJECTED), còn lại null. Người gửi xem thì không có
+ *                    ghi chú nội bộ và tên Biên tập viên (xem RejectionInfo.forReporter)
  * @param timeline    nhật ký xử lý theo thứ tự thời gian (bước 1 là lúc gửi)
  */
 public record SubmissionDetail(
@@ -30,6 +32,7 @@ public record SubmissionDetail(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         String requestNote,
+        RejectionInfo rejection,
         List<EvidenceInfo> evidences,
         List<TimelineEntry> timeline) {
 }

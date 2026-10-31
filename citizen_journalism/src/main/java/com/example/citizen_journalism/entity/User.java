@@ -89,12 +89,34 @@ public class User {
     @Column(name = "reputation_score")
     private Integer reputationScore;
 
+    /**
+     * Điểm hiệu suất: CHỈ DÀNH CHO CỘNG TÁC VIÊN, thay thế hoàn toàn điểm uy tín của vai trò này
+     * (người dân, chuyên gia... vẫn dùng điểm uy tín). Các vai trò khác để NULL.
+     * Biên tập viên dựa vào điểm này để chọn CTV khi giao nhiệm vụ. Người dùng chỉ được xem.
+     */
+    @Column(name = "performance_score")
+    private Integer performanceScore;
+
+    /** Điểm thưởng tích luỹ (đổi quà sau này). Mặc định 0, người dùng chỉ được xem. */
+    @Column(name = "reward_points", nullable = false, columnDefinition = "int default 0")
+    @Builder.Default
+    private int rewardPoints = 0;
+
     // ----- Thông tin hồ sơ cá nhân (trang Hồ sơ, xem UserService) -----
 
     /** Số căn cước công dân. Không bắt buộc; nếu có thì không được trùng với người khác. */
     @Column(name = "citizen_id", unique = true, length = 20)
     private String citizenId;
 
+    /** Tỉnh/thành phố (một giá trị trong util/VietnamProvinces). Với CTV đây là khu vực dùng để ghép với nơi xảy ra vụ việc. */
+    @Column(name = "province", length = 50)
+    private String province;
+
+    /** Phường/xã, phải thuộc đúng tỉnh ở trên (LocationService). */
+    @Column(name = "ward", length = 100)
+    private String ward;
+
+    /** Phần còn lại của địa chỉ: số nhà, ngõ, đường. */
     @Column(name = "address", length = 255)
     private String address;
 
@@ -156,12 +178,27 @@ public class User {
         }
     }
 
-    /** Chạy tự động ngay TRƯỚC khi lưu tài khoản mới vào DB lần đầu (@PrePersist): gán giá trị mặc định. */
+    /** Điểm hiệu suất khởi đầu khi một tài khoản trở thành Cộng tác viên. */
+    public static final int DEFAULT_PERFORMANCE_SCORE = 100;
+
+    /**
+     * Gán giá trị mặc định, chạy tự động ngay trước khi tạo mới (@PrePersist) hoặc cập nhật (@PreUpdate) tài khoản.
+     * Có @PreUpdate để tài khoản được ĐỔI vai trò thành Cộng tác viên cũng tự nhận điểm hiệu suất khởi đầu.
+     */
     @PrePersist
+    @PreUpdate
     private void initializeDefaults() {
         if (reputationScore == null) {
             reputationScore = DEFAULT_REPUTATION_SCORE;
         }
+        if (role == Role.CONTRIBUTOR && performanceScore == null) {
+            performanceScore = DEFAULT_PERFORMANCE_SCORE;
+        }
+    }
+
+    /** Điểm hiệu suất để hiển thị và xếp hạng: CTV cũ chưa có điểm thì tính bằng điểm khởi đầu. */
+    public int performanceScoreOrDefault() {
+        return performanceScore == null ? DEFAULT_PERFORMANCE_SCORE : performanceScore;
     }
 
     /**

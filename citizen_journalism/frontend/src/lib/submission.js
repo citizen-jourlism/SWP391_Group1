@@ -108,5 +108,41 @@ export const ACTOR_LABELS = {
   EIC: 'Tổng biên tập',
 }
 
+/**
+ * Tách lời nhắn "đề nghị bổ sung" của toà soạn thành phần mở đầu + các MỤC đánh số.
+ * Biên tập viên thường viết dạng "1. ...", "2) ..." mỗi mục một dòng; dòng không đánh số nối vào mục trước
+ * (hoặc vào phần mở đầu nếu chưa có mục nào). Không có dòng đánh số -> items rỗng, cả lời nhắn nằm trong intro.
+ * Dùng ở: RequestNoteCard (hiện danh sách mục) và SupplementForm (Chuyên gia trả lời từng mục).
+ *
+ * Ví dụ: "Vui lòng bổ sung:\n1. Địa chỉ\n2. Ảnh hiện trường" -> { intro: 'Vui lòng bổ sung:', items: ['Địa chỉ', 'Ảnh hiện trường'] }
+ */
+export const splitRequestNote = (note = '') => {
+  const intro = []
+  const items = []
+  for (const line of note.split(/\r?\n/)) {
+    const text = line.trim()
+    if (!text) continue
+    const match = text.match(/^(\d+)[.)]\s+(.*)$/)
+    if (match) items.push(match[2])
+    else if (items.length) items[items.length - 1] += `\n${text}`
+    else intro.push(text)
+  }
+  return { intro: intro.join('\n'), items }
+}
+
+/**
+ * Giới hạn của form "Bổ sung thông tin". Thông tin bổ sung: Người dân / CTV tối đa infoMax (2000) ký tự,
+ * Chuyên gia tối đa expertInfoMax (4000) - tính TỔNG mọi câu trả lời nếu trả lời theo từng mục.
+ * Khớp SubmissionSupplementService (backend).
+ */
+export const SUPPLEMENT_LIMITS = {
+  infoMax: 2000,
+  expertInfoMax: 4000,
+  addressMax: 250,
+  maxSources: 10,
+  sourceTitleMax: 250,
+  sourceUrlMax: 500,
+}
+
 /** Mã hồ sơ dạng KB-2026-0001 (khớp cách backend sinh mã trong SubmissionService.create). */
 export const TRACKING_CODE_REGEX = /^KB-\d{4}-\d{4,}$/i

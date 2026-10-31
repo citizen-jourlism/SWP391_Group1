@@ -36,6 +36,10 @@ import org.springframework.transaction.annotation.Transactional;
  * Hiện có: số liệu trang Tổng quan, hàng đợi chỉ xem hồ sơ và trang chấm điểm uy tín.
  * Mọi thay đổi trạng thái hồ sơ dùng SubmissionEventService để người gửi theo dõi được.
  * Phần đơn đăng ký CTV nằm ở ContributorApplicationService.
+ * Hiện có: số liệu trang Tổng quan, HÀNG ĐỢI TIN BÀI (xem danh sách + chi tiết, CHƯA có thao tác xử lý).
+ * Các thao tác xử lý tin (tiếp nhận, yêu cầu bổ sung, giao CTV xác minh...) sẽ thêm ở các bản sau;
+ * khi đổi trạng thái hồ sơ nhớ dùng SubmissionEventService.record để người gửi theo dõi được.
+ * Từ chối hồ sơ nằm ở SubmissionRejectionService. Phần đơn đăng ký CTV nằm ở ContributorApplicationService.
  */
 @Service
 @RequiredArgsConstructor
@@ -55,8 +59,8 @@ public class EditorService {
         return new EditorOverview(
                 submissionRepository.countByTypeAndStatus(Submission.SubmissionType.HOT_NEWS, SubmissionStatus.PENDING),
                 submissionRepository.countByTypeAndStatus(Submission.SubmissionType.COMPLAINT, SubmissionStatus.PENDING),
-                submissionRepository.countByStatus(SubmissionStatus.IN_REVIEW),
-                submissionRepository.countByStatus(SubmissionStatus.NEED_MORE_INFO),
+                submissionRepository.countByTypeNotAndStatus(Submission.SubmissionType.CONTRIBUTOR_POST, SubmissionStatus.IN_REVIEW),
+                submissionRepository.countByTypeNotAndStatus(Submission.SubmissionType.CONTRIBUTOR_POST, SubmissionStatus.NEED_MORE_INFO),
                 applicationService.countPendingForEditor(),
                 submissionRepository.searchForStaff(SubmissionStatus.PENDING, null, latest)
                         .map(EditorSubmissionSummary::from).getContent(),

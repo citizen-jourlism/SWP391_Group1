@@ -1,5 +1,0 @@
-{
-    "java.configuration.updateBuildConfiguration": "interactive",
-    "java.compile.nullAnalysis.mode": "disabled",
-    "spring-boot.ls.problem.application-properties.unknown-property": "ignore"
-}

@@ -221,7 +221,7 @@ function EditorWorkspace({ options, article, initialNotice }) {
       <>
         <div className="research-bar">
           <div className="research-bar__inner">
-            <Link to="/research" className="research-bar__back">
+            <Link to="/research?status=SUBMITTED" className="research-bar__back">
               <Icon name="arrowLeft" size={16} />
               Bài nghiên cứu của tôi
             </Link>

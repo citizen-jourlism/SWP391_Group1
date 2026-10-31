@@ -181,6 +181,14 @@ function EditorOverview() {
                 <Icon name="checkCircle" size={18} />
                 Uy tín và xử phạt
               </Link>
+              <Link to="/editor/articles">
+                <Icon name="edit" size={18} />
+                Biên tập bài
+              </Link>
+              <Link to="/editor/members">
+                <Icon name="shield" size={18} />
+                Uy tín & vi phạm
+              </Link>
             </div>
           </section>
         </div>

@@ -38,18 +38,35 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     @EntityGraph(attributePaths = "author")
     Page<Submission> findByAuthorId(String authorId, Pageable pageable);
 
+    /**
+     * Các hồ sơ của 1 người gửi, có phân trang (thứ tự sắp xếp truyền qua Pageable).
+     * type: loại cần bỏ qua. Bài CTV nộp kèm báo cáo (CONTRIBUTOR_POST) không phải hồ sơ họ gửi tới toà soạn.
+     */
+    @EntityGraph(attributePaths = "author")
+    Page<Submission> findByAuthorIdAndTypeNot(String authorId, Submission.SubmissionType type, Pageable pageable);
+
     long countByAuthorId(String authorId);
+
+    /** Số hồ sơ KHÁC (id khác) của 1 người đang ở trạng thái này, ví dụ đã bị từ chối bao nhiêu lần (màn Từ chối hồ sơ). */
+    long countByAuthorIdAndStatusAndIdNot(String authorId, Submission.SubmissionStatus status, Long id);
 
     long countByTypeAndStatus(Submission.SubmissionType type, Submission.SubmissionStatus status);
 
     @EntityGraph(attributePaths = "author")
     Page<Submission> findByStatusAndAuthorRole(Submission.SubmissionStatus status, User.Role role, Pageable pageable);
 
+    /** Đếm bỏ qua 1 loại, dùng để không tính bài CTV nộp (CONTRIBUTOR_POST) vào số hồ sơ. */
+    long countByTypeNotAndStatus(Submission.SubmissionType type, Submission.SubmissionStatus status);
+
+    long countByTypeNot(Submission.SubmissionType type);
+
     /**
      * Hàng đợi của toà soạn (EditorService): lọc theo trạng thái / loại phản ánh, tham số null = không lọc.
      * ":status is null or ..." là cách viết điều kiện "không bắt buộc" trong JPQL.
+     * Bài CTV nộp (CONTRIBUTOR_POST) xem ở nhiệm vụ của hồ sơ gốc, không vào hàng đợi.
      */
-    @Query("select s from Submission s where (:status is null or s.status = :status) "
+    @Query("select s from Submission s where s.type <> com.example.citizen_journalism.entity.Submission.SubmissionType.CONTRIBUTOR_POST "
+            + "and (:status is null or s.status = :status) "
             + "and (:category is null or s.reportCategory = :category)")
     Page<Submission> searchForStaff(@Param("status") Submission.SubmissionStatus status,
                                     @Param("category") Submission.ReportCategory category,

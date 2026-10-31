@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 import EditorLayout from './components/editor/EditorLayout.jsx'
 import ProtectedRoute from './components/layout/ProtectedRoute.jsx'
+import RoleHomeRedirect from './components/layout/RoleHomeRedirect.jsx'
 import ScrollToTop from './components/layout/ScrollToTop.jsx'
 import { AuthProvider } from './context/AuthProvider.jsx'
 import ChangePassword from './routes/ChangePassword.jsx'
@@ -10,17 +11,21 @@ import Homepage from './routes/Homepage.jsx'
 import Login from './routes/Login.jsx'
 import MySubmissionDetail from './routes/MySubmissionDetail.jsx'
 import MySubmissions from './routes/MySubmissions.jsx'
-import NotFound from './routes/NotFound.jsx'
 import Profile from './routes/Profile.jsx'
 import Register from './routes/Register.jsx'
+import ExpertRevisionReview from './routes/ExpertRevisionReview.jsx'
 import ResearchEditor from './routes/ResearchEditor.jsx'
 import ResearchList from './routes/ResearchList.jsx'
 import SubmitReport from './routes/SubmitReport.jsx'
+import SubmissionHistory from './routes/SubmissionHistory.jsx'
+import SupplementSubmission from './routes/SupplementSubmission.jsx'
 import TrackSubmission from './routes/TrackSubmission.jsx'
 import VerifyOtp from './routes/VerifyOtp.jsx'
 import { SUBMITTER_ROLES } from './lib/roles.js'
 import AdminOverview from './routes/admin/AdminOverview.jsx'
+import AdminUserDetail from './routes/admin/AdminUserDetail.jsx'
 import AdminUsers from './routes/admin/AdminUsers.jsx'
+import AuditLogs from './routes/admin/AuditLogs'
 import EditorApplicationDetail from './routes/editor/EditorApplicationDetail.jsx'
 import LeadershipApprovals from './routes/leadership/LeadershipApprovals.jsx'
 import LeadershipAppealDetail from './routes/leadership/LeadershipAppealDetail.jsx'
@@ -28,14 +33,28 @@ import LeadershipLayout from './components/leadership/LeadershipLayout.jsx'
 import AccountAppeal from './routes/AccountAppeal.jsx'
 import EditorAppeals from './routes/editor/EditorAppeals.jsx'
 import EditorAppealDetail from './routes/editor/EditorAppealDetail.jsx'
+import EditorArticles from './routes/editor/EditorArticles.jsx'
 import EditorApplications from './routes/editor/EditorApplications.jsx'
+import EditorCategories from './routes/editor/EditorCategories.jsx'
+import EditorDuplicateCheck from './routes/editor/EditorDuplicateCheck.jsx'
 import EditorOverview from './routes/editor/EditorOverview.jsx'
+import ContributorTaskDetail from './routes/contributor/ContributorTaskDetail.jsx'
+import ContributorTaskReport from './routes/contributor/ContributorTaskReport.jsx'
+import ContributorTaskRevision from './routes/contributor/ContributorTaskRevision.jsx'
+import ContributorTasks from './routes/contributor/ContributorTasks.jsx'
+import EditorAssignContributor from './routes/editor/EditorAssignContributor.jsx'
+import EditorAssignments from './routes/editor/EditorAssignments.jsx'
 import EditorPlanned from './routes/editor/EditorPlanned.jsx'
 import EditorQueue from './routes/editor/EditorQueue.jsx'
+import EditorRejectSubmission from './routes/editor/EditorRejectSubmission.jsx'
+import EditorRequestInfo from './routes/editor/EditorRequestInfo.jsx'
+import EditorResearchDetail from './routes/editor/EditorResearchDetail.jsx'
 import EditorSubmissionDetail from './routes/editor/EditorSubmissionDetail.jsx'
 import EditorReputationResearchDetail from './routes/editor/EditorReputationResearchDetail.jsx'
 import EditorReputation from './routes/editor/EditorReputation.jsx'
 import EditorReputationAccount from './routes/editor/EditorReputationAccount.jsx'
+import EditorVerificationReview from './routes/editor/EditorVerificationReview.jsx'
+import Notifications from './routes/Notifications.jsx'
 
 /**
  * Component gốc của ứng dụng: khai báo BẢN ĐỒ ĐƯỜNG DẪN (routing).
@@ -70,6 +89,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+  path="/account/notifications"
+  element={
+    <ProtectedRoute>
+      <Notifications />
+    </ProtectedRoute>
+  }
+/>
           <Route
             path="/account/change-password"
             element={
@@ -112,6 +139,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Chuyên gia xem / trao đổi / đồng ý / từ chối 1 yêu cầu chỉnh sửa của Biên tập viên */}
+          <Route
+            path="/research/revisions/:id"
+            element={
+              <ProtectedRoute roles={['EXPERT']}>
+                <ExpertRevisionReview />
+              </ProtectedRoute>
+            }
+          />
           {/* Thông tin đã gửi (danh sách) và theo dõi từng hồ sơ: chỉ người gửi xem được hồ sơ của mình */}
           <Route
             path="/account/submissions"
@@ -129,6 +165,57 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Bổ sung thông tin khi toà soạn đề nghị (hồ sơ "Cần bổ sung"): form khác nhau cho Người dân / Chuyên gia */}
+          <Route
+            path="/account/submissions/:code/supplement"
+            element={
+              <ProtectedRoute roles={SUBMITTER_ROLES}>
+                <SupplementSubmission />
+              </ProtectedRoute>
+            }
+          />
+          {/* Nhiệm vụ xác minh hiện trường (chỉ Cộng tác viên): danh sách và chi tiết 1 nhiệm vụ */}
+          <Route
+            path="/contributor/tasks"
+            element={
+              <ProtectedRoute roles={['CONTRIBUTOR']}>
+                <ContributorTasks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contributor/tasks/:id"
+            element={
+              <ProtectedRoute roles={['CONTRIBUTOR']}>
+                <ContributorTaskDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contributor/tasks/:id/report"
+            element={
+              <ProtectedRoute roles={['CONTRIBUTOR']}>
+                <ContributorTaskReport />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contributor/tasks/:id/revise"
+            element={
+              <ProtectedRoute roles={['CONTRIBUTOR']}>
+                <ContributorTaskRevision />
+              </ProtectedRoute>
+            }
+          />
+          {/* Lịch sử chỉnh sửa: các phiên bản của hồ sơ qua từng lần bổ sung, so sánh 2 phiên bản */}
+          <Route
+            path="/account/submissions/:code/history"
+            element={
+              <ProtectedRoute roles={SUBMITTER_ROLES}>
+                <SubmissionHistory />
+              </ProtectedRoute>
+            }
+          />
 
           {/* ----- Khu quản trị: chỉ SYSTEM_ADMIN. Route LỒNG NHAU: AdminLayout là khung chung,
                    các trang con hiện vào chỗ <Outlet /> của khung. index = trang mặc định của /admin ----- */}
@@ -142,6 +229,8 @@ function App() {
           >
             <Route index element={<AdminOverview />} />           {/* /admin       : Tổng quan */}
             <Route path="users" element={<AdminUsers />} />       {/* /admin/users : Quản lý tài khoản */}
+            <Route path="audit-history" element={<AuditLogs />} />
+            <Route path="users/:id" element={<AdminUserDetail />} /> {/* /admin/users/CT0001 : Xem / sửa một tài khoản */}
           </Route>
 
           <Route
@@ -177,13 +266,22 @@ function App() {
             <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
             <Route path="appeals" element={<EditorAppeals />} />
             <Route path="appeals/:id" element={<EditorAppealDetail />} />
+            <Route path="queue/:code/assign" element={<EditorAssignContributor />} />  {/* Chọn CTV giao nhiệm vụ */}
+            <Route path="queue/:code/reject" element={<EditorRejectSubmission />} />    {/* Từ chối 1 hồ sơ */}
+            <Route path="queue/:code/request-info" element={<EditorRequestInfo />} /> {/* Yêu cầu bổ sung cho 1 hồ sơ */}
+            <Route path="queue/:code/verification" element={<EditorVerificationReview />} /> {/* Duyệt kết quả xác minh của CTV */}
+            <Route path="queue/research/:id" element={<EditorResearchDetail />} />     {/* Chi tiết 1 bài nghiên cứu */}
+            <Route path="categories" element={<EditorCategories />} />
+            <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
             {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
             <Route path="screening" element={<EditorPlanned page="screening" />} />
-            <Route path="assignments" element={<EditorPlanned page="assignments" />} />
+            <Route path="assignments" element={<EditorAssignments />} />                 {/* Nhiệm vụ đã giao */}
+            <Route path="articles" element={<EditorArticles />} />                       {/* Biên tập bài viết */}
+            <Route path="members" element={<EditorPlanned page="members" />} />
           </Route>
 
-          {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link, hoặc trang chưa làm) */}
-          <Route path="*" element={<NotFound />} />
+          {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link...): về trang chính theo vai trò */}
+          <Route path="*" element={<RoleHomeRedirect />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

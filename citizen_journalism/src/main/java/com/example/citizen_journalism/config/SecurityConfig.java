@@ -26,6 +26,7 @@ import org.springframework.security.web.SecurityFilterChain;
  *      /api/contributor-applications/**            -> CITIZEN, CONTRIBUTOR (đơn đăng ký Cộng tác viên)
  *      /api/editor/**                              -> chỉ EDITOR (bàn làm việc Biên tập viên)
  *      /api/leadership/**                          -> chỉ DEPUTY_EIC (duyệt khiếu nại mở khóa)
+ *      /api/contributor/**                         -> chỉ CONTRIBUTOR (nhiệm vụ xác minh của Cộng tác viên)
  *      /api/research/**                            -> chỉ EXPERT (bài nghiên cứu, bản nháp)
  *   3. /api/** còn lại                              -> phải đăng nhập (có token hợp lệ)
  *   4. Mọi thứ khác (file tĩnh...)                  -> mở, TRỪ /uploads/applications/** (giấy tờ tuỳ thân) bị chặn
@@ -73,6 +74,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/research/**", "/api/research").hasRole("EXPERT")
                 // Bàn làm việc Biên tập viên
                 .requestMatchers("/api/editor/**").hasRole("EDITOR")
+                .requestMatchers("/api/contributor/**").hasRole("CONTRIBUTOR")
                 .requestMatchers("/api/**").authenticated()
                 // Giấy tờ tuỳ thân của đơn CTV: KHÔNG cho xem trực tiếp qua /uploads, chỉ xem qua API có kiểm tra quyền
                 .requestMatchers("/uploads/applications/**").denyAll()

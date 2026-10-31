@@ -96,6 +96,15 @@ public class ResearchArticleService {
         return toView(findOwned(userId, id));
     }
 
+    /** Bài ĐÃ NỘP cho nhân viên toà soạn xem (không cần là tác giả). Bản nháp -> 404. */
+    @Transactional(readOnly = true)
+    public ResearchArticleView getSubmittedForStaff(Long id) {
+        ResearchArticle article = articleRepository.findById(id)
+                .filter(found -> found.getStatus() == Status.SUBMITTED)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy bài nghiên cứu."));
+        return toView(article);
+    }
+
     /** Bài mới: tạo bản ghi rồi lưu như 1 lần sửa. */
     @Transactional
     public ResearchArticleView create(String userId, SaveResearchRequest request, List<MultipartFile> files) {

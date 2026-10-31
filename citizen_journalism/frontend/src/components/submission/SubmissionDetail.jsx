@@ -1,9 +1,11 @@
 import Alert from '../ui/Alert'
 import Badge from '../ui/Badge'
+import Button from '../ui/Button'
 import CopyButton from '../ui/CopyButton'
 import Icon from '../ui/Icon'
 import EvidenceList from './EvidenceList'
 import ProcessSteps from './ProcessSteps'
+import RejectionCard from './RejectionCard'
 import { formatDateTime } from '../../lib/format'
 import { ACTOR_LABELS, CATEGORY_BY_VALUE, SUBMISSION_STATUS } from '../../lib/submission'
 import '../../assets/styles/tracking.css'
@@ -15,10 +17,14 @@ import '../../assets/styles/tracking.css'
  *
  * BỐ CỤC:
  *   ┌ Đầu hồ sơ: mã hồ sơ (sao chép được), nhãn trạng thái, tiêu đề, loại, thời gian + thanh tiến trình 6 giai đoạn ┐
+ *   ├ [Nếu trang cha truyền children] chèn ngay dưới đầu hồ sơ (ví dụ khối Huỷ hồ sơ của MySubmissionDetail)        ┤
  *   ├ [Chỉ khi trạng thái "Cần bổ sung"] Hộp vàng: lời nhắn toà soạn đề nghị bổ sung (Editorial Request Note)       ┤
+ *   │   + nút "Bổ sung ngay" nếu trang cha truyền supplementLink (trang Bổ sung thông tin)                           │
+ *   ├ [Chỉ khi bị từ chối] Hộp đỏ: lý do + phản hồi của Biên tập viên (RejectionCard)                                ┤
+ *   │   + nút "Gửi thông tin mới" nếu trang cha truyền newReportLink                                                 │
  *   ├ Trái: thông tin sự việc (thời điểm, địa điểm, tóm tắt, nội dung, tệp)  │  Phải: NHẬT KÝ XỬ LÝ (mới nhất trên cùng) ┤
  */
-function SubmissionDetail({ detail }) {
+function SubmissionDetail({ detail, supplementLink, newReportLink, children }) {
   const status = SUBMISSION_STATUS[detail.status] ?? { label: detail.status, tone: 'neutral', stage: 0 }
   const category = CATEGORY_BY_VALUE[detail.category]
   // Đánh số bước theo thứ tự thời gian (bước 1 = lúc gửi), rồi đảo ngược để bước MỚI NHẤT hiện trên cùng
@@ -61,11 +67,23 @@ function SubmissionDetail({ detail }) {
         <ProcessSteps stage={status.stage} ended={status.ended} layout="horizontal" />
       </section>
 
+      {children}
+
       {detail.requestNote && (
         <Alert type="warning" title="Toà soạn đề nghị bổ sung thông tin">
           {detail.requestNote}
+          {supplementLink && (
+            <div className="alert__actions">
+              <Button to={supplementLink} className="btn--sm">
+                <Icon name="upload" size={16} />
+                Bổ sung ngay
+              </Button>
+            </div>
+          )}
         </Alert>
       )}
+
+      {detail.rejection && <RejectionCard rejection={detail.rejection} newReportLink={newReportLink} />}
 
       <div className="detail-grid">
         {/* ----- Thông tin sự việc ----- */}

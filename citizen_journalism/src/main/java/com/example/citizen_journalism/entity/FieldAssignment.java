@@ -62,6 +62,31 @@ public class FieldAssignment extends BaseEntity {
     @Column(name = "deadline")
     private LocalDateTime deadline;
 
+    /** Chỉ dẫn tác nghiệp của Biên tập viên gửi Cộng tác viên (không bắt buộc). */
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;
+
+    /** Vì sao nhiệm vụ bị huỷ (chỉ có khi status = CANCELLED). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cancel_type", length = 30)
+    private CancelType cancelType;
+
+    @Column(name = "cancel_reason", columnDefinition = "TEXT")
+    private String cancelReason;
+
+    /** Người từ chối / huỷ / thu hồi, hiện trong lịch sử nhiệm vụ. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cancelled_by")
+    private User cancelledBy;
+
+    /** Kết thúc nhiệm vụ ở trạng thái CANCELLED, ghi lại kiểu huỷ, lý do và người huỷ. */
+    public void cancel(CancelType type, String reason, User actor) {
+        status = AssignmentStatus.CANCELLED;
+        cancelType = type;
+        cancelReason = reason;
+        cancelledBy = actor;
+    }
+
     public enum AssignmentMode {
         BROADCAST,
         DIRECT
@@ -73,6 +98,16 @@ public class FieldAssignment extends BaseEntity {
         ACCEPTED,
         CANCELLED,
         COMPLETED
+    }
+
+    /**
+     * Các kiểu huỷ. Tách riêng thay vì thêm trạng thái mới vì cột status là kiểu ENUM của MySQL:
+     * thêm giá trị mới thì DB đã tạo sẵn của mọi người sẽ từ chối ghi, phải tự ALTER TABLE.
+     */
+    public enum CancelType {
+        DECLINED,              // CTV từ chối khi chưa nhận
+        CONTRIBUTOR_CANCELLED, // CTV huỷ sau khi đã nhận
+        EDITOR_CANCELLED       // Biên tập viên thu hồi
     }
 
 }

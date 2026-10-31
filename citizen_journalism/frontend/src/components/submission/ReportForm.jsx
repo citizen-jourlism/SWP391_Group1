@@ -22,7 +22,7 @@ import { submissionService } from '../../services/submissionService'
  *                        Chỉ hiện các loại vai trò của người dùng được gửi (options.categories, ví dụ người dân: 2 loại đầu).
  *   2. Nội dung sự việc : Tiêu đề (10–200), Tóm tắt (≤300), Nội dung chi tiết (50–5000),
  *                         Thời điểm xảy ra (không ở tương lai), Tỉnh/Thành phố, Địa chỉ (≤250)
- *   3. Tư liệu          : ít nhất 1 tệp JPG/PNG/MP4/MP3/PDF, ≤50MB/tệp (EvidenceUploader)
+ *   3. Tư liệu          : ít nhất 1 tệp JPG/PNG/MP4/MP3/PDF, giới hạn dung lượng + số tệp theo loại (EvidenceUploader)
  *   4. Người gửi        : Gửi ẩn danh (mặc định tắt). Tắt -> bắt buộc Họ tên, SĐT, Email; CMND/CCCD (9/12 số)
  *                         không bắt buộc. Mối quan hệ với sự việc (không bắt buộc). Cam kết Luật Báo chí (bắt buộc).
  *

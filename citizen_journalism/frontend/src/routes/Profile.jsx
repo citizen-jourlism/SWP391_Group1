@@ -4,6 +4,7 @@ import AvatarUploader from '../components/profile/AvatarUploader'
 import ChangeEmailDialog from '../components/profile/ChangeEmailDialog'
 import ContributorSection from '../components/contributor/ContributorSection'
 import Alert from '../components/ui/Alert'
+import AddressFields from '../components/ui/AddressFields'
 import Button from '../components/ui/Button'
 import Icon from '../components/ui/Icon'
 import TextField from '../components/ui/TextField'
@@ -36,6 +37,8 @@ const toFormValues = (profile) => ({
   fullName: profile.fullName ?? '',
   phone: profile.phone ?? '',
   citizenId: profile.citizenId ?? '',
+  province: profile.province ?? '',
+  ward: profile.ward ?? '',
   address: profile.address ?? '',
   dateOfBirth: profile.dateOfBirth ?? '',
 })
@@ -102,10 +105,24 @@ function Profile() {
 
             {/* Điểm: CHỈ XEM, do hệ thống cộng/trừ (backend không cho người dùng sửa) */}
             <div className="profile-stats">
-              <div className="profile-stat profile-stat--trust">
-                <Icon name="shield" size={20} />
-                <strong>{profile.reputationScore ?? 0}</strong>
-                <span>Điểm uy tín</span>
+              {/* Cộng tác viên dùng điểm hiệu suất thay cho điểm uy tín */}
+              {profile.role === 'CONTRIBUTOR' ? (
+                <div className="profile-stat profile-stat--trust">
+                  <Icon name="star" size={20} />
+                  <strong>{profile.performanceScore ?? 0}</strong>
+                  <span>Điểm hiệu suất</span>
+                </div>
+              ) : (
+                <div className="profile-stat profile-stat--trust">
+                  <Icon name="shield" size={20} />
+                  <strong>{profile.reputationScore ?? 0}</strong>
+                  <span>Điểm uy tín</span>
+                </div>
+              )}
+              <div className="profile-stat profile-stat--reward">
+                <Icon name="gift" size={20} />
+                <strong>{profile.rewardPoints}</strong>
+                <span>Điểm thưởng</span>
               </div>
             </div>
 
@@ -138,7 +155,7 @@ function Profile() {
             {/* Đăng ký / theo dõi đơn Cộng tác viên. profileKey đổi (vừa lưu CCCD, ngày sinh...) -> mục này tự kiểm tra lại điều kiện */}
             {CONTRIBUTOR_SECTION_ROLES.includes(profile.role) && (
               <ContributorSection
-                profileKey={[profile.citizenId, profile.dateOfBirth, profile.address, profile.reputationScore].join('|')}
+                profileKey={[profile.citizenId, profile.dateOfBirth, profile.province, profile.ward, profile.address, profile.reputationScore].join('|')}
               />
             )}
           </div>
@@ -220,16 +237,8 @@ function ProfileForm({ profile, onSaved, onEditEmail, onChange }) {
         />
       </div>
 
-      <div className="form__row">
-        <TextField label="Ngày sinh" icon="calendar" type="date" max={todayIso()} {...field('dateOfBirth')} />
-        <TextField
-          label="Địa chỉ"
-          icon="mapPin"
-          placeholder="Số nhà, đường, phường/xã, tỉnh/thành"
-          autoComplete="street-address"
-          {...field('address')}
-        />
-      </div>
+      <TextField label="Ngày sinh" icon="calendar" type="date" max={todayIso()} {...field('dateOfBirth')} />
+      <AddressFields form={form} field={field} />
 
       <div className="form__actions">
         <Button variant="secondary" onClick={() => form.reset()} disabled={!form.isDirty || form.submitting}>

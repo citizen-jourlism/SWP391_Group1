@@ -72,6 +72,11 @@ public class MailService {
         return HtmlUtils.htmlEscape(text, "UTF-8");
     }
 
+    /** Ô nền xám làm nổi một đoạn trong email (lý do, chỉ dẫn...). Chữ do người dùng nhập phải được bọc escape() trước. */
+    public static String box(String html) {
+        return "<p style=\"padding:12px 16px;background:#f5f7fb;border-radius:8px\">" + html + "</p>";
+    }
+
     /**
      * Gửi email nhưng KHÔNG ném lỗi: gửi hỏng thì chỉ ghi log và trả về false.
      * Dùng cho email THÔNG BÁO (biên nhận hồ sơ, kết quả xét đơn...): thao tác chính đã lưu thành công rồi,

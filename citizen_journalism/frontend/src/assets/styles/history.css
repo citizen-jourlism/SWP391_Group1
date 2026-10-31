@@ -1,0 +1,593 @@
+/* ===== LỊCH SỬ CHỈNH SỬA HỒ SƠ (routes/SubmissionHistory.jsx, components/submission/RevisionList.jsx, RevisionCompare.jsx) =====
+ * Chỉ chứa phần riêng của trang này. Thẻ hồ sơ, nút, ô chọn, badge, alert, danh sách tệp dùng CSS có sẵn
+ * (ui.css, tracking.css, submit.css). Màu chỉ lấy từ design tokens trong src/index.css.
+ */
+
+/* ---------- Đầu trang: tóm tắt hồ sơ (gọn hơn detail-head của trang Theo dõi) ---------- */
+.rh-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rh-head h2 {
+  margin: 8px 0 0;
+  color: var(--navy-900);
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.rh-head__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rh-stat {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: #f6f8fb;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rh-stat svg {
+  color: var(--muted);
+}
+
+/* ---------- Bố cục 2 cột: danh sách phiên bản | khung so sánh ---------- */
+.rh-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.rh-versions {
+  position: sticky;
+  top: 16px;
+}
+
+.rh-versions ol {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Một phiên bản: chấm số + đường nối dọc như timeline của trang Theo dõi */
+.rh-version {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rh-version:hover {
+  background: #f6f8fb;
+}
+
+.rh-versions li:not(:last-child) .rh-version::before {
+  content: '';
+  position: absolute;
+  top: 44px;
+  bottom: -12px;
+  left: 24px;
+  width: 2px;
+  background: var(--card-border);
+}
+
+.rh-version__dot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: #eef1f6;
+  color: var(--navy-700);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.rh-version__body {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rh-version__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.rh-version__top strong {
+  color: var(--navy-900);
+  font-size: 14.5px;
+}
+
+.rh-version__body small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+/* Hai phiên bản đang được so sánh: A (cũ) viền xám đậm, B (mới) viền cam */
+.rh-version.is-from {
+  border-color: var(--input-border);
+  background: #f6f8fb;
+}
+
+.rh-version.is-to {
+  border-color: var(--orange-light);
+  background: #fff7f2;
+}
+
+.rh-version.is-to .rh-version__dot {
+  background: var(--gradient-primary);
+  color: #fff;
+}
+
+.rh-version.is-from .rh-version__dot {
+  background: var(--navy-700);
+  color: #fff;
+}
+
+.rh-pick {
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--navy-700);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.rh-pick--to {
+  background: var(--orange-strong);
+}
+
+/* Thay đổi tóm tắt của 1 phiên bản so với bản ngay trước: +46 từ · +2 tệp · Đổi địa chỉ */
+.rh-delta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.rh-delta__add {
+  color: #15803d;
+}
+
+.rh-delta__edit {
+  color: var(--warning);
+}
+
+.rh-versions__foot {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* ---------- Khung so sánh ---------- */
+.rh-compare {
+  display: grid;
+  gap: 18px;
+}
+
+.rh-compare__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.rh-compare__head h3 {
+  margin: 0;
+}
+
+.rh-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.rh-pickers .field {
+  min-width: 210px;
+}
+
+.rh-pickers .field__label {
+  font-size: 12.5px;
+}
+
+/* Mũi tên A -> B: dùng icon chevronDown xoay ngang */
+.rh-pickers__arrow {
+  margin-bottom: 14px;
+  color: var(--muted);
+  transform: rotate(-90deg);
+}
+
+/* 3 ô số liệu: số từ, tư liệu, số mục thay đổi */
+.rh-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rh-metric {
+  padding: 12px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  background: #f6f8fb;
+}
+
+.rh-metric small {
+  display: block;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.rh-metric strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--navy-900);
+  font-size: 18px;
+}
+
+.rh-metric em {
+  margin-left: 6px;
+  color: #15803d;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* Lý do có phiên bản mới: lời đề nghị bổ sung của toà soạn (lấy từ bước nhật ký NEED_MORE_INFO) */
+.rh-reason {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--warning-bg);
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.rh-reason > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--warning);
+}
+
+.rh-reason strong {
+  color: var(--warning);
+}
+
+.rh-reason ol {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+/* Chú giải màu */
+.rh-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+/* Một mục được so sánh (Địa điểm, Nội dung, Tư liệu...) */
+.rh-field {
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.rh-field__head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--card-border);
+  background: #f6f8fb;
+}
+
+.rh-field__head h4 {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 14px;
+}
+
+.rh-field__body {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.rh-field__body p {
+  margin: 0;
+}
+
+/* Phần giữ nguyên: chữ nhạt hơn để mắt tập trung vào phần thay đổi */
+.rh-same {
+  color: var(--muted);
+}
+
+ins.rh-ins,
+del.rh-del {
+  padding: 1px 4px;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+ins.rh-ins {
+  background: var(--success-bg);
+  color: #15803d;
+}
+
+del.rh-del {
+  background: var(--danger-bg);
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+/* Khối chữ được thêm cả đoạn (thông tin bổ sung, câu trả lời) */
+.rh-block {
+  padding: 10px 12px 10px 14px;
+  border-left: 3px solid var(--success);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--success-bg);
+}
+
+.rh-block__label {
+  display: block;
+  margin-bottom: 2px;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.rh-block--same {
+  border-left-color: var(--card-border);
+  background: #f6f8fb;
+}
+
+.rh-block--same .rh-block__label {
+  color: var(--muted);
+}
+
+/* Câu hỏi của Biên tập viên phía trên câu trả lời của Chuyên gia */
+.rh-qa__q {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 6px;
+  color: var(--navy-900);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.rh-qa__num {
+  display: grid;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--navy-700);
+  color: #fff;
+  font-size: 11px;
+}
+
+/* Danh sách tệp / nguồn: dòng mới thêm có nền xanh */
+.rh-field .evidence-list li.is-added {
+  margin: 0 -14px;
+  padding-right: 14px;
+  padding-left: 14px;
+  background: var(--success-bg);
+}
+
+.rh-tag-new {
+  margin-left: 6px;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Các mục không đổi: gom vào 1 dòng */
+.rh-unchanged {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.rh-unchanged svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* Trạng thái rỗng: hồ sơ chưa có phiên bản nào ngoài bản gốc */
+.rh-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 36px 20px;
+  text-align: center;
+}
+
+.rh-empty__icon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f6f8fb;
+  color: var(--muted);
+}
+
+.rh-empty h3 {
+  margin: 4px 0 0;
+}
+
+.rh-empty p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .rh-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rh-versions {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .rh-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .rh-pickers,
+  .rh-pickers .field {
+    width: 100%;
+  }
+
+  .rh-pickers__arrow {
+    display: none;
+  }
+
+  .rh-head .btn {
+    width: 100%;
+  }
+}
+
+/* Trong đầu trang lịch sử: nhãn trạng thái đứng ngay sau mã hồ sơ */
+.rh-head .detail-head__top {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+/* Lần bổ sung cũ không đổi giữa A và B: thu gọn thành 1 dòng (<details>), bấm để mở */
+.rh-fold {
+  border-radius: var(--radius-sm);
+  background: #f6f8fb;
+}
+
+.rh-fold summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 12px;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.rh-fold summary::-webkit-details-marker {
+  display: none;
+}
+
+.rh-fold summary svg {
+  flex: none;
+  transform: rotate(-90deg);
+  transition: transform 0.15s;
+}
+
+.rh-fold[open] summary svg {
+  transform: none;
+}
+
+.rh-fold__label {
+  color: var(--navy-700);
+  font-weight: 700;
+}
+
+.rh-fold__hint {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.rh-fold__body {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px 36px;
+  color: var(--muted);
+}
+
+.rh-fold__body p {
+  margin: 0;
+}
+
+/* Nút "Xem thêm N phiên bản cũ" khi có hơn 5 phiên bản */
+.rh-more {
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* Ô chọn A/B: nhãn dài (số + tên + ngày giờ) nên cho 2 ô giãn đều */
+.rh-pickers .field {
+  position: relative;
+  flex: 1 1 280px;
+}
+
+
+
+/* Nhãn "+ Bổ sung lần N" phía trên các câu trả lời mới của Chuyên gia */
+.rh-block__label--add {
+  color: #15803d;
+}
+
+.rh-reason__text {
+  margin-top: 2px;
+}
+
+.rh-reason__list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}

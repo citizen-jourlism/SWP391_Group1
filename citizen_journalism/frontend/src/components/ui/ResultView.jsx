@@ -1,6 +1,6 @@
 import Icon from './Icon'
 
-const ICONS = { success: 'checkCircle', muted: 'info' }
+const ICONS = { success: 'checkCircle', muted: 'info', danger: 'x' }
 
 /**
  * Màn hình KẾT QUẢ đặt trong thẻ của AuthLayout: icon tròn lớn + đoạn mô tả + các nút hành động.
@@ -8,7 +8,7 @@ const ICONS = { success: 'checkCircle', muted: 'info' }
  * CSS: các class .result* trong assets/styles/ui.css.
  *
  * Props:
- *   - tone    : 'success' (xanh lá, dấu tích) | 'muted' (xám, chữ i)
+ *   - tone    : 'success' (xanh lá, dấu tích) | 'muted' (xám, chữ i) | 'danger' (đỏ, dấu X)
  *   - text    : đoạn mô tả (không bắt buộc)
  *   - children: các nút hành động (Button), xếp dọc, rộng hết khung
  */

@@ -25,4 +25,13 @@ export const researchService = {
   },
 
   remove: (id) => api.delete(`/research/${id}`),
+
+  // ----- Phản hồi của toà soạn (yêu cầu chỉnh sửa, kết quả duyệt) — backend ResearchEditorialController -----
+  listRevisions: () => api.get('/research/revisions'),
+  getRevision: (id) => api.get(`/research/revisions/${id}`),
+  commentRevision: (id, content) => api.post(`/research/revisions/${id}/comments`, { content }),
+  /** values = bản cuối { title, abstractText, keywords, content } (đúng bản đề xuất hoặc bản đã điều chỉnh) */
+  acceptRevision: (id, values) => api.post(`/research/revisions/${id}/accept`, values),
+  rejectRevision: (id, reason) => api.post(`/research/revisions/${id}/reject`, { reason }),
+  listReviewResults: () => api.get('/research/review-results'),
 }
