@@ -9,6 +9,8 @@ export const contributorTaskService = {
   list: (params) => api.get('/contributor/tasks', { params: cleanParams(params) }),
   /** Số nhiệm vụ theo trạng thái: { ASSIGNED: 2, ACCEPTED: 1, ... } (trạng thái chưa có nhiệm vụ thì không xuất hiện). */
   counts: () => api.get('/contributor/tasks/counts'),
+  /** params: { page, size } -> { summary, reports }, xem routes/contributor/ContributorHistory.jsx */
+  history: (params) => api.get('/contributor/tasks/history', { params: cleanParams(params) }),
   get: (id) => api.get(`/contributor/tasks/${id}`),
   accept: (id) => api.post(`/contributor/tasks/${id}/accept`),
   decline: (id, reason) => api.post(`/contributor/tasks/${id}/decline`, { reason }),

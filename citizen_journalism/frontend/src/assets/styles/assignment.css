@@ -12,6 +12,19 @@
   padding-bottom: 12px;
 }
 
+/* ---------- Lịch sử đóng góp của CTV: 4 thẻ số liệu, xuống 2 cột khi hẹp ---------- */
+.contribution-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+/* <small> mặc định nằm cùng dòng, ở đây mỗi thông tin cần 1 dòng riêng */
+.contribution-line {
+  display: block;
+}
+
 /* ---------- Tóm tắt vụ việc ---------- */
 .admin-panel.assign-case {
   flex-direction: row;

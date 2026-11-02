@@ -30,6 +30,7 @@ import EditorArticles from './routes/editor/EditorArticles.jsx'
 import EditorApplications from './routes/editor/EditorApplications.jsx'
 import EditorDuplicateCheck from './routes/editor/EditorDuplicateCheck.jsx'
 import EditorOverview from './routes/editor/EditorOverview.jsx'
+import ContributorHistory from './routes/contributor/ContributorHistory.jsx'
 import ContributorTaskDetail from './routes/contributor/ContributorTaskDetail.jsx'
 import ContributorTaskReport from './routes/contributor/ContributorTaskReport.jsx'
 import ContributorTaskRevision from './routes/contributor/ContributorTaskRevision.jsx'
@@ -170,6 +171,15 @@ function App() {
             element={
               <ProtectedRoute roles={['CONTRIBUTOR']}>
                 <ContributorTasks />
+              </ProtectedRoute>
+            }
+          />
+          {/* Lịch sử đóng góp (chỉ Cộng tác viên): các báo cáo đã nộp và điểm hiệu suất */}
+          <Route
+            path="/contributor/history"
+            element={
+              <ProtectedRoute roles={['CONTRIBUTOR']}>
+                <ContributorHistory />
               </ProtectedRoute>
             }
           />
