@@ -2,7 +2,9 @@ package com.example.citizen_journalism.service;
 
 import static com.example.citizen_journalism.util.TextUtils.blankToNull;
 
+import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.assignment.AdditionalEvidenceRequest;
+import com.example.citizen_journalism.dto.assignment.ContributionHistory;
 import com.example.citizen_journalism.dto.assignment.FieldReportView;
 import com.example.citizen_journalism.dto.assignment.ReportFeedbackView;
 import com.example.citizen_journalism.dto.assignment.SubmitFieldReportRequest;
@@ -23,6 +25,7 @@ import com.example.citizen_journalism.repository.FieldReportRepository;
 import com.example.citizen_journalism.repository.ReputationLogRepository;
 import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.example.citizen_journalism.repository.UserRepository;
+import com.example.citizen_journalism.util.Paging;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -31,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -131,6 +135,29 @@ public class FieldReportService {
     /** Phản hồi của nhiều nhiệm vụ, từ cũ đến mới, cho lịch sử nhiệm vụ. */
     public List<FieldReportFeedback> feedbacksOf(List<Long> assignmentIds) {
         return assignmentIds.isEmpty() ? List.of() : feedbackRepository.findByReportAssignmentIdInOrderByIdAsc(assignmentIds);
+    }
+
+    /**
+     * Lịch sử đóng góp của 1 Cộng tác viên: số liệu tổng hợp + các báo cáo đã nộp, mới nhất trước.
+     * Đúng / trễ hạn tính lại từ lúc nộp và hạn nhiệm vụ, cùng quy tắc với lúc cộng điểm (updatePerformance).
+     */
+    @Transactional(readOnly = true)
+    public ContributionHistory getContributionHistory(String contributorId, int page, int size) {
+        int score = userRepository.getActiveById(contributorId).performanceScoreOrDefault();
+        long total = reportRepository.countByAssignmentContributorId(contributorId);
+        long onTime = reportRepository.countOnTimeByContributor(contributorId);
+        long approved = feedbackRepository.countByReportAssignmentContributorIdAndType(contributorId, FieldReportFeedback.Type.APPROVED);
+
+        Page<FieldReport> reports = reportRepository.findByAssignmentContributorId(
+                contributorId, Paging.of(page, size, Paging.NEWEST_FIRST));
+        Map<Long, ReviewStatus> reviews = reviewStatuses(reports.map(report -> report.getAssignment().getId()).getContent());
+        return new ContributionHistory(
+                new ContributionHistory.Summary(score, total, onTime, total - onTime, approved),
+                PageResponse.from(reports.map(report -> {
+                    FieldAssignment task = report.getAssignment();
+                    boolean late = report.getCreatedAt().isAfter(task.getDeadline());
+                    return ContributionHistory.Item.from(report, reviews.get(task.getId()), !late, pointsFor(late));
+                })));
     }
 
     // ================ BIÊN TẬP VIÊN PHẢN HỒI ================
@@ -274,7 +301,7 @@ public class FieldReportService {
     private void updatePerformance(FieldAssignment task) {
         User contributor = task.getContributor();
         boolean late = LocalDateTime.now().isAfter(task.getDeadline());
-        int points = late ? LATE_POINTS : ON_TIME_POINTS;
+        int points = pointsFor(late);
         contributor.setPerformanceScore(Math.max(0, contributor.performanceScoreOrDefault() + points));
         reputationLogRepository.save(ReputationLog.builder()
                 .user(contributor)
@@ -282,6 +309,10 @@ public class FieldReportService {
                 .reason(late ? ReputationLog.ReputationReason.TASK_LATE : ReputationLog.ReputationReason.TASK_COMPLETED_ON_TIME)
                 .relatedSubmission(task.getSubmission())
                 .build());
+    }
+
+    private static int pointsFor(boolean late) {
+        return late ? LATE_POINTS : ON_TIME_POINTS;
     }
 
     private FieldReportView toView(FieldAssignment task, FieldReport report) {

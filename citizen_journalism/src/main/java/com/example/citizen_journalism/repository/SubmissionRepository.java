@@ -2,9 +2,12 @@ package com.example.citizen_journalism.repository;
 
 import com.example.citizen_journalism.entity.Submission;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -42,6 +45,18 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     long countByTypeNotAndStatus(Submission.SubmissionType type, Submission.SubmissionStatus status);
 
     long countByTypeNot(Submission.SubmissionType type);
+
+    /**
+     * Các hồ sơ cho bảng tiến độ toà soạn (EditorPipelineService), gửi sớm nhất trước. category = null: mọi loại.
+     * Kèm Biên tập viên phụ trách để hiện tên trên thẻ. Bài CTV nộp không phải hồ sơ riêng nên không tính.
+     */
+    @EntityGraph(attributePaths = {"assignedEditor"})
+    @Query("select s from Submission s where s.type <> com.example.citizen_journalism.entity.Submission.SubmissionType.CONTRIBUTOR_POST "
+            + "and s.status in :statuses "
+            + "and (:category is null or s.reportCategory = :category) "
+            + "order by s.createdAt asc, s.id asc")
+    List<Submission> findForPipeline(@Param("statuses") Collection<Submission.SubmissionStatus> statuses,
+                                     @Param("category") Submission.ReportCategory category);
 
     /**
      * Hàng đợi của toà soạn (EditorService): lọc theo trạng thái / loại phản ánh, tham số null = không lọc.
