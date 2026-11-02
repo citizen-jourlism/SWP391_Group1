@@ -30,6 +30,7 @@ import EditorArticles from './routes/editor/EditorArticles.jsx'
 import EditorApplications from './routes/editor/EditorApplications.jsx'
 import EditorDuplicateCheck from './routes/editor/EditorDuplicateCheck.jsx'
 import EditorOverview from './routes/editor/EditorOverview.jsx'
+import EditorPipeline from './routes/editor/EditorPipeline.jsx'
 import ContributorHistory from './routes/contributor/ContributorHistory.jsx'
 import ContributorTaskDetail from './routes/contributor/ContributorTaskDetail.jsx'
 import ContributorTaskReport from './routes/contributor/ContributorTaskReport.jsx'
@@ -243,6 +244,7 @@ function App() {
             }
           >
             <Route index element={<EditorOverview />} />                                {/* Tổng quan */}
+            <Route path="pipeline" element={<EditorPipeline />} />                      {/* Tiến độ toà soạn */}
             <Route path="queue" element={<EditorQueue />} />                            {/* Hàng đợi tin bài */}
             <Route path="queue/:code" element={<EditorSubmissionDetail />} />           {/* Chi tiết 1 hồ sơ */}
             <Route path="queue/:code/assign" element={<EditorAssignContributor />} />  {/* Chọn CTV giao nhiệm vụ */}

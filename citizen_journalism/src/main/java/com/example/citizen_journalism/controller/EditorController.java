@@ -7,6 +7,7 @@ import com.example.citizen_journalism.dto.editor.ApproveSubmissionResponse;
 import com.example.citizen_journalism.dto.editor.ApplicationListItem;
 import com.example.citizen_journalism.dto.editor.EditorApplicationDetail;
 import com.example.citizen_journalism.dto.editor.EditorOverview;
+import com.example.citizen_journalism.dto.editor.EditorPipeline;
 import com.example.citizen_journalism.dto.editor.InfoRequestResponse;
 import com.example.citizen_journalism.dto.editor.RejectSubmissionRequest;
 import com.example.citizen_journalism.dto.editor.RequestInfoRequest;
@@ -19,6 +20,7 @@ import com.example.citizen_journalism.dto.submission.SubmissionSummary;
 import com.example.citizen_journalism.entity.ContributorApplication;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.service.ContributorApplicationService;
+import com.example.citizen_journalism.service.EditorPipelineService;
 import com.example.citizen_journalism.service.EditorService;
 import com.example.citizen_journalism.service.SubmissionApprovalService;
 import com.example.citizen_journalism.service.SubmissionInfoRequestService;
@@ -44,6 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
  * API BÀN LÀM VIỆC BIÊN TẬP VIÊN — chỉ vai trò EDITOR (luật "/api/editor/**" trong SecurityConfig).
  *
  *   GET  /api/editor/overview                               -> số liệu trang Tổng quan
+ *   GET  /api/editor/pipeline?category=                     -> bảng tiến độ toà soạn: hồ sơ đang xử lý theo từng bước
  *   GET  /api/editor/submissions?status=&category=&page=    -> hàng đợi tin bài (chỉ xem)
  *   GET  /api/editor/submissions/{mã hồ sơ}                 -> chi tiết 1 hồ sơ
  *   POST /api/editor/submissions/{mã hồ sơ}/start-review    -> tiếp nhận thẩm định: hồ sơ chuyển "Đang thẩm định", BTV phụ trách
@@ -68,6 +71,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class EditorController {
 
     private final EditorService editorService;
+    private final EditorPipelineService pipelineService;
     private final ContributorApplicationService applicationService;
     private final SubmissionRejectionService rejectionService;
     private final SubmissionInfoRequestService infoRequestService;
@@ -78,6 +82,11 @@ public class EditorController {
     @GetMapping("/overview")
     public ApiResponse<EditorOverview> overview() {
         return ApiResponse.ok("OK", editorService.getOverview());
+    }
+
+    @GetMapping("/pipeline")
+    public ApiResponse<EditorPipeline> pipeline(@RequestParam(required = false) Submission.ReportCategory category) {
+        return ApiResponse.ok("OK", pipelineService.get(category));
     }
 
     // ----------------------------- Hàng đợi tin bài -----------------------------
