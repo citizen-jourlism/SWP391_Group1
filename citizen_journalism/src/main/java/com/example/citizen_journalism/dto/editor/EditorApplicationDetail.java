@@ -24,7 +24,6 @@ public record EditorApplicationDetail(ApplicationView application, Applicant app
             String address,
             String avatarUrl,
             Integer reputationScore,
-            int rewardPoints,
             LocalDateTime memberSince,
             long submissionCount) {
     }

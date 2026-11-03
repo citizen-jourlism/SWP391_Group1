@@ -1,6 +1,5 @@
 package com.example.citizen_journalism.dto.editor;
 
-import com.example.citizen_journalism.dto.submission.SubmissionSummary;
 import java.util.List;
 
 /**
@@ -20,6 +19,6 @@ public record EditorOverview(
         long inReview,
         long needMoreInfo,
         long pendingApplications,
-        List<SubmissionSummary> recentSubmissions,
+        List<EditorSubmissionSummary> recentSubmissions,
         List<ApplicationListItem> recentApplications) {
 }

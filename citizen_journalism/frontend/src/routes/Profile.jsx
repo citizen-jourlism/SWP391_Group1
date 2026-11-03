@@ -2,7 +2,6 @@ import { useState } from 'react'
 import AccountLayout from '../components/layout/AccountLayout'
 import AvatarUploader from '../components/profile/AvatarUploader'
 import ChangeEmailDialog from '../components/profile/ChangeEmailDialog'
-import ContributorSection from '../components/contributor/ContributorSection'
 import Alert from '../components/ui/Alert'
 import AddressFields from '../components/ui/AddressFields'
 import Button from '../components/ui/Button'
@@ -153,31 +152,13 @@ function Profile() {
               />
             </section>
 
-            {/* Đăng ký / theo dõi đơn Cộng tác viên. profileKey đổi (vừa lưu CCCD, ngày sinh...) -> mục này tự kiểm tra lại điều kiện */}
-            {/*  Chuyển giữa đăng ký CTV và Expert */}
-{profile.role === 'CITIZEN' ? (
-  <UpgradeRoleSection
-    profile={profile}
-    profileKey={[
-      profile.citizenId,
-      profile.dateOfBirth,
-      profile.address,
-      profile.reputationScore,
-    ].join('|')}
-  />
-) : (
-  profile.role === 'CONTRIBUTOR' && (
-    <UpgradeRoleSection
-      profile={profile}
-      profileKey={[
-        profile.citizenId,
-        profile.dateOfBirth,
-        profile.address,
-        profile.reputationScore,
-      ].join('|')}
-    />
-  )
-)}
+            {/* TungTT: Đăng ký nâng cấp tài khoản (tab CTV / Chuyên gia). profileKey đổi (vừa lưu CCCD, ngày sinh...) -> mục này tự kiểm tra lại điều kiện */}
+            {CONTRIBUTOR_SECTION_ROLES.includes(profile.role) && (
+              <UpgradeRoleSection
+                profile={profile}
+                profileKey={[profile.citizenId, profile.dateOfBirth, profile.province, profile.ward, profile.address, profile.reputationScore].join('|')}
+              />
+            )}
           </div>
         </div>
       )}

@@ -26,10 +26,19 @@ import { SUBMITTER_ROLES } from './lib/roles.js'
 import AdminOverview from './routes/admin/AdminOverview.jsx'
 import AdminUserDetail from './routes/admin/AdminUserDetail.jsx'
 import AdminUsers from './routes/admin/AdminUsers.jsx'
+import AuditLogs from './routes/admin/AuditLogs'
 import EditorApplicationDetail from './routes/editor/EditorApplicationDetail.jsx'
+import LeadershipApprovals from './routes/leadership/LeadershipApprovals.jsx'
+import LeadershipAppealDetail from './routes/leadership/LeadershipAppealDetail.jsx'
+import LeadershipLayout from './components/leadership/LeadershipLayout.jsx'
+import AccountAppeal from './routes/AccountAppeal.jsx'
+import EditorAppeals from './routes/editor/EditorAppeals.jsx'
+import EditorAppealDetail from './routes/editor/EditorAppealDetail.jsx'
 import EditorArticles from './routes/editor/EditorArticles.jsx'
 import EditorApplications from './routes/editor/EditorApplications.jsx'
+import EditorCategories from './routes/editor/EditorCategories.jsx'
 import EditorDuplicateCheck from './routes/editor/EditorDuplicateCheck.jsx'
+import EditorImpactAssessment from './routes/editor/EditorImpactAssessment.jsx'
 import EditorOverview from './routes/editor/EditorOverview.jsx'
 import EditorPipeline from './routes/editor/EditorPipeline.jsx'
 import ContributorHistory from './routes/contributor/ContributorHistory.jsx'
@@ -40,16 +49,19 @@ import ContributorTasks from './routes/contributor/ContributorTasks.jsx'
 import EditorAssignContributor from './routes/editor/EditorAssignContributor.jsx'
 import EditorAssignments from './routes/editor/EditorAssignments.jsx'
 import EditorPlanned from './routes/editor/EditorPlanned.jsx'
+import ViolationReports, { ViolationReportDetail } from './routes/editor/ViolationReports.jsx'
+import UserPerformance from './routes/editor/UserPerformance.jsx'
 import EditorQueue from './routes/editor/EditorQueue.jsx'
 import EditorRejectSubmission from './routes/editor/EditorRejectSubmission.jsx'
 import EditorRequestInfo from './routes/editor/EditorRequestInfo.jsx'
 import EditorResearchDetail from './routes/editor/EditorResearchDetail.jsx'
 import EditorSubmissionDetail from './routes/editor/EditorSubmissionDetail.jsx'
+import EditorReputationSubmission from './routes/editor/EditorReputationSubmission.jsx'
+import EditorReputationResearchDetail from './routes/editor/EditorReputationResearchDetail.jsx'
+import EditorReputation from './routes/editor/EditorReputation.jsx'
+import EditorReputationAccount from './routes/editor/EditorReputationAccount.jsx'
 import EditorVerificationReview from './routes/editor/EditorVerificationReview.jsx'
-import AuditLogs from './routes/admin/AuditLogs'
-import EditorCategories from './routes/editor/EditorCategories.jsx'
 import Notifications from './routes/Notifications.jsx'
-import LeadershipLayout from './components/leadership/LeadershipLayout.jsx'
 import LeadershipQueue from './routes/leadership/LeadershipQueue.jsx'
 import LeadershipResearchDetail from './routes/leadership/LeadershipResearchDetail.jsx'
 import LeadershipSubmissionDetail from './routes/leadership/LeadershipSubmissionDetail.jsx'
@@ -84,6 +96,7 @@ function App() {
           <Route path="/verify-otp" element={<VerifyOtp />} />            {/* Nhập mã OTP sau khi đăng ký */}
           <Route path="/forgot-password" element={<ForgotPassword />} />  {/* Quên mật khẩu */}
           <Route path="/track" element={<TrackSubmission />} />          {/* Tra cứu hồ sơ bằng mã + PIN */}
+          <Route path="/account-appeal" element={<AccountAppeal />} />
 
           {/* ----- Trang cần đăng nhập ----- */}
           <Route
@@ -247,6 +260,35 @@ function App() {
             <Route path="users/:id" element={<AdminUserDetail />} /> {/* /admin/users/CT0001 : Xem / sửa một tài khoản */}
           </Route>
 
+          <Route
+            path="/leadership"
+            element={
+              <ProtectedRoute roles={['DEPUTY_EIC', 'EIC']}>
+                <LeadershipLayout />
+              </ProtectedRoute>
+            }
+          >
+
+            <Route index element={<LeadershipQueue key="SUBMISSION" kind="SUBMISSION" />} />          {/* Hồ sơ chờ duyệt */}
+            <Route path="research" element={<LeadershipQueue key="RESEARCH" kind="RESEARCH" />} />     {/* Bài nghiên cứu chờ duyệt */}
+            <Route path="submissions/:code" element={<LeadershipSubmissionDetail />} />              {/* Chi tiết 1 hồ sơ */}
+            <Route path="research/:id" element={<LeadershipResearchDetail />} />                      {/* Chi tiết 1 bài nghiên cứu */}
+            <Route path="appeals" element={<ProtectedRoute roles={['DEPUTY_EIC']}><EditorAppeals scope="leadership" /></ProtectedRoute>} />
+            <Route path="violations" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ViolationReports leadership /></ProtectedRoute>} />
+            <Route path="violations/:id" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ViolationReportDetail leadership /></ProtectedRoute>} />
+            <Route path="approvals/appeals/:id" element={<ProtectedRoute roles={['DEPUTY_EIC']}><LeadershipAppealDetail /></ProtectedRoute>} />
+            {/* TungTT: Phó TBT duyệt đơn đăng ký Cộng tác viên (danh sách + chi tiết) */}
+            <Route path="contributor-applications" element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorApplications /></ProtectedRoute>} />
+            <Route path="contributor-applications/:id" element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorApplicationDetail /></ProtectedRoute>} />
+            {/* TungTT: Quản lý Cộng tác viên */}
+            <Route path="contributor-management" element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorManagement /></ProtectedRoute>} />
+            {/* TungTT: Phó TBT duyệt đơn Chuyên gia (bước 2, quyết định cuối) */}
+            <Route path="expert-applications" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ExpertReviewQueue mode="deputy" /></ProtectedRoute>} />
+            {/* TungTT: Dashboard hiệu suất tòa soạn + Danh bạ nhân sự biên tập (Phó TBT và TBT) */}
+            <Route path="newsroom-performance" element={<NewsroomPerformanceDashboard />} />
+            <Route path="editorial-staff" element={<EditorialStaffDirectory />} />
+          </Route>
+
           {/* ----- Bàn làm việc Biên tập viên: chỉ EDITOR. Cũng là route lồng nhau trong EditorLayout ----- */}
           <Route
             path="/editor"
@@ -260,54 +302,35 @@ function App() {
             <Route path="pipeline" element={<EditorPipeline />} />                      {/* Tiến độ toà soạn */}
             <Route path="queue" element={<EditorQueue />} />                            {/* Hàng đợi tin bài */}
             <Route path="queue/:code" element={<EditorSubmissionDetail />} />           {/* Chi tiết 1 hồ sơ */}
+            <Route path="reputation" element={<EditorReputation />} />
+            <Route path="reputation/accounts/:accountId" element={<EditorReputationAccount />} />
+            <Route path="reputation/accounts/:accountId/submissions/:code" element={<EditorReputationSubmission />} />
+            <Route path="reputation/accounts/:accountId/research/:id" element={<EditorReputationResearchDetail />} />
+            <Route path="applications" element={<EditorApplications />} />              {/* Đơn đăng ký CTV */}
+            <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
+            <Route path="appeals" element={<EditorAppeals />} />
+            <Route path="appeals/:id" element={<EditorAppealDetail />} />
             <Route path="queue/:code/assign" element={<EditorAssignContributor />} />  {/* Chọn CTV giao nhiệm vụ */}
             <Route path="queue/:code/reject" element={<EditorRejectSubmission />} />    {/* Từ chối 1 hồ sơ */}
             <Route path="queue/:code/request-info" element={<EditorRequestInfo />} /> {/* Yêu cầu bổ sung cho 1 hồ sơ */}
             <Route path="queue/:code/verification" element={<EditorVerificationReview />} /> {/* Duyệt kết quả xác minh của CTV */}
+            <Route path="queue/:code/impact" element={<EditorImpactAssessment />} />   {/* Đánh giá mức tác động */}
             <Route path="queue/research/:id" element={<EditorResearchDetail />} />     {/* Chi tiết 1 bài nghiên cứu */}
-            <Route path="applications" element={<EditorApplications />} />              {/* Đơn đăng ký CTV */}
-            <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
-            <Route path="expert-applications" element={<ExpertReviewQueue mode="editor" />}/>{/* TungTT Editor duyệt đơn Expert bước 1 */}
+            <Route path="expert-applications" element={<ExpertReviewQueue mode="editor" />} /> {/* TungTT: BTV duyệt đơn Chuyên gia (bước 1) */}
             <Route path="categories" element={<EditorCategories />} />
             <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
             {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
-            <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
             <Route path="screening" element={<EditorPlanned page="screening" />} />
             <Route path="assignments" element={<EditorAssignments />} />                 {/* Nhiệm vụ đã giao */}
             <Route path="articles" element={<EditorArticles />} />                       {/* Biên tập bài viết */}
-            <Route path="members" element={<EditorPlanned page="members" />} />
+            <Route path="members" element={<ViolationReports />} />
+            <Route path="performance" element={<UserPerformance />} />
+            <Route path="violations" element={<ViolationReports />} />
+            <Route path="violations/:id" element={<ViolationReportDetail />} />
           </Route>
 
           {/* ----- Bàn duyệt Ban biên tập: Phó TBT + Tổng biên tập. Route lồng nhau trong LeadershipLayout ----- */}
-          <Route
-            path="/leadership"
-            element={
-              <ProtectedRoute roles={['DEPUTY_EIC', 'EIC']}>
-                <LeadershipLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<LeadershipQueue key="SUBMISSION" kind="SUBMISSION" />} />          {/* Hồ sơ chờ duyệt */}
-            <Route path="research" element={<LeadershipQueue key="RESEARCH" kind="RESEARCH" />} />     {/* Bài nghiên cứu chờ duyệt */}
-            <Route path="submissions/:code" element={<LeadershipSubmissionDetail />} />              {/* Chi tiết 1 hồ sơ */}
-            <Route path="research/:id" element={<LeadershipResearchDetail />} />                      {/* Chi tiết 1 bài nghiên cứu */}
-            {/* TungTT: Danh sách đơn đăng ký Contributor chờ Phó TBT duyệt */}
-            <Route
-              path="contributor-applications"
-              element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorApplications /></ProtectedRoute>}/>
-              {/* TungTT: Quản lý Cộng tác viên */}
-            <Route path="contributor-management" element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorManagement /></ProtectedRoute>}/>
-            {/* TungTT: Chi tiết và xét duyệt đơn đăng ký Contributor */}
-            <Route path="contributor-applications/:id"element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorApplicationDetail /></ProtectedRoute>}/>
-            {/* TungTT  Phó Tổng Biên tập duyệt đơn Expert */}
-            <Route path="expert-applications" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ExpertReviewQueue mode="deputy" /></ProtectedRoute>}/>
 
-            {/* TungTT - Iteration 3 Task 4: Dashboard hiệu suất tòa soạn */}
-            <Route path="newsroom-performance" element={<NewsroomPerformanceDashboard />}/>
-
-            {/* TungTT - Iteration 3 Task 5: Danh bạ nhân sự biên tập */}
-            <Route path="editorial-staff" element={<EditorialStaffDirectory />}/>
-          </Route>
 
           {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link...): về trang chính theo vai trò */}
           <Route path="*" element={<RoleHomeRedirect />} />

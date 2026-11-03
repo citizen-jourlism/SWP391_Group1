@@ -1,0 +1,14 @@
+.appeal-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.appeal-heading h1 { font-size: 24px; margin: 0 0 8px; }
+.appeal-heading p { color: #64748b; margin: 0; }
+.appeal-progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; list-style: none; padding: 0; margin: 0 0 24px; }
+.appeal-progress li { padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #64748b; font-size: 13px; }
+.appeal-progress li[aria-current="step"] { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; font-weight: 600; }
+.appeal-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.appeal-penalty { border-top: 1px solid #e2e8f0; padding: 14px 0; }
+.appeal-penalty summary { cursor: pointer; font-weight: 600; line-height: 1.6; }
+.appeal-review .applicant__facts dd { overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .appeal-heading { align-items: flex-start; flex-direction: column; }
+  .appeal-progress { grid-template-columns: repeat(2, 1fr); }
+}

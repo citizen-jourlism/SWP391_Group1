@@ -22,12 +22,13 @@ const NAV_GROUPS = [
     label: 'Tiếp nhận',
     items: [
       { to: '/editor/queue', icon: 'fileText', label: 'Hàng đợi tin bài', title: 'Hàng đợi tin bài' },
-      { to: '/editor/screening', icon: 'search', label: 'Sàng lọc AI', title: 'Sàng lọc AI & gộp tin trùng', soon: true },
+      { to: '/editor/screening', icon: 'search', label: 'Sàng lọc AI', title: 'Sàng lọc AI & kiểm tra tin trùng', soon: true },
     ],
   },
   {
     label: 'Xác minh & biên tập',
     items: [
+      { to: '/editor/reputation', icon: 'shield', label: 'Uy tín và xử phạt', title: 'Uy tín và xử phạt' },
       { to: '/editor/assignments', icon: 'mapPin', label: 'Danh sách nhiệm vụ', title: 'Danh sách nhiệm vụ' },
       { to: '/editor/articles', icon: 'edit', label: 'Biên tập bài viết', title: 'Biên tập bài viết' },
     ],
@@ -36,11 +37,11 @@ const NAV_GROUPS = [
     label: 'Cộng đồng',
     items: [
       { to: '/editor/applications', icon: 'award', label: 'Đơn đăng ký CTV', title: 'Đơn đăng ký Cộng tác viên' },
-
+      { to: '/editor/appeals', icon: 'shield', label: 'Khiếu nại xử phạt', title: 'Xét duyệt khiếu nại xử phạt' },
+      { to: '/editor/violations', icon: 'shield', label: 'Báo cáo vi phạm', title: 'Báo cáo vi phạm tài khoản' },
+      { to: '/editor/performance', icon: 'activity', label: 'Hiệu suất người dùng', title: 'Đánh giá hiệu suất' },
       // TungTT - Iteration 3 Task 3: Editor duyệt đơn Expert
-      { to: '/editor/expert-applications', icon: 'fileText', label: 'Duyệt đơn Chuyên gia', title: 'Xét duyệt đăng ký Expert' },
-
-      { to: '/editor/members', icon: 'shield', label: 'Uy tín & vi phạm', title: 'Uy tín & vi phạm', soon: true },
+      { to: '/editor/expert-applications', icon: 'award', label: 'Duyệt đơn Chuyên gia', title: 'Xét duyệt đăng ký Expert' },
     ],
   },
 

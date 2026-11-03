@@ -163,7 +163,11 @@ public class SubmissionVerificationReviewService {
         if (reportStatus != ReviewStatus.APPROVED) {
             return "Báo cáo của Cộng tác viên chưa được duyệt. Hãy duyệt báo cáo ở trang hồ sơ trước.";
         }
-        return null;
+        if (submission.getPriority() == null) {
+            return "Hồ sơ chưa được đánh giá mức tác động. Hãy đánh giá trước khi duyệt chuyển Phó Tổng biên tập.";
+        }
+        // Chưa phân loại chuyên mục / chuyên mục chưa có Phó TBT thì không biết chuyển cho ai
+        return SubmissionCategoryService.routingProblem(submission);
     }
 
     private VerificationReviewResponse toContext(Submission submission) {
@@ -269,7 +273,7 @@ public class SubmissionVerificationReviewService {
     /** Lần duyệt kết quả xác minh gần nhất: editorial_reviews APPROVE của EDITOR có mã đánh dấu. */
     private VerificationReviewResponse.Review reviewOf(Submission submission) {
         return reviewRepository
-                .findFirstBySubmissionAndActionOrderByCreatedAtDescIdDesc(submission, EditoralReview.ReviewAction.APPROVE)
+                .findFirstBySubmissionAndActionAndReviewRoleOrderByCreatedAtDescIdDesc(submission, EditoralReview.ReviewAction.APPROVE, EditoralReview.ReviewRole.EDITOR)
                 .filter(review -> review.getReviewRole() == EditoralReview.ReviewRole.EDITOR)
                 .filter(review -> review.getComments() != null && review.getComments().startsWith(COMMENT_MARKER))
                 .map(review -> new VerificationReviewResponse.Review(

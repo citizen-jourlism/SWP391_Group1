@@ -110,7 +110,11 @@ public class SubmissionApprovalService {
         if (assignmentRepository.existsBySubmissionIdAndStatusIn(submission.getId(), VERIFYING_STATUSES)) {
             return "Hồ sơ đã giao Cộng tác viên xác minh. Hãy duyệt kết quả xác minh, hoặc thu hồi nhiệm vụ trước.";
         }
-        return null;
+        if (submission.getPriority() == null) {
+            return "Hồ sơ chưa được đánh giá mức tác động. Hãy đánh giá trước khi duyệt chuyển Phó Tổng biên tập.";
+        }
+        // Chưa phân loại chuyên mục / chuyên mục chưa có Phó TBT thì không biết chuyển cho ai
+        return SubmissionCategoryService.routingProblem(submission);
     }
 
     private ApproveSubmissionResponse toContext(Submission submission) {
@@ -131,7 +135,7 @@ public class SubmissionApprovalService {
     /** Lần Biên tập viên duyệt gần nhất (editorial_reviews APPROVE do EDITOR ghi). */
     private ApproveSubmissionResponse.Approval approvalOf(Submission submission) {
         return reviewRepository
-                .findFirstBySubmissionAndActionOrderByCreatedAtDescIdDesc(submission, EditoralReview.ReviewAction.APPROVE)
+                .findFirstBySubmissionAndActionAndReviewRoleOrderByCreatedAtDescIdDesc(submission, EditoralReview.ReviewAction.APPROVE, EditoralReview.ReviewRole.EDITOR)
                 .filter(review -> review.getReviewRole() == EditoralReview.ReviewRole.EDITOR)
                 .map(review -> new ApproveSubmissionResponse.Approval(
                         review.getCreatedAt(),

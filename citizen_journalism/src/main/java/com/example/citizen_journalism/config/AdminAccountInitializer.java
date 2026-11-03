@@ -29,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Slf4j
 @Component
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "app.bootstrap.admin-enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class AdminAccountInitializer implements ApplicationRunner {
 

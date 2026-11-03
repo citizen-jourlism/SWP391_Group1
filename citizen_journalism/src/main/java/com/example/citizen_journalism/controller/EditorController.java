@@ -3,11 +3,17 @@ package com.example.citizen_journalism.controller;
 import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.editor.ApproveSubmissionRequest;
+import com.example.citizen_journalism.dto.editor.AssessImpactRequest;
+import com.example.citizen_journalism.dto.editor.AssessImpactResponse;
 import com.example.citizen_journalism.dto.editor.ApproveSubmissionResponse;
 import com.example.citizen_journalism.dto.editor.ApplicationListItem;
+import com.example.citizen_journalism.dto.editor.ConfirmDuplicateRequest;
+import com.example.citizen_journalism.dto.editor.DismissDuplicateRequest;
+import com.example.citizen_journalism.dto.editor.DuplicateCheckResponse;
 import com.example.citizen_journalism.dto.editor.EditorApplicationDetail;
 import com.example.citizen_journalism.dto.editor.EditorOverview;
 import com.example.citizen_journalism.dto.editor.EditorPipeline;
+import com.example.citizen_journalism.dto.editor.EditorSubmissionSummary;
 import com.example.citizen_journalism.dto.editor.InfoRequestResponse;
 import com.example.citizen_journalism.dto.editor.RejectSubmissionRequest;
 import com.example.citizen_journalism.dto.editor.RequestInfoRequest;
@@ -16,12 +22,13 @@ import com.example.citizen_journalism.dto.editor.ReviewApplicationRequest;
 import com.example.citizen_journalism.dto.editor.VerificationReviewRequest;
 import com.example.citizen_journalism.dto.editor.VerificationReviewResponse;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
-import com.example.citizen_journalism.dto.submission.SubmissionSummary;
 import com.example.citizen_journalism.entity.ContributorApplication;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.service.ContributorApplicationService;
+import com.example.citizen_journalism.service.DuplicateReviewService;
 import com.example.citizen_journalism.service.EditorPipelineService;
 import com.example.citizen_journalism.service.EditorService;
+import com.example.citizen_journalism.service.ImpactScoreService;
 import com.example.citizen_journalism.service.SubmissionApprovalService;
 import com.example.citizen_journalism.service.SubmissionInfoRequestService;
 import com.example.citizen_journalism.service.SubmissionRejectionService;
@@ -49,6 +56,9 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /api/editor/pipeline?category=                     -> bảng tiến độ toà soạn: hồ sơ đang xử lý theo từng bước
  *   GET  /api/editor/submissions?status=&category=&page=    -> hàng đợi tin bài (chỉ xem)
  *   GET  /api/editor/submissions/{mã hồ sơ}                 -> chi tiết 1 hồ sơ
+ *   GET  /api/editor/reputation/accounts                    -> danh sách Citizen / Expert
+ *   GET  /api/editor/reputation/accounts/{id}/submissions   -> bài gửi của tài khoản
+ *   GET  /api/editor/reputation/accounts/{id}/research      -> bài nghiên cứu của Expert
  *   POST /api/editor/submissions/{mã hồ sơ}/start-review    -> tiếp nhận thẩm định: hồ sơ chuyển "Đang thẩm định", BTV phụ trách
  *   GET  /api/editor/submissions/{mã hồ sơ}/rejection       -> dữ liệu màn Từ chối hồ sơ
  *   POST /api/editor/submissions/{mã hồ sơ}/reject          -> từ chối hồ sơ, kèm phản hồi cho người gửi
@@ -58,6 +68,9 @@ import org.springframework.web.bind.annotation.RestController;
  *   POST /api/editor/submissions/{mã hồ sơ}/approve         -> duyệt tin nóng, chuyển Phó Tổng biên tập phê duyệt
  *   GET  /api/editor/submissions/{mã hồ sơ}/verification-review -> dữ liệu màn Duyệt kết quả xác minh (bài CTV + tin gốc)
  *   POST /api/editor/submissions/{mã hồ sơ}/verification-review -> duyệt kết quả xác minh, chuyển Phó Tổng biên tập phê duyệt
+ *   GET  /api/editor/submissions/{mã hồ sơ}/duplicates          -> Kiểm tra tin trùng: kết quả quét AI (RAG) + hồ sơ tương tự
+ *   POST /api/editor/submissions/{mã hồ sơ}/duplicates/confirm  -> ghi nhận kết luận: trùng với hồ sơ khác
+ *   POST /api/editor/submissions/{mã hồ sơ}/duplicates/dismiss  -> ghi nhận kết luận: không trùng
  *   GET  /api/editor/applications?status=&page=             -> đơn đăng ký Cộng tác viên
  *   GET  /api/editor/applications/{id}                      -> chi tiết đơn + hồ sơ người nộp
  *   POST /api/editor/applications/{id}/review               -> xét duyệt: chuyển Phó TBT / từ chối
@@ -73,11 +86,14 @@ public class EditorController {
     private final EditorService editorService;
     private final EditorPipelineService pipelineService;
     private final ContributorApplicationService applicationService;
+
     private final SubmissionRejectionService rejectionService;
     private final SubmissionInfoRequestService infoRequestService;
     private final SubmissionApprovalService approvalService;
     private final SubmissionReviewStartService reviewStartService;
     private final SubmissionVerificationReviewService verificationReviewService;
+    private final DuplicateReviewService duplicateReviewService;
+    private final ImpactScoreService impactScoreService;
 
     @GetMapping("/overview")
     public ApiResponse<EditorOverview> overview() {
@@ -92,7 +108,7 @@ public class EditorController {
     // ----------------------------- Hàng đợi tin bài -----------------------------
 
     @GetMapping("/submissions")
-    public ApiResponse<PageResponse<SubmissionSummary>> listSubmissions(
+    public ApiResponse<PageResponse<EditorSubmissionSummary>> listSubmissions(
             @RequestParam(required = false) Submission.SubmissionStatus status,
             @RequestParam(required = false) Submission.ReportCategory category,
             @RequestParam(defaultValue = "0") int page,
@@ -159,6 +175,42 @@ public class EditorController {
         return ApiResponse.ok("Đã duyệt kết quả xác minh hồ sơ " + result.submission().trackingCode() + " và chuyển Phó Tổng biên tập.", result);
     }
 
+    // ----------------------------- Kiểm tra tin trùng -----------------------------
+
+    @GetMapping("/submissions/{trackingCode}/duplicates")
+    public ApiResponse<DuplicateCheckResponse> getDuplicates(@PathVariable String trackingCode) {
+        return ApiResponse.ok("OK", duplicateReviewService.getContext(trackingCode));
+    }
+
+    @PostMapping("/submissions/{trackingCode}/duplicates/confirm")
+    public ApiResponse<DuplicateCheckResponse> confirmDuplicate(@AuthenticationPrincipal Jwt jwt, @PathVariable String trackingCode,
+                                                                @Valid @RequestBody ConfirmDuplicateRequest request) {
+        DuplicateCheckResponse result = duplicateReviewService.confirm(jwt.getSubject(), trackingCode, request);
+        return ApiResponse.ok("Đã ghi nhận hồ sơ " + result.submission().trackingCode() + " trùng với hồ sơ "
+                + result.review().original().trackingCode() + ".", result);
+    }
+
+    @PostMapping("/submissions/{trackingCode}/duplicates/dismiss")
+    public ApiResponse<DuplicateCheckResponse> dismissDuplicates(@AuthenticationPrincipal Jwt jwt, @PathVariable String trackingCode,
+                                                                 @Valid @RequestBody(required = false) DismissDuplicateRequest request) {
+        DuplicateCheckResponse result = duplicateReviewService.dismiss(jwt.getSubject(), trackingCode, request);
+        return ApiResponse.ok("Đã ghi nhận hồ sơ " + result.submission().trackingCode() + " không trùng.", result);
+    }
+
+    // ----------------------------- Đánh giá mức tác động -----------------------------
+
+    @GetMapping("/submissions/{trackingCode}/impact")
+    public ApiResponse<AssessImpactResponse> getImpact(@PathVariable String trackingCode) {
+        return ApiResponse.ok("OK", impactScoreService.getContext(trackingCode));
+    }
+
+    @PostMapping("/submissions/{trackingCode}/impact")
+    public ApiResponse<AssessImpactResponse> assessImpact(@AuthenticationPrincipal Jwt jwt, @PathVariable String trackingCode,
+                                                          @Valid @RequestBody AssessImpactRequest request) {
+        AssessImpactResponse result = impactScoreService.assess(jwt.getSubject(), trackingCode, request);
+        return ApiResponse.ok("Đã lưu đánh giá mức tác động của hồ sơ " + result.submission().trackingCode() + ".", result);
+    }
+
     // ----------------------------- Đơn đăng ký CTV -----------------------------
 
     @GetMapping("/applications")
@@ -187,4 +239,5 @@ public class EditorController {
     public ResponseEntity<Resource> openApplicationDocument(@PathVariable Long id, @PathVariable int index) {
         return FileResponses.inline(applicationService.openDocumentForStaff(id, index));
     }
+
 }

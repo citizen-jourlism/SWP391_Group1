@@ -335,6 +335,45 @@
   max-width: 380px;
 }
 
+.reputation-account-table {
+  min-width: 760px;
+  table-layout: fixed;
+}
+
+.reputation-account-table th:nth-child(1),
+.reputation-account-table td:nth-child(1) { width: 26%; }
+.reputation-account-table th:nth-child(2),
+.reputation-account-table td:nth-child(2) { width: 15%; }
+.reputation-account-table th:nth-child(3),
+.reputation-account-table td:nth-child(3) { width: 15%; }
+.reputation-account-table th:nth-child(4),
+.reputation-account-table td:nth-child(4) { width: 17%; }
+.reputation-account-table th:nth-child(5),
+.reputation-account-table td:nth-child(5) { width: 13%; }
+.reputation-account-table th:nth-child(6),
+.reputation-account-table td:nth-child(6) { width: 14%; }
+
+.reputation-account-table td {
+  overflow-wrap: anywhere;
+}
+
+.reputation-account-table td:first-child strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reputation-account-table .data-table__note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reputation-account-table .data-table__actions {
+  overflow-wrap: normal;
+}
+
 /* Link "Mở / Xét duyệt" cuối dòng */
 .desk-open {
   display: inline-flex;
@@ -638,5 +677,93 @@
 
   .review-box__actions {
     flex-direction: column-reverse;
+  }
+}
+
+/* ---------- Phân loại tin (components/editor/SubmissionCategoryPanel.jsx) ---------- */
+.admin-panel.category-panel {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-panel__icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--warning-bg);
+  color: var(--orange-strong);
+}
+
+.category-panel__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-panel__main small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.category-panel__deputy {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.category-panel__empty {
+  color: var(--orange-strong);
+}
+
+.category-dialog__hint {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.category-dialog__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  margin-bottom: 16px;
+  overflow-y: auto;
+}
+
+.category-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.category-option.is-selected {
+  border-color: var(--orange);
+  background: var(--warning-bg);
+}
+
+.category-option span {
+  display: flex;
+  flex-direction: column;
+}
+
+.category-option small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.category-option .category-option__warn {
+  color: var(--danger);
+}
+
+@media (max-width: 640px) {
+  .admin-panel.category-panel {
+    flex-wrap: wrap;
   }
 }

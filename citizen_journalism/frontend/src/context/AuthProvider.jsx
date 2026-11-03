@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
       // Token hết hạn / tài khoản bị khoá -> backend trả 401 -> lib/api.js đã tự gọi logout().
       // Lỗi khác (backend đang tắt / khởi động lại...) thì GIỮ token: tạm coi như chưa đăng nhập,
       // tải lại trang khi backend chạy là vào lại được ngay, không bắt người dùng đăng nhập lại.
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setStatus('ready'))
   }, [logout])
 

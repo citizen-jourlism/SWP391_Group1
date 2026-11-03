@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import StatCard from '../../components/admin/StatCard'
 import DuplicateSide from '../../components/editor/DuplicateSide'
@@ -21,37 +21,49 @@ import '../../assets/styles/tracking.css' // Đầu hồ sơ, thông tin, nội 
 
 /*
  * KIỂM TRA TIN TRÙNG (UC Editor #05 "Check for Duplication") — /editor/screening/:code.
- * Mở từ nút "Kiểm tra tin trùng" ở chi tiết hồ sơ (EditorSubmissionDetail). Biên tập viên xem kết quả AI quét hồ sơ
- * (điểm tin rác, độ tin cậy, tóm tắt) và các hồ sơ AI cho là tương tự, so sánh từng cặp rồi kết luận.
+ * Mở từ nút "Kiểm tra tin trùng" ở chi tiết hồ sơ (EditorSubmissionDetail). AI CHỈ HỖ TRỢ RA QUYẾT ĐỊNH: Biên tập viên
+ * xem kết quả AI quét hồ sơ và các hồ sơ AI cho là tương tự, so sánh từng cặp rồi ghi nhận kết luận
+ * (trùng với hồ sơ nào / không trùng). Kết luận chỉ được lưu lại, không gộp hay đổi dữ liệu hồ sơ;
+ * hồ sơ trùng thì Biên tập viên xử lý tiếp bằng các chức năng sẵn có (ví dụ Từ chối hồ sơ).
  *
- * API (backend CHƯA có, xem services/screeningService.js):
+ * API (backend: EditorController -> DuplicateReviewService; AI quét bằng RAG: DuplicateDetectionService):
  *   GET  /api/editor/submissions/{mã}/duplicates          -> { submission, screening, candidates, review }
  *        submission : như GET /api/editor/submissions/{mã} (SubmissionDetail)
- *        screening  : { status: 'PROCESSING' | 'DONE', spamScore, credibilityScore, aiSummary, threshold, windowDays }
+ *        screening  : { status: 'PROCESSING' | 'DONE', aiSummary, threshold, windowDays, checkedAt }
  *        candidates : [{ trackingCode, category, title, content, address, province, status, createdAt, assignedEditorName,
  *                        evidences, similarity (0–100), aiReason, matchedPhrases: [chuỗi],
- *                        similarEvidenceUrls: [url tệp giống nhau, của cả 2 bên],
- *                        signals: { distanceMeters, minutesApart, contentSimilarity, similarImages, totalImages } }]
+ *                        signals: { distanceMeters (luôn null, hồ sơ không có toạ độ), sameProvince,
+ *                                   minutesApart (null nếu không rõ), contentSimilarity } }]
  *                      sắp xếp % tương đồng giảm dần, chỉ gồm hồ sơ ≥ threshold trong windowDays ngày gần nhất
- *        review     : null | { decision: 'MERGED' | 'DISTINCT', original: { trackingCode, title } | null, note, reviewedAt }
- *   POST .../duplicates/merge   { originalCode, note } -> gộp: submissions.duplicate_submission_id = id hồ sơ gốc
- *   POST .../duplicates/dismiss { note }               -> không trùng, hồ sơ tiếp tục ở hàng đợi
- *   POST .../duplicates/unmerge                        -> hoàn tác gộp
- *   Ba API ghi đều trả về dữ liệu mới (cùng dạng GET) + message; ghi chú lưu vào editorial_reviews.comments.
+ *        review     : null | { decision: 'DUPLICATE' | 'DISTINCT', original: { trackingCode, title } | null, note, reviewedAt }
+ *        Lần đầu mở (hoặc người gửi vừa bổ sung) backend bắt đầu quét và trả về PROCESSING; tải lại sau ít giây.
+ *   POST .../duplicates/confirm { originalCode, note } -> ghi nhận: trùng với hồ sơ originalCode
+ *   POST .../duplicates/dismiss { note }               -> ghi nhận: không trùng
+ *   Hai API đều trả về dữ liệu mới (cùng dạng GET) + message. Ghi lại lần nữa = đổi kết luận (lần mới nhất có hiệu lực).
+ *   Kết luận + ghi chú nội bộ lưu ở submission_events (người gửi không thấy); hồ sơ vẫn ở hàng đợi, trạng thái không đổi.
  *
- * TRẠNG THÁI MÀN HÌNH: AI đang quét | không có hồ sơ tương tự | có gợi ý (so sánh + kết luận) | đã gộp | đã xác nhận không trùng.
+ * TRẠNG THÁI MÀN HÌNH: AI đang quét | không có hồ sơ tương tự | có gợi ý (so sánh + kết luận) | đã ghi nhận trùng | đã ghi nhận không trùng.
  */
 
 const NOTE_MAX = 500
 
 function EditorDuplicateCheck() {
   const { code } = useParams()
-  const { data, error, setData } = useAsyncData(() => screeningService.getDuplicates(code), code)
+  const { data, error, reload, setData } = useAsyncData(() => screeningService.getDuplicates(code), code)
   const [selectedCode, setSelectedCode] = useState(null)
-  const [decision, setDecision] = useState('MERGE') // 'MERGE' | 'DISTINCT'
+  const [decision, setDecision] = useState('DUPLICATE') // 'DUPLICATE' | 'DISTINCT'
   const [note, setNote] = useState('')
-  const [confirm, setConfirm] = useState(null) // 'MERGE' | 'DISTINCT' | 'UNMERGE' | null
+  const [confirm, setConfirm] = useState(null) // 'DUPLICATE' | 'DISTINCT' | null
+  const [editing, setEditing] = useState(false) // Đã có kết luận nhưng Biên tập viên muốn đổi
   const [notice, setNotice] = useState('')
+
+  // AI đang quét trên máy chủ -> tự hỏi lại mỗi 3 giây cho tới khi có kết quả
+  const scanningNow = data?.screening.status === 'PROCESSING'
+  useEffect(() => {
+    if (!scanningNow) return undefined
+    const timer = setTimeout(reload, 3000)
+    return () => clearTimeout(timer)
+  }, [scanningNow, data, reload])
 
   const back = (
     <Link to={`/editor/queue/${code}`} className="desk-back">
@@ -75,22 +87,21 @@ function EditorDuplicateCheck() {
   const status = SUBMISSION_STATUS[submission.status]
   const category = CATEGORY_BY_VALUE[submission.category]
   const scanning = screening.status === 'PROCESSING'
+  const failed = screening.status === 'FAILED' // Lần quét gần nhất lỗi: không có kết quả để tin
   // Mặc định so sánh với hồ sơ giống nhất (đầu danh sách)
   const selected = candidates.find((item) => item.trackingCode === selectedCode) ?? candidates[0]
-  const similarUrls = new Set(selected?.similarEvidenceUrls ?? [])
 
   /** Gửi kết luận; backend trả về dữ liệu mới -> thay luôn, không cần tải lại. */
   const submit = async () => {
     const trimmed = note.trim() || null
     const response =
-      confirm === 'MERGE'
-        ? await screeningService.mergeDuplicate(code, selected.trackingCode, trimmed)
-        : confirm === 'DISTINCT'
-          ? await screeningService.dismissDuplicates(code, trimmed)
-          : await screeningService.unmergeDuplicate(code)
+      confirm === 'DUPLICATE'
+        ? await screeningService.confirmDuplicate(code, selected.trackingCode, trimmed)
+        : await screeningService.dismissDuplicates(code, trimmed)
     setData(response.data)
     setNotice(response.message)
     setNote('')
+    setEditing(false)
   }
 
   const ask = (action) => {
@@ -144,35 +155,25 @@ function EditorDuplicateCheck() {
       </section>
 
       {/* ===== Kết quả quét AI ===== */}
-      {!scanning && (
+      {failed && (
+        <Alert type="error" title="Chưa quét được">
+          Hệ thống chưa so sánh được hồ sơ này (máy chủ AI hoặc dữ liệu gặp lỗi) và sẽ tự thử lại sau ít phút.
+          <div className="alert__actions">
+            <Button variant="secondary" className="btn--sm" onClick={reload}>
+              Thử lại
+            </Button>
+          </div>
+        </Alert>
+      )}
+
+      {!scanning && !failed && (
         <div className="admin-grid admin-grid--stats">
-          <StatCard
-            icon="shield"
-            tone={screening.spamScore < 20 ? 'green' : 'red'}
-            label="Nghi vấn tin rác (/100)"
-            value={screening.spamScore}
-            hint={screening.spamScore < 20 ? 'Thấp, nội dung hợp lệ' : 'Cần kiểm tra kỹ'}
-          />
-          <StatCard
-            icon="checkCircle"
-            tone="blue"
-            label="Độ tin cậy (/100)"
-            value={screening.credibilityScore}
-            hint={`${submission.evidences.length} tệp đính kèm`}
-          />
           <StatCard
             icon="copy"
             tone={candidates.length ? 'red' : 'green'}
             label="Hồ sơ tương tự"
             value={candidates.length}
-            hint={candidates.length ? `Độ giống cao nhất ${candidates[0].similarity}%` : 'Không có hồ sơ nào vượt ngưỡng'}
-          />
-          <StatCard
-            icon="activity"
-            tone="orange"
-            label="Ngưỡng gợi ý (%)"
-            value={screening.threshold}
-            hint={`So với hồ sơ trong ${screening.windowDays} ngày`}
+            hint={candidates.length ? `Độ giống cao nhất ${candidates[0].similarity}%` : `Trong ${screening.windowDays} ngày qua`}
           />
         </div>
       )}
@@ -180,50 +181,58 @@ function EditorDuplicateCheck() {
       {scanning && (
         <section className="admin-panel">
           <div className="dup-result">
-            <ResultView
+            <ResultView compact
               tone="muted"
-              text={`AI đang so sánh nội dung, vị trí, thời gian và hình ảnh với các hồ sơ trong ${screening.windowDays} ngày qua. Tải lại trang sau ít phút để xem kết quả.`}
+              text={`AI đang so sánh nội dung, vị trí và thời gian với các hồ sơ trong ${screening.windowDays} ngày qua. Trang tự cập nhật khi có kết quả.`}
             />
           </div>
         </section>
       )}
 
       {/* ===== Đã kết luận ===== */}
-      {review?.decision === 'MERGED' && (
+      {review?.decision === 'DUPLICATE' && !editing && (
         <section className="admin-panel">
           <div className="dup-result">
-            <ResultView text={`Đã gộp vào hồ sơ ${review.original.trackingCode} "${review.original.title}". Nội dung và tệp của hồ sơ này đã được nối vào hồ sơ gốc, người gửi nhận thông báo tin đã được ghép.`}>
-              <Button to={`/editor/queue/${review.original.trackingCode}`}>Mở hồ sơ gốc</Button>
-              <Button to="/editor/queue" variant="secondary">
-                Về hàng đợi tin bài
+            <ResultView compact
+              text={`Đã ghi nhận hồ sơ này trùng với hồ sơ ${review.original.trackingCode} "${review.original.title}". Hồ sơ vẫn ở hàng đợi, bạn xử lý tiếp bằng các chức năng thẩm định.`}
+            >
+              <Button to={`/editor/queue/${code}/reject`}>Từ chối hồ sơ</Button>
+              <Button to={`/editor/queue/${review.original.trackingCode}`} variant="secondary">
+                Mở hồ sơ trùng
               </Button>
-              <Button variant="ghost" onClick={() => ask('UNMERGE')}>
-                <Icon name="refresh" size={16} />
-                Hoàn tác gộp
+              <Button variant="ghost" onClick={() => setEditing(true)}>
+                <Icon name="edit" size={16} />
+                Đổi kết luận
               </Button>
             </ResultView>
           </div>
         </section>
       )}
 
-      {review?.decision === 'DISTINCT' && (
+      {review?.decision === 'DISTINCT' && !editing && (
         <section className="admin-panel">
           <div className="dup-result">
-            <ResultView text="Đã xác nhận hồ sơ không trùng. Hồ sơ tiếp tục ở hàng đợi để tiếp nhận thẩm định như một sự việc mới.">
+            <ResultView compact text="Đã ghi nhận hồ sơ không trùng. Hồ sơ tiếp tục ở hàng đợi để tiếp nhận thẩm định như một sự việc mới.">
               <Button to={`/editor/queue/${code}`}>Mở chi tiết hồ sơ</Button>
               <Button to="/editor/queue" variant="secondary">
                 Về hàng đợi tin bài
               </Button>
+              {candidates.length > 0 && (
+                <Button variant="ghost" onClick={() => setEditing(true)}>
+                  <Icon name="edit" size={16} />
+                  Đổi kết luận
+                </Button>
+              )}
             </ResultView>
           </div>
         </section>
       )}
 
       {/* ===== Không có hồ sơ tương tự ===== */}
-      {!scanning && !review && candidates.length === 0 && (
+      {!scanning && !failed && !review && candidates.length === 0 && (
         <section className="admin-panel">
           <div className="dup-result">
-            <ResultView
+            <ResultView compact
               text={`Không tìm thấy hồ sơ trùng lặp. Không có hồ sơ nào giống từ ${screening.threshold}% trở lên trong ${screening.windowDays} ngày qua, bạn có thể xử lý hồ sơ này như một sự việc mới.`}
             >
               <Button onClick={() => ask('DISTINCT')}>
@@ -240,14 +249,14 @@ function EditorDuplicateCheck() {
       )}
 
       {/* ===== 2. Gợi ý của AI | so sánh + kết luận ===== */}
-      {!scanning && !review && selected && (
+      {!scanning && (!review || editing) && selected && (
         <div className="review-grid">
           {/* .applicant: khối dính dưới thanh tiêu đề khi cuộn (editor.css) */}
           <aside className="admin-panel applicant">
             <div className="admin-panel__header">
               <h2>AI gợi ý {candidates.length} hồ sơ</h2>
             </div>
-            <span className="field__hint">Đây là gợi ý của AI. Bạn so sánh rồi tự quyết định có gộp hay không.</span>
+            <span className="field__hint">Đây là gợi ý của AI. Bạn so sánh rồi tự quyết định có trùng hay không.</span>
 
             <div className="role-options dup-candidates" role="radiogroup" aria-label="Hồ sơ gợi ý">
               {candidates.map((item) => {
@@ -306,7 +315,6 @@ function EditorDuplicateCheck() {
                   tagTone="dark"
                   record={submission}
                   phrases={selected.matchedPhrases}
-                  similarUrls={similarUrls}
                   extraFact={{ label: 'Người gửi', value: submission.anonymous ? 'Ẩn danh' : 'Công khai danh tính' }}
                 />
                 <DuplicateSide
@@ -315,7 +323,6 @@ function EditorDuplicateCheck() {
                   status={SUBMISSION_STATUS[selected.status]}
                   record={selected}
                   phrases={selected.matchedPhrases}
-                  similarUrls={similarUrls}
                   extraFact={{ label: 'Phụ trách', value: selected.assignedEditorName ?? 'Chưa có' }}
                 />
               </div>
@@ -331,18 +338,18 @@ function EditorDuplicateCheck() {
               </div>
 
               <div className="role-options" role="radiogroup" aria-label="Kết luận">
-                <label className={`role-option ${decision === 'MERGE' ? 'is-selected' : ''}`}>
-                  <input type="radio" name="decision" checked={decision === 'MERGE'} onChange={() => setDecision('MERGE')} />
+                <label className={`role-option ${decision === 'DUPLICATE' ? 'is-selected' : ''}`}>
+                  <input type="radio" name="decision" checked={decision === 'DUPLICATE'} onChange={() => setDecision('DUPLICATE')} />
                   <span>
-                    <strong>Trùng sự việc, gộp vào hồ sơ đang so sánh</strong>
-                    <small>Hồ sơ này trở thành bản trùng của hồ sơ gốc. Nội dung và tệp được nối vào hồ sơ gốc, không xử lý riêng nữa.</small>
+                    <strong>Trùng sự việc với hồ sơ đang so sánh</strong>
+                    <small>Chỉ ghi nhận kết luận. Hồ sơ vẫn ở hàng đợi, bạn xử lý tiếp (ví dụ từ chối vì trùng).</small>
                   </span>
                 </label>
                 <label className={`role-option ${decision === 'DISTINCT' ? 'is-selected' : ''}`}>
                   <input type="radio" name="decision" checked={decision === 'DISTINCT'} onChange={() => setDecision('DISTINCT')} />
                   <span>
                     <strong>Không trùng, xử lý như sự việc mới</strong>
-                    <small>Bỏ qua gợi ý của AI. Hồ sơ tiếp tục ở hàng đợi để tiếp nhận thẩm định bình thường.</small>
+                    <small>Chỉ ghi nhận kết luận. Hồ sơ tiếp tục ở hàng đợi để tiếp nhận thẩm định bình thường.</small>
                   </span>
                 </label>
               </div>
@@ -352,7 +359,7 @@ function EditorDuplicateCheck() {
                 multiline
                 rows={3}
                 counter={NOTE_MAX}
-                placeholder="Ví dụ: cùng điểm ngập, cùng thời điểm, ảnh chụp cùng góc."
+                placeholder="Ví dụ: cùng điểm ngập, cùng thời điểm, mô tả giống nhau."
                 hint="Không bắt buộc. Lưu vào lịch sử thẩm định, người gửi không thấy."
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
@@ -360,12 +367,18 @@ function EditorDuplicateCheck() {
               />
 
               <div className="review-box__actions">
-                <Button variant="ghost" to={`/editor/queue/${code}`}>
-                  Để sau
-                </Button>
+                {editing ? (
+                  <Button variant="ghost" onClick={() => setEditing(false)}>
+                    Huỷ
+                  </Button>
+                ) : (
+                  <Button variant="ghost" to={`/editor/queue/${code}`}>
+                    Để sau
+                  </Button>
+                )}
                 <Button onClick={() => ask(decision)}>
-                  <Icon name={decision === 'MERGE' ? 'copy' : 'check'} size={16} />
-                  {decision === 'MERGE' ? 'Gộp hồ sơ' : 'Xác nhận không trùng'}
+                  <Icon name={decision === 'DUPLICATE' ? 'copy' : 'check'} size={16} />
+                  {decision === 'DUPLICATE' ? 'Ghi nhận trùng' : 'Ghi nhận không trùng'}
                 </Button>
               </div>
             </section>
@@ -375,15 +388,13 @@ function EditorDuplicateCheck() {
 
       <ConfirmDialog
         open={Boolean(confirm)}
-        title={confirm === 'MERGE' ? 'Gộp hồ sơ trùng' : confirm === 'UNMERGE' ? 'Hoàn tác gộp' : 'Xác nhận không trùng'}
+        title={confirm === 'DUPLICATE' ? 'Ghi nhận hồ sơ trùng' : 'Ghi nhận không trùng'}
         message={
-          confirm === 'MERGE'
-            ? `Gộp hồ sơ ${code} vào hồ sơ gốc ${selected?.trackingCode}? Hồ sơ này sẽ không được xử lý riêng nữa.`
-            : confirm === 'UNMERGE'
-              ? `Tách hồ sơ ${code} khỏi hồ sơ gốc và đưa lại vào hàng đợi?`
-              : `Xác nhận hồ sơ ${code} không trùng với hồ sơ nào và tiếp tục xử lý như sự việc mới?`
+          confirm === 'DUPLICATE'
+            ? `Ghi nhận hồ sơ ${code} trùng sự việc với hồ sơ ${selected?.trackingCode}? Hồ sơ vẫn ở hàng đợi, không có dữ liệu nào bị gộp.`
+            : `Ghi nhận hồ sơ ${code} không trùng với hồ sơ nào và tiếp tục xử lý như sự việc mới?`
         }
-        confirmLabel={confirm === 'MERGE' ? 'Gộp hồ sơ' : confirm === 'UNMERGE' ? 'Hoàn tác' : 'Xác nhận'}
+        confirmLabel="Ghi nhận"
         onConfirm={submit}
         onClose={() => setConfirm(null)}
       />
