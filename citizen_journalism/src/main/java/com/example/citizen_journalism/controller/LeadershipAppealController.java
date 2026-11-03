@@ -1,5 +1,7 @@
 package com.example.citizen_journalism.controller;
 
+import com.example.citizen_journalism.dto.violation.ViolationDetail;
+
 import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.violation.DecideAppealRequest;
@@ -36,6 +38,13 @@ public class LeadershipAppealController {
     @GetMapping("/appeals/{id}")
     public ApiResponse<ViolationAppealView> getAppeal(@PathVariable Long id) {
         return ApiResponse.ok("OK", appealService.get(id));
+    }
+
+    @GetMapping("/appeals/{id}/penalties")
+    public ApiResponse<PageResponse<ViolationDetail>> penalties(
+            @PathVariable Long id, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", appealService.penalties(id, page, size));
     }
 
     @PostMapping("/appeals/{id}/decision")

@@ -51,5 +51,8 @@ public interface UserViolationRepository extends JpaRepository<UserViolation, Lo
     @Query("select v from UserViolation v where coalesce(v.legacyId, v.id) = :id")
     Optional<UserViolation> findWithDetailsById(@Param("id") Long id);
 
+    @EntityGraph(attributePaths = {"reportedUser", "reportedBy", "relatedSubmission", "reviewedBy", "approvedBy"})
+    Page<UserViolation> findByReportedUserIdAndStatus(String userId, UserViolation.Status status, Pageable pageable);
+
     long countByStatus(UserViolation.Status status);
 }

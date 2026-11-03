@@ -8,13 +8,16 @@ import com.example.citizen_journalism.dto.violation.CreateAppealRequest;
 import com.example.citizen_journalism.dto.violation.DecideAppealRequest;
 import com.example.citizen_journalism.dto.violation.ReviewAppealRequest;
 import com.example.citizen_journalism.dto.violation.ViolationAppealView;
+import com.example.citizen_journalism.dto.violation.ViolationDetail;
 import com.example.citizen_journalism.entity.User;
+import com.example.citizen_journalism.entity.UserViolation;
 import com.example.citizen_journalism.entity.ViolationAppeal;
 import com.example.citizen_journalism.entity.ReputationLog;
 import com.example.citizen_journalism.exception.AppException;
 import com.example.citizen_journalism.exception.ErrorCode;
 import com.example.citizen_journalism.repository.ReputationLogRepository;
 import com.example.citizen_journalism.repository.UserRepository;
+import com.example.citizen_journalism.repository.UserViolationRepository;
 import com.example.citizen_journalism.repository.ViolationAppealRepository;
 import com.example.citizen_journalism.util.Paging;
 import java.time.LocalDateTime;
@@ -33,6 +36,7 @@ public class ViolationAppealService {
     private final ViolationAppealRepository appealRepository;
     private final UserRepository userRepository;
     private final ReputationLogRepository reputationLogRepository;
+    private final UserViolationRepository violationRepository;
     private final AuthService authService;
 
     /** Vai trò có điểm uy tín, tức có thể bị khoá tự động vì dưới 80 điểm, nên được gửi khiếu nại. */
@@ -79,6 +83,15 @@ public class ViolationAppealService {
     @Transactional(readOnly = true)
     public ViolationAppealView get(Long id) {
         return ViolationAppealView.from(find(id));
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ViolationDetail> penalties(Long id, int page, int size) {
+        ViolationAppeal appeal = find(id);
+        return PageResponse.from(violationRepository.findByReportedUserIdAndStatus(
+                appeal.getUser().getId(), UserViolation.Status.RESOLVED,
+                Paging.of(page, size, Paging.NEWEST_FIRST))
+                .map(ViolationDetail::from));
     }
 
     @Transactional

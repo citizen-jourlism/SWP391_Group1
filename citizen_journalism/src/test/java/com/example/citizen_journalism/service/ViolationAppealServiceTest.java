@@ -10,10 +10,12 @@ import static org.mockito.Mockito.when;
 import com.example.citizen_journalism.dto.violation.DecideAppealRequest;
 import com.example.citizen_journalism.entity.ReputationLog;
 import com.example.citizen_journalism.entity.User;
+import com.example.citizen_journalism.entity.UserViolation;
 import com.example.citizen_journalism.entity.ViolationAppeal;
 import com.example.citizen_journalism.exception.AppException;
 import com.example.citizen_journalism.repository.ReputationLogRepository;
 import com.example.citizen_journalism.repository.UserRepository;
+import com.example.citizen_journalism.repository.UserViolationRepository;
 import com.example.citizen_journalism.repository.ViolationAppealRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -23,12 +25,42 @@ class ViolationAppealServiceTest {
     private final ViolationAppealRepository appealRepository = mock(ViolationAppealRepository.class);
     private final UserRepository userRepository = mock(UserRepository.class);
     private final ReputationLogRepository reputationLogRepository = mock(ReputationLogRepository.class);
+    private final UserViolationRepository violationRepository = mock(UserViolationRepository.class);
     private final ViolationAppealService service = new ViolationAppealService(
             appealRepository,
             userRepository,
             reputationLogRepository,
+            violationRepository,
             mock(AuthService.class),
             mock(MailService.class));
+
+    @Test
+    void penaltyHistoryIsScopedToAppealOwnerAndExecutedPenalties() {
+        User citizen = user("CT0001", User.Role.CITIZEN, User.Status.LOCKED, 64);
+        var pageable = com.example.citizen_journalism.util.Paging.of(
+                0, 5, com.example.citizen_journalism.util.Paging.NEWEST_FIRST);
+        UserViolation penalty = UserViolation.builder().reportedUser(citizen)
+                .status(UserViolation.Status.RESOLVED).proposedAction(UserViolation.Action.LOCK_ACCOUNT)
+                .description("Confirmed repeated violations").build();
+        penalty.setId(22L);
+        when(appealRepository.findWithDetailsById(1L)).thenReturn(java.util.Optional.of(appeal(citizen)));
+        when(violationRepository.findByReportedUserIdAndStatus(citizen.getId(), UserViolation.Status.RESOLVED, pageable))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of(penalty), pageable, 1));
+
+        var result = service.penalties(1L, 0, 5);
+
+        assertEquals(1, result.totalItems());
+        assertEquals(22L, result.items().get(0).id());
+        assertEquals("Confirmed repeated violations", result.items().get(0).description());
+        verify(violationRepository).findByReportedUserIdAndStatus(citizen.getId(), UserViolation.Status.RESOLVED, pageable);
+    }
+
+    @Test
+    void missingAppealDoesNotExposePenaltyHistory() {
+        when(appealRepository.findWithDetailsById(99L)).thenReturn(java.util.Optional.empty());
+        assertThrows(AppException.class, () -> service.penalties(99L, 0, 5));
+        org.mockito.Mockito.verifyNoInteractions(violationRepository);
+    }
 
     @Test
     void deputyApprovalRestoresMinimumReputationAndUnlocksCitizen() {

@@ -266,7 +266,7 @@ function App() {
             <Route path="research" element={<LeadershipQueue key="RESEARCH" kind="RESEARCH" />} />     {/* Bài nghiên cứu chờ duyệt */}
             <Route path="submissions/:code" element={<LeadershipSubmissionDetail />} />              {/* Chi tiết 1 hồ sơ */}
             <Route path="research/:id" element={<LeadershipResearchDetail />} />                      {/* Chi tiết 1 bài nghiên cứu */}
-            <Route path="appeals" element={<ProtectedRoute roles={['DEPUTY_EIC']}><LeadershipApprovals /></ProtectedRoute>} />
+            <Route path="appeals" element={<ProtectedRoute roles={['DEPUTY_EIC']}><EditorAppeals scope="leadership" /></ProtectedRoute>} />
             <Route path="violations" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ViolationReports leadership /></ProtectedRoute>} />
             <Route path="applications" element={<ProtectedRoute roles={['DEPUTY_EIC']}><LeadershipApplications /></ProtectedRoute>} />
             <Route path="violations/:id" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ViolationReportDetail leadership /></ProtectedRoute>} />

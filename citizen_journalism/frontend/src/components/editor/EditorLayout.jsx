@@ -37,7 +37,7 @@ const NAV_GROUPS = [
     label: 'Cộng đồng',
     items: [
       { to: '/editor/applications', icon: 'award', label: 'Đơn đăng ký CTV', title: 'Đơn đăng ký Cộng tác viên' },
-      { to: '/editor/appeals', icon: 'shield', label: 'Khiếu nại mở khóa', title: 'Khiếu nại mở khóa' },
+      { to: '/editor/appeals', icon: 'shield', label: 'Khiếu nại xử phạt', title: 'Xét duyệt khiếu nại xử phạt' },
       { to: '/editor/violations', icon: 'shield', label: 'Báo cáo vi phạm', title: 'Báo cáo vi phạm tài khoản' },
       { to: '/editor/performance', icon: 'activity', label: 'Hiệu suất người dùng', title: 'Đánh giá hiệu suất' },
       { to: '/editor/expert-applications', icon: 'award', label: 'Đăng ký chuyên gia', title: 'Xét duyệt chuyên gia' },

@@ -4,6 +4,7 @@ import { cleanParams } from '../lib/payload'
 export const violationService = {
   listEditorAppeals: (params) => api.get('/editor/appeals', { params: cleanParams(params) }),
   getEditorAppeal: (id) => api.get(`/editor/appeals/${id}`),
+  getAppealPenalties: (scope, id, params) => api.get(`/${scope}/appeals/${id}/penalties`, { params }),
   reviewAppeal: (id, payload) => api.post(`/editor/appeals/${id}/review`, payload),
   listLeadershipAppeals: (params) => api.get('/leadership/appeals', { params: cleanParams(params) }),
   getLeadershipAppeal: (id) => api.get(`/leadership/appeals/${id}`),
