@@ -54,6 +54,7 @@ public class AdminService {
     private final PasswordEncoder passwordEncoder;
     private final UserIdGenerator userIdGenerator;
     private final MailService mailService;
+    private final DeputyFieldService deputyFieldService;
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -116,7 +117,12 @@ public class AdminService {
                 .phone(request.phone().trim())
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .build();
-        return AdminUserItem.from(userRepository.save(user));
+        User saved = userRepository.save(user);
+        // Phó TBT: giao lĩnh vực phụ trách (chung transaction, lĩnh vực sai thì tài khoản cũng không được tạo)
+        if (saved.getRole() == User.Role.DEPUTY_EIC) {
+            deputyFieldService.assign(saved, request.categoryIds());
+        }
+        return AdminUserItem.from(saved);
     }
 
     /** Khoá (LOCKED) hoặc mở khoá (ACTIVE). Người bị khoá sẽ bị đăng xuất ở lần gọi API kế tiếp. */
@@ -170,6 +176,7 @@ public class AdminService {
         user.setAddress(blankToNull(request.address()));
         user.setDateOfBirth(request.dateOfBirth());
         user.setRole(request.role());
+        deputyFieldService.sync(user, request.categoryIds()); // Lĩnh vực phụ trách của Phó TBT (đổi khỏi Phó TBT -> gỡ hết)
         // Không cần save(): user đang được JPA quản lý trong transaction, tự ghi xuống DB khi hàm kết thúc.
         return AdminUserItem.from(user);
     }

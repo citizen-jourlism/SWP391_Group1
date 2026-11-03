@@ -13,6 +13,7 @@ import '../../assets/styles/user-menu.css'
 const MENU_LINKS = [
   { to: '/admin', icon: 'activity', label: 'Trang quản trị', roles: ['SYSTEM_ADMIN'] },
   { to: '/editor', icon: 'activity', label: 'Bàn biên tập', roles: ['EDITOR'] },
+  { to: '/leadership', icon: 'activity', label: 'Bàn biên tập', roles: ['DEPUTY_EIC', 'EIC'] },
   { to: '/account/submissions', icon: 'fileText', label: 'Thông tin đã gửi', roles: SUBMITTER_ROLES },
   { to: '/research', icon: 'edit', label: 'Bài nghiên cứu của tôi', roles: ['EXPERT'] },
   { to: '/contributor/tasks', icon: 'mapPin', label: 'Nhiệm vụ của tôi', roles: ['CONTRIBUTOR'] },

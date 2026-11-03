@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { LeadershipNotes } from '../../components/leadership/LeadershipDecision'
 import { ReasonDialog, RevisionComments, RevisionDiff, RevisionVersions } from '../../components/research/ResearchEditorial'
 import ResearchReader from '../../components/research/ResearchReader'
 import Alert from '../../components/ui/Alert'
@@ -15,14 +16,17 @@ import { formatDateTime } from '../../lib/format'
 import {
   CONFLICT_OPTIONS,
   MENTION_OPTIONS,
-  PRIORITY_INFO,
+  POLITICAL_OPTIONS,
   REVISION_STATUS,
-  evaluatePriority,
+  SCOPE_OPTIONS,
+  URGENCY_OPTIONS,
+  editorReviewInfo,
   optionLabel,
-  reviewStatusInfo,
 } from '../../lib/researchEditorial'
 import { createValidator, rules } from '../../lib/validators'
 import { editorService } from '../../services/editorService'
+import { leadershipService } from '../../services/leadershipService'
+import '../../assets/styles/leadership.css' // Khung "Ý kiến của Ban biên tập"
 import '../../assets/styles/research.css' // Kiểu trình bày bài (.paper, .article-body...) của ResearchReader
 import '../../assets/styles/revision.css' // Form sửa bài + khung xem thay đổi
 
@@ -45,8 +49,9 @@ import '../../assets/styles/revision.css' // Form sửa bài + khung xem thay đ
  *      bản gốc, bản đề xuất và bản sau chỉnh sửa; Biên tập viên có thể gửi yêu cầu mới.
  *
  * DUYỆT / TỪ CHỐI BÀI:
- *   - "Duyệt": form chấm phân loại (ApproveResearchDialog cuối file này, tiêu chuẩn ở lib/researchEditorial.js)
- *     -> chuyển Phó TBT phụ trách lĩnh vực. Bị chặn khi lĩnh vực chưa có Phó TBT / đang chờ Chuyên gia phản hồi.
+ *   - "Duyệt": form chấm 6 tiêu chí (ApproveResearchDialog cuối file này, tiêu chuẩn ở lib/researchEditorial.js)
+ *     -> BTV chỉ tick tiêu chí; điểm, cấp độ và nơi bài được chuyển tới do backend tự xử lý, BTV không được thấy.
+ *     Bị chặn khi lĩnh vực chưa được phân công người duyệt / đang chờ Chuyên gia phản hồi / yếu tố con người ở mức chặn duyệt.
  *   - "Từ chối": nhập lý do bắt buộc (ReasonDialog) -> bài dừng xử lý, báo Chuyên gia.
  *   Đã có kết quả thì hiện ReviewResultPanel và khoá mọi thao tác.
  */
@@ -61,6 +66,8 @@ const validate = createValidator({
 function EditorResearchDetail() {
   const { id } = useParams()
   const { data, error, setData } = useAsyncData(() => editorService.getResearch(id), id)
+  // Ý kiến của Ban biên tập (yêu cầu chỉnh sửa / không duyệt, ghi chung "Ban biên tập") — không có thì không hiện
+  const { data: leadershipNotes } = useAsyncData(() => leadershipService.researchNotes(id), `notes|${id}`)
 
   return (
     <div className="desk-detail">
@@ -71,6 +78,7 @@ function EditorResearchDetail() {
 
       {error && <Alert type="error">{error}</Alert>}
       {!data && !error && <div className="skeleton skeleton--page" />}
+      <LeadershipNotes title="Ý kiến của Ban biên tập" notes={leadershipNotes} />
 
       {/* key: đổi sang bài khác thì tạo lại form từ đầu theo bài mới */}
       {data && (
@@ -204,7 +212,7 @@ function ResearchReview({ detail, onRevisionChange, onReviewChange }) {
       </section>
 
       <Alert type="success">{notice}</Alert>
-      {/* Chưa duyệt được (chưa có Phó TBT phụ trách / đang chờ Chuyên gia phản hồi): nói rõ lý do */}
+      {/* Chưa duyệt được (lĩnh vực chưa có người duyệt / đang chờ Chuyên gia phản hồi): nói rõ lý do */}
       {!decided && approval?.blockedReason && <Alert type="warning">{approval.blockedReason}</Alert>}
       {decided && <ReviewResultPanel result={review.result} />}
 
@@ -289,10 +297,18 @@ function ResearchReview({ detail, onRevisionChange, onReviewChange }) {
         onClose={() => setConfirming(false)}
       />
 
-      {approval && (
+      {/* Bài đã được phân loại ở lần duyệt trước (Ban biên tập trả về, đã sửa) -> chỉ xác nhận duyệt lại, không chấm lại */}
+      {approval?.previous && (
+        <ReapproveResearchDialog
+          open={approving}
+          approval={approval}
+          onClose={() => setApproving(false)}
+          onSubmit={async (values) => reviewed(await editorService.approveResearch(article.id, values))}
+        />
+      )}
+      {approval && !approval.previous && (
         <ApproveResearchDialog
           open={approving}
-          field={article.field}
           approval={approval}
           onClose={() => setApproving(false)}
           onSubmit={async (values) => reviewed(await editorService.approveResearch(article.id, values))}
@@ -310,33 +326,30 @@ function ResearchReview({ detail, onRevisionChange, onReviewChange }) {
   )
 }
 
-/** Kết quả Duyệt / Từ chối đã lưu: ai, lúc nào, chuyển Phó TBT nào, điểm từng tiêu chí, cấp độ, ghi chú / lý do. */
+/**
+ * Kết quả Duyệt / Từ chối đã lưu: ai, lúc nào, các tiêu chí BTV đã tick, ghi chú / lý do.
+ * KHÔNG hiện điểm, cấp độ phân loại hay bài được chuyển cho ai (backend cũng không gửi các thông tin này cho BTV).
+ * Bài duyệt theo tiêu chuẩn cũ (3 tiêu chí) không có political / scope / urgency -> ẩn các dòng đó.
+ */
 function ReviewResultPanel({ result }) {
-  const status = reviewStatusInfo(result.status)
-  const priority = result.priority && PRIORITY_INFO[result.priority]
-  const approved = result.status === 'DEPUTY_PENDING'
+  const status = editorReviewInfo(result.status)
+  // Bài có thể đã đi tiếp ở Ban biên tập nhưng quyết định của BTV vẫn là "Duyệt" -> chỉ REJECTED mới là BTV từ chối
+  const approved = result.status !== 'REJECTED'
   return (
     <section className={`admin-panel review-result ${approved ? '' : 'review-result--rejected'}`}>
       <div className="review-result__head">
         <Badge tone={status.tone}>{status.label}</Badge>
-        {priority && <Badge tone={priority.tone}>{priority.label}</Badge>}
         <small>
           {result.reviewerName} · {formatDateTime(result.reviewedAt)}
         </small>
       </div>
       {approved ? (
         <>
-          <p>
-            Đã chuyển tới <b>Phó TBT {result.deputyName}</b>. Tổng điểm phân loại <b>{result.impactScore}/10</b>:
-          </p>
-          <ul className="review-result__scores">
-            <li>Lĩnh vực: {result.fieldScore} điểm</li>
-            <li>Xung đột lợi ích: {optionLabel(CONFLICT_OPTIONS, result.conflict)}</li>
-            <li>Nhắc đến cá nhân / tổ chức: {optionLabel(MENTION_OPTIONS, result.mention)}</li>
-          </ul>
+          <p>Các tiêu chí đã đánh giá:</p>
+          <CriteriaList values={result} />
           {result.note && (
             <p className="review-result__note">
-              <b>Ghi chú cho Phó TBT:</b> {result.note}
+              <b>Ghi chú:</b> {result.note}
             </p>
           )}
         </>
@@ -350,23 +363,49 @@ function ReviewResultPanel({ result }) {
 }
 
 const validateApproval = createValidator({
+  political: [rules.required('Vui lòng chọn mức yếu tố chính trị.')],
+  mention: [rules.required('Vui lòng chọn mức yếu tố con người.')],
+  scope: [rules.required('Vui lòng chọn phạm vi tác động.')],
+  urgency: [rules.required('Vui lòng chọn mức khẩn cấp.')],
   conflict: [rules.required('Vui lòng chọn mức xung đột lợi ích.')],
-  mention: [rules.required('Vui lòng chọn mức nhắc đến cá nhân / tổ chức.')],
   note: [rules.maxLength(2000, 'Ghi chú tối đa 2000 ký tự.')],
 })
 
+/** 5 nhóm tiêu chí BTV tick khi Duyệt (lĩnh vực hệ thống tự xét theo lĩnh vực của bài, BTV không chọn). */
+const CRITERIA_GROUPS = [
+  { title: '1. Yếu tố chính trị', name: 'political', options: POLITICAL_OPTIONS },
+  { title: '2. Yếu tố con người (nêu tên, công kích, danh tính)', name: 'mention', options: MENTION_OPTIONS },
+  { title: '3. Phạm vi tác động cộng đồng', name: 'scope', options: SCOPE_OPTIONS },
+  { title: '4. Mức khẩn cấp, nguy hại', name: 'urgency', options: URGENCY_OPTIONS },
+  { title: '5. Xung đột lợi ích', name: 'conflict', options: CONFLICT_OPTIONS },
+]
+
+/** Danh sách các tiêu chí đã tick (chỉ tên lựa chọn, không điểm). Tiêu chí không có (bài theo tiêu chuẩn cũ) thì ẩn. */
+function CriteriaList({ values }) {
+  return (
+    <ul className="review-result__scores">
+      {CRITERIA_GROUPS.filter((group) => values[group.name]).map((group) => (
+        <li key={group.name}>
+          {group.title.replace(/^\d+\.\s*/, '').replace(/\s*\(.*\)$/, '')}: {optionLabel(group.options, values[group.name])}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 /**
- * FORM "DUYỆT VÀ CHUYỂN PHÓ TBT". BTV chấm 3 tiêu chí:
- *   1. Lĩnh vực: tự động (approval.fieldScore do backend tính sẵn)
- *   2. Xung đột lợi ích: chọn sẵn theo khai báo của tác giả, BTV sửa nếu thấy khác
- *   3. Nhắc đến cá nhân / tổ chức: BTV bắt buộc chọn
- * Tổng điểm + cấp độ (Low / Medium / High) cập nhật ngay khi chọn; BTV không tự đổi cấp độ.
- * onSubmit: async ({ conflict, mention, note }) => ...  lỗi backend tự hiện trong hộp thoại.
+ * FORM "DUYỆT BÀI". BTV chỉ TICK 5 nhóm tiêu chí (tiêu chuẩn ở lib/researchEditorial.js, khu 4):
+ * yếu tố chính trị, yếu tố con người, phạm vi tác động, mức khẩn cấp, xung đột lợi ích (chọn sẵn theo khai báo của tác giả).
+ * KHÔNG hiện điểm, tổng điểm, cấp độ phân loại hay bài sẽ chuyển cho ai — hệ thống tự phân loại ở backend.
+ *   - Yếu tố con người ở mức chặn duyệt -> hiện cảnh báo, khoá nút "Duyệt".
+ * onSubmit: async ({ political, mention, scope, urgency, conflict, note }) => ...  lỗi backend tự hiện trong hộp thoại.
  */
-function ApproveResearchDialog({ open, onClose, field, approval, onSubmit }) {
-  const form = useForm({ conflict: approval.suggestedConflict ?? '', mention: '', note: '' }, validateApproval)
-  const result = evaluatePriority(approval.fieldScore, form.values.conflict, form.values.mention)
-  const priority = result && PRIORITY_INFO[result.priority]
+function ApproveResearchDialog({ open, onClose, approval, onSubmit }) {
+  const form = useForm(
+    { political: '', mention: '', scope: '', urgency: '', conflict: approval.suggestedConflict ?? '', note: '' },
+    validateApproval,
+  )
+  const blocked = Boolean(MENTION_OPTIONS.find((option) => option.value === form.values.mention)?.blocked)
 
   const close = () => {
     form.reset()
@@ -379,58 +418,38 @@ function ApproveResearchDialog({ open, onClose, field, approval, onSubmit }) {
   })
 
   return (
-    <Modal open={open} title="Duyệt và chuyển Phó Tổng biên tập" onClose={close}>
+    <Modal open={open} title="Duyệt bài nghiên cứu" onClose={close}>
       <form onSubmit={submit} className="revision-form" noValidate>
         <Alert type="error">{form.formError}</Alert>
+        <p className="modal__text">Đánh giá bài theo các tiêu chí dưới đây (chọn 1 mục ở mỗi nhóm).</p>
 
-        <div className="rubric-item">
-          <div className="rubric-item__head">
-            <strong>1. Lĩnh vực</strong>
-            <span>{field || 'Chưa chọn'}</span>
-          </div>
-          <p className="rubric-item__auto">
-            {approval.fieldScore} điểm <small>(hệ thống tự chấm theo độ nhạy cảm của lĩnh vực)</small>
-          </p>
-        </div>
+        {CRITERIA_GROUPS.map((group) => (
+          <RubricGroup
+            key={group.name}
+            title={group.title}
+            name={group.name}
+            options={group.options}
+            value={form.values[group.name]}
+            error={form.errorOf(group.name)}
+            onChange={(value) => form.setValue(group.name, value)}
+          />
+        ))}
 
-        <RubricGroup
-          title="2. Xung đột lợi ích"
-          name="conflict"
-          options={CONFLICT_OPTIONS}
-          value={form.values.conflict}
-          error={form.errorOf('conflict')}
-          onChange={(value) => form.setValue('conflict', value)}
-        />
-        <RubricGroup
-          title="3. Nhắc đến / công kích cá nhân, tổ chức cụ thể"
-          name="mention"
-          options={MENTION_OPTIONS}
-          value={form.values.mention}
-          error={form.errorOf('mention')}
-          onChange={(value) => form.setValue('mention', value)}
-        />
+        <TextField label="Ghi chú (không bắt buộc)" multiline rows={3} counter={2000} {...form.field('note')} />
 
-        <TextField label="Ghi chú cho Phó TBT (không bắt buộc)" multiline rows={3} counter={2000} {...form.field('note')} />
-
-        <div className="rubric-total">
-          <span>
-            Tổng điểm: <b>{result ? `${result.total}/10` : '—'}</b>
-          </span>
-          <span>
-            Cấp độ: {priority ? <Badge tone={priority.tone}>{priority.label}</Badge> : <small>Chọn đủ các tiêu chí</small>}
-          </span>
-          {priority && <small className="rubric-total__hint">{priority.hint}</small>}
-        </div>
-        <p className="rubric-deputy">
-          Chuyển tới: <b>Phó TBT {approval.deputyName}</b> (phụ trách lĩnh vực {field})
-        </p>
+        {blocked && (
+          <Alert type="warning">
+            Bài vi phạm tiêu chuẩn về yếu tố con người nên không được duyệt. Hãy đóng hộp thoại này rồi bấm "Sửa bài" để gửi yêu cầu
+            chỉnh sửa cho Chuyên gia, hoặc bấm "Từ chối".
+          </Alert>
+        )}
 
         <div className="modal__actions">
           <Button variant="secondary" onClick={close} disabled={form.submitting}>
             Huỷ
           </Button>
-          <Button type="submit" loading={form.submitting}>
-            Duyệt và chuyển
+          <Button type="submit" loading={form.submitting} disabled={blocked}>
+            Duyệt
           </Button>
         </div>
       </form>
@@ -438,7 +457,68 @@ function ApproveResearchDialog({ open, onClose, field, approval, onSubmit }) {
   )
 }
 
-/** 1 nhóm lựa chọn (chọn 1), mỗi lựa chọn có điểm + gợi ý khi nào chọn. */
+/**
+ * Hộp DUYỆT LẠI cho bài đã được đánh giá (approval.previous): bài bị trả về, đã sửa xong nộp lại.
+ * Không đánh giá lại — chỉ hiện các tiêu chí đã tick lần trước (không điểm / cấp độ), BTV ghi chú (không bắt buộc) rồi duyệt.
+ * Gửi kèm đúng các lựa chọn cũ cho đủ dữ liệu; backend vẫn tự lấy lại kết quả cũ (ResearchEditorialService.approve).
+ */
+function ReapproveResearchDialog({ open, onClose, approval, onSubmit }) {
+  const previous = approval.previous
+  const [note, setNote] = useState('')
+  const [error, setError] = useState('')
+  const [running, setRunning] = useState(false)
+
+  const close = () => {
+    setNote('')
+    setError('')
+    onClose()
+  }
+
+  const submit = async (event) => {
+    event.preventDefault()
+    setRunning(true)
+    setError('')
+    try {
+      const { political, mention, scope, urgency, conflict } = previous
+      await onSubmit({ political, mention, scope, urgency, conflict, note: note.trim() || null })
+      close()
+    } catch (err) {
+      setError(err.errors?.note || err.message)
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  return (
+    <Modal open={open} title="Duyệt lại bài nghiên cứu" onClose={close}>
+      <form onSubmit={submit} className="revision-form" noValidate>
+        <p className="modal__text">
+          Bài đã được đánh giá ở lần duyệt trước nên <b>không cần đánh giá lại</b>. Các tiêu chí đã chọn:
+        </p>
+        <CriteriaList values={previous} />
+        <TextField
+          label="Ghi chú (không bắt buộc)"
+          multiline
+          rows={3}
+          counter={2000}
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+        />
+        <Alert type="error">{error}</Alert>
+        <div className="modal__actions">
+          <Button variant="secondary" onClick={close} disabled={running}>
+            Huỷ
+          </Button>
+          <Button type="submit" loading={running}>
+            Duyệt
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+/** 1 nhóm lựa chọn (chọn 1), mỗi lựa chọn có gợi ý khi nào chọn. Không hiện điểm của lựa chọn. */
 function RubricGroup({ title, name, options, value, error, onChange }) {
   return (
     <fieldset className="rubric-item">
@@ -450,7 +530,7 @@ function RubricGroup({ title, name, options, value, error, onChange }) {
           <input type="radio" name={name} value={option.value} checked={value === option.value} onChange={() => onChange(option.value)} />
           <span>
             <b>
-              {option.label} <em>({option.score} điểm)</em>
+              {option.label} {option.blocked && <em>(không được duyệt)</em>}
             </b>
             <small>{option.hint}</small>
           </span>

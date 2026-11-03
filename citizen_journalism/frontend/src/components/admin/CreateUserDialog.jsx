@@ -7,12 +7,13 @@ import { adminService } from '../../services/adminService'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
 import CopyButton from '../ui/CopyButton'
+import DeputyFieldPicker from './DeputyFieldPicker'
 import Icon from '../ui/Icon'
 import Modal from '../ui/Modal'
 import SelectField from '../ui/SelectField'
 import TextField from '../ui/TextField'
 
-const INITIAL_VALUES = { fullName: '', email: '', username: '', phone: '', role: 'EDITOR', password: '' }
+const INITIAL_VALUES = { fullName: '', email: '', username: '', phone: '', role: 'EDITOR', password: '', categoryIds: [] }
 
 const validate = createValidator({
   fullName: [rules.required('Vui lòng nhập họ và tên.'), rules.maxLength(100, 'Họ và tên tối đa 100 ký tự.')],
@@ -26,6 +27,10 @@ const validate = createValidator({
   phone: [rules.required('Vui lòng nhập số điện thoại.'), rules.phone()],
   role: [rules.required('Vui lòng chọn vai trò.')],
   password: newPasswordRules,
+  // Chỉ Phó TBT: phải chọn ≥ 1 lĩnh vực phụ trách (DeputyFieldPicker; backend DeputyFieldService kiểm tra lại)
+  categoryIds: [
+    rules.when((values) => values.role === 'DEPUTY_EIC', (value) => (value?.length ? '' : 'Vui lòng chọn ít nhất 1 lĩnh vực phụ trách.')),
+  ],
 })
 
 const ROLE_OPTIONS = ASSIGNABLE_ROLES.map((role) => ({ value: role, label: ROLE_LABELS[role] }))
@@ -117,6 +122,13 @@ function CreateUserDialog({ open, onClose, onCreated }) {
           <TextField label="Số điện thoại" icon="phone" type="tel" inputMode="numeric" required {...form.field('phone')} />
           <SelectField label="Vai trò" options={ROLE_OPTIONS} required {...form.field('role')} />
           <p className="field__hint field__hint--block">{ROLE_DESCRIPTIONS[form.values.role]}</p>
+          {form.values.role === 'DEPUTY_EIC' && (
+            <DeputyFieldPicker
+              value={form.values.categoryIds}
+              onChange={(ids) => form.setValue('categoryIds', ids)}
+              error={form.errorOf('categoryIds')}
+            />
+          )}
           <TextField
             label="Mật khẩu tạm"
             icon="lock"

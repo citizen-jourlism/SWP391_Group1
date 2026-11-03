@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Admin SỬA THÔNG TIN + VAI TRÒ của một tài khoản: PUT /api/admin/users/{id}
@@ -41,6 +42,9 @@ public record AdminUpdateUserRequest(
 
         String province,
 
-        String ward
+        String ward,
+
+        // Chỉ dùng khi role = DEPUTY_EIC: id các chuyên mục (lĩnh vực) Phó TBT phụ trách, bắt buộc ≥ 1 (DeputyFieldService.sync)
+        List<Long> categoryIds
 ) {
 }

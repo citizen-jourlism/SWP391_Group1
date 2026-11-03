@@ -8,7 +8,7 @@ import SelectField from '../../components/ui/SelectField'
 import { useAsyncData } from '../../hooks/useAsyncData'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 import { formatDateTime } from '../../lib/format'
-import { EDIT_STATUS, PRIORITY_INFO, reviewStatusInfo } from '../../lib/researchEditorial'
+import { EDIT_STATUS, editorReviewInfo } from '../../lib/researchEditorial'
 import { editorService } from '../../services/editorService'
 import '../../assets/styles/admin.css' // Ô tìm kiếm .search-box (dùng chung với trang Quản lý tài khoản)
 import '../../assets/styles/submit.css' // Màu icon bài nghiên cứu (.category-card__icon--research)
@@ -130,8 +130,8 @@ function EditorArticles() {
                   </td>
                   <td>
                     <span className="review-cell">
-                      <Badge tone={reviewStatusInfo(item.reviewStatus).tone}>{reviewStatusInfo(item.reviewStatus).label}</Badge>
-                      {item.priority && <Badge tone={PRIORITY_INFO[item.priority].tone}>{PRIORITY_INFO[item.priority].label}</Badge>}
+                      {/* BTV chỉ thấy chờ duyệt / đã duyệt / đã từ chối, không thấy cấp độ phân loại */}
+                      <Badge tone={editorReviewInfo(item.reviewStatus).tone}>{editorReviewInfo(item.reviewStatus).label}</Badge>
                     </span>
                   </td>
                   <td>{formatDateTime(item.lastActivityAt)}</td>
