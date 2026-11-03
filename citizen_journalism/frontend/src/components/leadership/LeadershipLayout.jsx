@@ -29,11 +29,11 @@ const NAV_GROUPS = [
     label: 'Quản lý tòa soạn',
     items: [
       // TungTT - Iteration 3 Task 2: Quản lý CTV
-      { to: '/leadership/contributor-management', icon: 'users', label: 'Quản lý Cộng tác viên', title: 'Danh sách Cộng tác viên', roles: ['DEPUTY_EIC'] },
+      { to: '/leadership/contributor-management', icon: 'user', label: 'Quản lý Cộng tác viên', title: 'Danh sách Cộng tác viên', roles: ['DEPUTY_EIC'] },
       // TungTT - Iteration 3 Task 4: Dashboard hiệu suất tòa soạn
       { to: '/leadership/newsroom-performance', icon: 'activity', label: 'Hiệu suất tòa soạn', title: 'Dashboard hiệu suất và quy trình biên tập' },
       // TungTT - Iteration 3 Task 5: Danh bạ nhân sự biên tập
-      { to: '/leadership/editorial-staff', icon: 'users', label: 'Danh bạ nhân sự', title: 'Danh bạ nhân sự và hồ sơ được phân công' },
+      { to: '/leadership/editorial-staff', icon: 'phone', label: 'Danh bạ nhân sự', title: 'Danh bạ nhân sự và hồ sơ được phân công' },
     ],
   },
 ]

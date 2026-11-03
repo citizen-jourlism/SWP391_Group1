@@ -110,7 +110,7 @@ public class DeputyContributorApplicationController {
 
         String message = rejected
                 ? "Đã từ chối đơn đăng ký cộng tác viên."
-                : "Đã phê duyệt đơn. Tài khoản chờ System Admin kích hoạt.";
+                : "Đã phê duyệt đơn. Người đăng ký đã trở thành Cộng tác viên.";
 
         return ApiResponse.ok(
                 message,

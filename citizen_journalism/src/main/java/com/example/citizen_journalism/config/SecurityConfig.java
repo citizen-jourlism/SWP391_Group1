@@ -67,7 +67,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
-                .requestMatchers("/api/leadership/appeals/**", "/api/leadership/violations/**", "/api/leadership/applications/**").hasRole("DEPUTY_EIC")
+                .requestMatchers("/api/leadership/appeals/**", "/api/leadership/violations/**", "/api/deputy/**").hasRole("DEPUTY_EIC")
                 // Gửi tin / khiếu nại: người dân, cộng tác viên, chuyên gia (nhân sự toà soạn và admin thì không)
                 .requestMatchers("/api/submissions/**").hasAnyRole("CITIZEN", "CONTRIBUTOR", "EXPERT")
                 // Đăng ký / theo dõi đơn Cộng tác viên: người dân (nộp đơn) và CTV (xem lại đơn cũ)

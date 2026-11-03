@@ -145,8 +145,10 @@ public class DeputyContributorApplicationService {
     ) {
         User deputy = requireDeputy(deputyId);
 
+        // Khoá dòng đơn (SELECT ... FOR UPDATE): 2 Phó TBT bấm cùng lúc thì người sau phải chờ,
+        // rồi thấy đơn đã có quyết định và bị chặn ở bước kiểm tra trạng thái bên dưới.
         ContributorApplication application = applicationRepository
-                .findWithApplicantById(applicationId)
+                .findForDecision(applicationId)
                 .orElseThrow(() ->
                         AppException.notFound("Không tìm thấy đơn đăng ký.")
                 );
@@ -178,6 +180,13 @@ public class DeputyContributorApplicationService {
 
         boolean rejected = request.decision()
                 == DeputyReviewApplicationRequest.Decision.REJECT;
+
+        // Tài khoản đang bị khoá / tạm ngưng (ví dụ điểm uy tín dưới 80) thì không được nâng lên CTV.
+        if (!rejected && applicant.getStatus() != User.Status.ACTIVE) {
+            throw AppException.conflict(
+                    "Tài khoản người đăng ký đang không hoạt động, chưa thể nâng cấp Cộng tác viên."
+            );
+        }
 
         String note;
 

@@ -10,6 +10,7 @@ import tools.jackson.databind.json.JsonMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -17,6 +18,8 @@ import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * TungTT - Iteration 3 - Task 3.
@@ -29,6 +32,7 @@ import java.util.stream.Stream;
  * Lưu đơn bằng file JSON.
  * Không tạo bảng hoặc thay đổi cấu trúc Database.
  */
+@Slf4j
 @Service
 public class ExpertUpgradeService {
 
@@ -161,6 +165,19 @@ public class ExpertUpgradeService {
         }
     }
 
+    /**
+     * Dùng khi đọc cả danh sách: file nào hỏng thì ghi log và bỏ qua,
+     * để các đơn còn lại vẫn hiện cho Editor / Deputy / người dân.
+     */
+    private ExpertApplication readOrSkip(Path file) {
+        try {
+            return read(file);
+        } catch (AppException e) {
+            log.warn("Bỏ qua file đơn Expert không đọc được: {}", file.getFileName());
+            return null;
+        }
+    }
+
     // ==============================
     // GHI FILE JSON
     // ==============================
@@ -240,7 +257,8 @@ public class ExpertUpgradeService {
                                     .toString()
                                     .endsWith(".json")
                     )
-                    .map(this::read)
+                    .map(this::readOrSkip)
+                    .filter(Objects::nonNull)
                     .sorted(
                             Comparator.comparing(
                                     ExpertApplication::createdAt
@@ -565,7 +583,11 @@ public class ExpertUpgradeService {
      * Deputy EIC:
      * - Approve: chuyển CITIZEN -> EXPERT.
      * - Reject: giữ vai trò CITIZEN.
+     *
+     * @Transactional: vai trò EXPERT chỉ được lưu vào DB khi ghi file JSON thành công.
+     * Ghi file lỗi -> write() ném lỗi -> giao dịch rollback, người dùng vẫn là CITIZEN và đơn vẫn chờ Deputy.
      */
+    @Transactional
     public synchronized ExpertApplication deputyReview(
             String deputyId,
             String id,
@@ -634,9 +656,9 @@ public class ExpertUpgradeService {
                 );
 
         // Chỉ đổi role khi Deputy phê duyệt cuối.
+        // applicant đang được giao dịch quản lý: đổi role là đủ, Hibernate tự UPDATE khi commit (sau khi ghi file).
         if (approved) {
             applicant.setRole(User.Role.EXPERT);
-            users.save(applicant);
         }
 
         // Lưu kết quả xét duyệt vào JSON.

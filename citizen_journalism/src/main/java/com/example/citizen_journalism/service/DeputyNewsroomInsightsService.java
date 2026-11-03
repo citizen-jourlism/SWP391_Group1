@@ -183,22 +183,18 @@ public class DeputyNewsroomInsightsService {
                 .getSingleResult();
 
         // --------------------------------------
-        // Đếm bài nghiên cứu đã nộp trong kỳ
-        // và hiện còn ở trạng thái SUBMITTED.
+        // Đếm bài nghiên cứu đã nộp trong kỳ, dù sau đó
+        // đã được duyệt, trả về hay từ chối (bản nháp
+        // chưa nộp có submittedAt = null nên không bị đếm).
         // --------------------------------------
         long research = em.createQuery("""
                 select count(r)
                 from ResearchArticle r
                 where r.submittedAt >= :start
                   and r.submittedAt < :end
-                  and r.status = :submitted
                 """, Long.class)
                 .setParameter("start", start)
                 .setParameter("end", end)
-                .setParameter(
-                        "submitted",
-                        ResearchArticle.Status.SUBMITTED
-                )
                 .getSingleResult();
 
         // --------------------------------------
