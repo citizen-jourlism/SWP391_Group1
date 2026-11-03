@@ -13,7 +13,10 @@ import '../../assets/styles/editor.css'
 const NAV_GROUPS = [
   {
     label: 'Bàn làm việc',
-    items: [{ to: '/editor', end: true, icon: 'activity', label: 'Tổng quan', title: 'Bàn làm việc hôm nay' }],
+    items: [
+      { to: '/editor', end: true, icon: 'activity', label: 'Tổng quan', title: 'Bàn làm việc hôm nay' },
+      { to: '/editor/pipeline', icon: 'clock', label: 'Tiến độ toà soạn', title: 'Tiến độ toà soạn' },
+    ],
   },
   {
     label: 'Tiếp nhận',

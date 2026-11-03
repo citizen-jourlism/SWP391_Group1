@@ -4,12 +4,14 @@ import com.example.citizen_journalism.dto.ApiResponse;
 import com.example.citizen_journalism.dto.PageResponse;
 import com.example.citizen_journalism.dto.assignment.AdditionalEvidenceRequest;
 import com.example.citizen_journalism.dto.assignment.AssignmentReasonRequest;
+import com.example.citizen_journalism.dto.assignment.ContributionHistory;
 import com.example.citizen_journalism.dto.assignment.ContributorTaskDetail;
 import com.example.citizen_journalism.dto.assignment.ContributorTaskItem;
 import com.example.citizen_journalism.dto.assignment.SubmitFieldReportRequest;
 import com.example.citizen_journalism.dto.assignment.UpdateReportArticleRequest;
 import com.example.citizen_journalism.entity.FieldAssignment.AssignmentStatus;
 import com.example.citizen_journalism.service.ContributorTaskService;
+import com.example.citizen_journalism.service.FieldReportService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
  *
  *   GET  /api/contributor/tasks              -> danh sách nhiệm vụ (lọc status, phân trang)
  *   GET  /api/contributor/tasks/counts       -> số nhiệm vụ theo từng trạng thái
+ *   GET  /api/contributor/tasks/history      -> lịch sử đóng góp: số liệu + các báo cáo đã nộp (phân trang)
  *   GET  /api/contributor/tasks/{id}         -> chi tiết 1 nhiệm vụ
  *   POST /api/contributor/tasks/{id}/accept  -> nhận nhiệm vụ
  *   POST /api/contributor/tasks/{id}/decline -> từ chối nhiệm vụ đang chờ phản hồi (bắt buộc lý do)
@@ -47,6 +50,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ContributorTaskController {
 
     private final ContributorTaskService taskService;
+    private final FieldReportService fieldReportService;
 
     @GetMapping
     public ApiResponse<PageResponse<ContributorTaskItem>> list(
@@ -60,6 +64,14 @@ public class ContributorTaskController {
     @GetMapping("/counts")
     public ApiResponse<Map<AssignmentStatus, Long>> counts(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.ok("OK", taskService.countByStatus(jwt.getSubject()));
+    }
+
+    @GetMapping("/history")
+    public ApiResponse<ContributionHistory> history(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok("OK", fieldReportService.getContributionHistory(jwt.getSubject(), page, size));
     }
 
     @GetMapping("/{id}")

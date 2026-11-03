@@ -46,6 +46,15 @@ public interface FieldAssignmentRepository extends JpaRepository<FieldAssignment
     Page<FieldAssignment> findLatestPerSubmission(@Param("statuses") Collection<FieldAssignment.AssignmentStatus> statuses,
                                                   Pageable pageable);
 
+    /** Nhiệm vụ mới nhất của từng hồ sơ trong danh sách, kèm CTV, cho bảng tiến độ toà soạn. */
+    @EntityGraph(attributePaths = {"contributor"})
+    @Query("""
+            select a from FieldAssignment a
+            where a.submission in :submissions
+              and a.id = (select max(b.id) from FieldAssignment b where b.submission = a.submission)
+            """)
+    List<FieldAssignment> findLatestBySubmissions(@Param("submissions") Collection<Submission> submissions);
+
     /** Mọi nhiệm vụ của 1 hồ sơ từ cũ đến mới, cho lịch sử nhiệm vụ. */
     @EntityGraph(attributePaths = {"contributor", "createdBy", "cancelledBy"})
     List<FieldAssignment> findBySubmissionIdOrderByIdAsc(Long submissionId);

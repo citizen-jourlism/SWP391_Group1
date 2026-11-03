@@ -20,4 +20,7 @@ public interface FieldReportFeedbackRepository extends JpaRepository<FieldReport
     /** Phản hồi của nhiều nhiệm vụ trong 1 câu SQL, từ cũ đến mới, cho danh sách và lịch sử. */
     @EntityGraph(attributePaths = {"report", "editor"})
     List<FieldReportFeedback> findByReportAssignmentIdInOrderByIdAsc(Collection<Long> assignmentIds);
+
+    /** Đếm phản hồi một loại của 1 Cộng tác viên. Mỗi báo cáo chỉ được duyệt 1 lần nên type = APPROVED cho ra số báo cáo đã duyệt. */
+    long countByReportAssignmentContributorIdAndType(String contributorId, FieldReportFeedback.Type type);
 }

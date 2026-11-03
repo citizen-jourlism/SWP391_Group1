@@ -6,6 +6,8 @@ import { cleanParams } from '../lib/payload'
  */
 export const editorService = {
   getOverview: () => api.get('/editor/overview'),
+  /** params: { category } -> { columns, totalOpen, overdueTasks }, xem routes/editor/EditorPipeline.jsx */
+  getPipeline: (params) => api.get('/editor/pipeline', { params: cleanParams(params) }),
 
   // ----- Hàng đợi tin bài -----
   listSubmissions: (params) => api.get('/editor/submissions', { params: cleanParams(params) }),
