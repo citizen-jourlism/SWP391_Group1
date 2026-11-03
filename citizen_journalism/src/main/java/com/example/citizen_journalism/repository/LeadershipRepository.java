@@ -22,9 +22,13 @@ public interface LeadershipRepository extends JpaRepository<EditoralReview, Long
     /**
      * Hồ sơ phản ánh đang ở 1 trạng thái (DEPUTY_PENDING / EIC_PENDING), lọc theo loại và từ khoá (mã hoặc tiêu đề).
      * Bài CTV nộp (CONTRIBUTOR_POST) đi kèm hồ sơ gốc nên không đưa vào danh sách.
+     * deputyId != null (Phó TBT xem): chỉ hồ sơ thuộc chuyên mục người này phụ trách, cộng hồ sơ chưa có ai phụ trách
+     * (chuyển lên trước khi bắt buộc phân loại, hoặc chuyên mục bị gỡ người phụ trách) để không hồ sơ nào bị kẹt.
+     * Dùng LEFT JOIN vì viết s.category.deputyEic sẽ thành INNER JOIN và bỏ mất hồ sơ chưa phân loại.
      */
-    @Query("select s from Submission s "
+    @Query("select s from Submission s left join s.category c left join c.deputyEic d "
             + "where s.type <> com.example.citizen_journalism.entity.Submission.SubmissionType.CONTRIBUTOR_POST "
+            + "and (:deputyId is null or d is null or d.id = :deputyId) "
             + "and s.status = :status "
             + "and (:category is null or s.reportCategory = :category) "
             + "and (:keyword is null or lower(s.trackingCode) like lower(concat('%', :keyword, '%')) "
@@ -32,6 +36,7 @@ public interface LeadershipRepository extends JpaRepository<EditoralReview, Long
     Page<Submission> searchSubmissions(@Param("status") Submission.SubmissionStatus status,
                                        @Param("category") Submission.ReportCategory category,
                                        @Param("keyword") String keyword,
+                                       @Param("deputyId") String deputyId,
                                        Pageable pageable);
 
     /** Bài nghiên cứu đã nộp có kết quả duyệt = reviewStatus, lọc theo tiêu đề. */

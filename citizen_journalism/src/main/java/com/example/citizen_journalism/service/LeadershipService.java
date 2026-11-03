@@ -40,7 +40,8 @@ import org.springframework.transaction.annotation.Transactional;
  *        -> LeadershipRepository / SubmissionEventService.
  *
  * AI XEM GÌ:
- *   - Phó TBT: MỌI hồ sơ / bài đang DEPUTY_PENDING (không chia theo chuyên mục).
+ *   - Phó TBT: hồ sơ / bài đang DEPUTY_PENDING thuộc chuyên mục mình phụ trách (hồ sơ: submissions.category_id;
+ *     bài nghiên cứu: lĩnh vực trùng tên chuyên mục). Hồ sơ chưa có ai phụ trách thì Phó TBT nào cũng thấy.
  *   - Tổng biên tập: hồ sơ / bài đang EIC_PENDING (chỉ tin BREAKING mới lên tới đây).
  *
  * 4 QUYẾT ĐỊNH (Decision):
@@ -151,8 +152,9 @@ public class LeadershipService {
                             PageRequest.of(safePage, safeSize, Sort.by(Sort.Order.asc("updatedAt"), Sort.Order.asc("id"))))
                     .map(this::queueItemOf));
         }
+        String deputyId = user.getRole() == User.Role.DEPUTY_EIC ? user.getId() : null;
         return PageResponse.from(repository.searchSubmissions(waiting, type, safeKeyword == null ? null : safeKeyword.trim(),
-                        PageRequest.of(safePage, safeSize, Sort.by(Sort.Order.asc("updatedAt"), Sort.Order.asc("id"))))
+                        deputyId, PageRequest.of(safePage, safeSize, Sort.by(Sort.Order.asc("updatedAt"), Sort.Order.asc("id"))))
                 .map(LeadershipService::queueItemOf));
     }
 
@@ -161,13 +163,13 @@ public class LeadershipService {
     @Transactional(readOnly = true)
     public SubmissionReview getSubmission(String userId, String trackingCode) {
         User user = userRepository.getActiveById(userId);
-        return toReview(user, findSubmission(trackingCode));
+        return toReview(user, findSubmissionFor(user, trackingCode));
     }
 
     @Transactional
     public SubmissionReview decideSubmission(String userId, String trackingCode, DecisionBody body) {
         User user = userRepository.getActiveById(userId);
-        Submission submission = findSubmission(trackingCode);
+        Submission submission = findSubmissionFor(user, trackingCode);
         if (submission.getStatus() != waitingStatusOf(user)) {
             throw AppException.conflict("Hồ sơ không ở bước chờ bạn duyệt (có thể người khác vừa xử lý). Vui lòng tải lại trang.");
         }
@@ -360,6 +362,16 @@ public class LeadershipService {
     private void mail(User recipient, String subject, String bodyHtml) {
         mailService.trySend(recipient.getEmail(), subject, MailService.layout(
                 "<p>Xin chào <b>%s</b>,</p><p>%s</p>".formatted(MailService.escape(recipient.getFullName()), bodyHtml)));
+    }
+
+    /** Hồ sơ cho bàn duyệt: Phó TBT chỉ mở / duyệt được hồ sơ thuộc chuyên mục mình (hoặc chưa có ai phụ trách). */
+    private Submission findSubmissionFor(User user, String trackingCode) {
+        Submission submission = findSubmission(trackingCode);
+        User deputy = submission.getCategory() == null ? null : submission.getCategory().getDeputyEic();
+        if (user.getRole() == User.Role.DEPUTY_EIC && deputy != null && !deputy.getId().equals(user.getId())) {
+            throw AppException.forbidden("Hồ sơ thuộc chuyên mục bạn không phụ trách.", ErrorCode.FORBIDDEN);
+        }
+        return submission;
     }
 
     private Submission findSubmission(String trackingCode) {

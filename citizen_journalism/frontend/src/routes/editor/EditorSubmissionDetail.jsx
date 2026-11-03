@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import FieldReportCard from '../../components/contributor/FieldReportCard'
 import ApproveSubmissionDialog from '../../components/editor/ApproveSubmissionDialog'
 import AssignmentHistoryDialog from '../../components/editor/AssignmentHistoryDialog'
+import SubmissionCategoryPanel from '../../components/editor/SubmissionCategoryPanel'
 import SubmissionEditPanel from '../../components/editor/SubmissionEditPanel'
 import { LeadershipNotes } from '../../components/leadership/LeadershipDecision'
 import { ReasonDialog } from '../../components/research/ResearchEditorial'
@@ -49,6 +50,7 @@ import '../../assets/styles/leadership.css' // Khung "Ý kiến của Ban biên 
  *   - "Duyệt kết quả xác minh" (CTV đã nộp báo cáo) mở /editor/queue/<mã>/verification (EditorVerificationReview).
  *   - "Từ chối" mở /editor/queue/<mã>/reject (EditorRejectSubmission), chỉ bật khi hồ sơ còn ở bước biên tập.
  *   - "Lịch sử" mở AssignmentHistoryDialog: giao cho ai, ai nhận, ai từ chối, lý do...
+ * Ngay dưới thanh này là ô Phân loại tin (SubmissionCategoryPanel): chọn chuyên mục, bắt buộc trước khi chuyển Phó TBT.
  * Nhiệm vụ đã nộp báo cáo thì hiện báo cáo (FieldReportCard) ngay dưới ô nhiệm vụ. Báo cáo đang chờ xem thì có
  * 3 nút phản hồi: yêu cầu sửa bài, yêu cầu bổ sung tư liệu, duyệt.
  */
@@ -159,6 +161,8 @@ function EditorSubmissionDetail() {
               </Button>
             </div>
           </section>
+          {/* Phân loại chuyên mục: bắt buộc trước khi chuyển Phó TBT */}
+          <SubmissionCategoryPanel code={code} status={data.status} />
           {assignment && <CurrentAssignment assignment={assignment} onCancelled={setAssignment} />}
           {assignment?.status === 'COMPLETED' && <AssignmentReport assignmentId={assignment.id} onReviewed={reloadAssignment} />}
           {/* Sửa trực tiếp tiêu đề / tóm tắt / nội dung (chỉ khi đang thẩm định), lưu luôn không cần người gửi xác nhận */}
