@@ -45,6 +45,8 @@ const NAV_ITEMS = [
 const STAFF_HOMES = {
   SYSTEM_ADMIN: { to: '/admin', label: 'Trang quản trị' },
   EDITOR: { to: '/editor', label: 'Bàn biên tập' },
+  DEPUTY_EIC: { to: '/leadership', label: 'Bàn biên tập' },
+  EIC: { to: '/leadership', label: 'Bàn biên tập' },
 }
 
 function SiteHeader() {

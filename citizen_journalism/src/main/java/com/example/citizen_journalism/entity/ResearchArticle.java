@@ -84,7 +84,14 @@ public class ResearchArticle extends BaseEntity {
     // nằm ở dòng APPROVE / REJECT của bảng editorial_reviews.
     // Cho phép NULL: bài cũ / bài vừa nộp có reviewStatus = null nghĩa là "chờ Biên tập viên duyệt".
 
-    /** null = chờ BTV duyệt; DEPUTY_PENDING = đã duyệt, chuyển Phó TBT; REJECTED = BTV từ chối (dừng xử lý). */
+    /**
+     * null = chờ BTV duyệt; DEPUTY_PENDING = đã duyệt, chuyển Phó TBT; EIC_PENDING = đã duyệt, bài BREAKING chuyển
+     * Tổng biên tập; REJECTED = BTV từ chối (dừng xử lý).
+     * Sau bước Ban biên tập (LeadershipService): READY_FOR_PUBLISHING = Phó TBT / TBT đã duyệt, được xuất bản;
+     * EIC_REJECTED = Ban biên tập không duyệt (dừng); Ban biên tập yêu cầu chỉnh sửa -> về null (BTV xử lý lại).
+     * Tên trùng trạng thái hồ sơ (Submission.SubmissionStatus) để hàng đợi đổi thẳng theo tên.
+     * Cột VARCHAR nên thêm giá trị không phải sửa DB.
+     */
     @Enumerated(EnumType.STRING)
     @Column(name = "review_status", columnDefinition = "VARCHAR(30)")
     private ReviewStatus reviewStatus;
@@ -101,12 +108,17 @@ public class ResearchArticle extends BaseEntity {
 
     public enum ReviewStatus {
         DEPUTY_PENDING,
-        REJECTED
+        EIC_PENDING,
+        REJECTED,
+        READY_FOR_PUBLISHING,
+        EIC_REJECTED
     }
 
+    /** LOW / MEDIUM / HIGH: Phó TBT duyệt. BREAKING: chỉ Tổng biên tập duyệt. */
     public enum Priority {
         LOW,
         MEDIUM,
-        HIGH
+        HIGH,
+        BREAKING
     }
 }

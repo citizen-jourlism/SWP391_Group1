@@ -27,6 +27,8 @@ import org.springframework.security.web.SecurityFilterChain;
  *      /api/editor/**                              -> chỉ EDITOR (bàn làm việc Biên tập viên)
  *      /api/contributor/**                         -> chỉ CONTRIBUTOR (nhiệm vụ xác minh của Cộng tác viên)
  *      /api/research/**                            -> chỉ EXPERT (bài nghiên cứu, bản nháp)
+ *      /api/leadership/notes/**                    -> EDITOR, DEPUTY_EIC, EIC (ý kiến của Ban biên tập)
+ *      /api/leadership/**                          -> DEPUTY_EIC, EIC (bàn duyệt Ban biên tập)
  *   3. /api/** còn lại                              -> phải đăng nhập (có token hợp lệ)
  *   4. Mọi thứ khác (file tĩnh...)                  -> mở, TRỪ /uploads/applications/** (giấy tờ tuỳ thân) bị chặn
  * Thêm API mới cần phân quyền theo vai trò: thêm 1 dòng .requestMatchers(...).hasRole(...) TRƯỚC dòng số 3.
@@ -71,6 +73,9 @@ public class SecurityConfig {
                 // Bàn làm việc Biên tập viên
                 .requestMatchers("/api/editor/**").hasRole("EDITOR")
                 .requestMatchers("/api/contributor/**").hasRole("CONTRIBUTOR")
+                // Bàn duyệt Ban biên tập: ý kiến đọc được cả BTV (để biết cần sửa gì), còn lại chỉ Phó TBT / TBT
+                .requestMatchers("/api/leadership/notes/**").hasAnyRole("EDITOR", "DEPUTY_EIC", "EIC")
+                .requestMatchers("/api/leadership/**").hasAnyRole("DEPUTY_EIC", "EIC")
                 .requestMatchers("/api/**").authenticated()
                 // Giấy tờ tuỳ thân của đơn CTV: KHÔNG cho xem trực tiếp qua /uploads, chỉ xem qua API có kiểm tra quyền
                 .requestMatchers("/uploads/applications/**").denyAll()

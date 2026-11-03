@@ -19,6 +19,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,7 +50,7 @@ import tools.jackson.databind.ObjectMapper;
  *
  * CÁC KHU TRONG FILE:
  *   1. Dữ liệu gửi / nhận với frontend (record)      5. Yêu cầu chỉnh sửa (BTV gửi, 2 bên bình luận, Chuyên gia trả lời)
- *   2. Tiêu chuẩn chấm điểm Low / Medium / High      6. Duyệt / Từ chối bài (BTV) + kết quả cho Chuyên gia
+ *   2. Tiêu chuẩn chấm điểm Low / Medium / High / Breaking 6. Duyệt / Từ chối bài (BTV) + kết quả cho Chuyên gia
  *   3. Hàng đợi tin bài + Biên tập bài viết          7. Tạo chuyên mục mặc định khi khởi động
  *   4. Chi tiết 1 bài                                8. Hàm phụ
  */
@@ -113,9 +114,14 @@ public class ResearchEditorialService {
                            Fields finalVersion, boolean expertAdjusted, List<Comment> comments) {
     }
 
-    /** JSON trong cột content_snapshot của dòng APPROVE: lựa chọn của BTV + kết quả chấm + Phó TBT nhận bài. */
+    /**
+     * JSON trong cột content_snapshot của dòng APPROVE: lựa chọn của BTV + kết quả chấm + người nhận bài.
+     * Bài thường: deputyId / deputyName = Phó TBT. Bài BREAKING: eicId / eicName = Tổng biên tập.
+     * political / scope / urgency / eic* thêm sau: bài duyệt trước đó không có -> đọc ra null.
+     */
     public record ApproveSnapshot(int fieldScore, Conflict conflict, Mention mention, int impactScore,
-                                  String deputyId, String deputyName) {
+                                  String deputyId, String deputyName,
+                                  Political political, Scope scope, Urgency urgency, String eicId, String eicName) {
     }
 
     /** Phần duyệt bài ở trang chi tiết: đã có kết quả (result) HOẶC thông tin điền sẵn form Duyệt (approval). */
@@ -124,11 +130,23 @@ public class ResearchEditorialService {
 
     public record ReviewResult(ResearchArticle.ReviewStatus status, ResearchArticle.Priority priority,
                                Integer impactScore, Integer fieldScore, Conflict conflict, Mention mention, String note,
-                               String reviewerName, String deputyName, LocalDateTime reviewedAt) {
+                               String reviewerName, String deputyName, LocalDateTime reviewedAt,
+                               Political political, Scope scope, Urgency urgency, String eicName) {
     }
 
-    /** blockedReason != null: chưa Duyệt được (đang chờ Chuyên gia phản hồi / lĩnh vực chưa có Phó TBT). */
-    public record ApprovalInfo(int fieldScore, Conflict suggestedConflict, String deputyName, String blockedReason) {
+    /**
+     * blockedReason != null: chưa Duyệt được (đang chờ Chuyên gia phản hồi / lĩnh vực chưa có Phó TBT).
+     * eicName: Tổng biên tập sẽ nhận bài nếu BTV chấm ra BREAKING (null = chưa có tài khoản TBT đang hoạt động).
+     */
+    public record ApprovalInfo(int fieldScore, Conflict suggestedConflict, String deputyName, String blockedReason,
+                               String eicName, Classification previous) {
+    }
+
+    /**
+     * Các tiêu chí BTV đã tick ở lần duyệt trước (bài bị Ban biên tập trả về, sửa xong nộp lại) — không kèm điểm / cấp độ.
+     * Có giá trị này thì form Duyệt KHÔNG chấm lại, backend dùng nguyên kết quả cũ. null = bài mới, phải chấm.
+     */
+    public record Classification(Political political, Mention mention, Scope scope, Urgency urgency, Conflict conflict) {
     }
 
     /** Chi tiết 1 bài cho BTV: nội dung bài + tác giả + lịch sử yêu cầu chỉnh sửa (mới nhất trước) + phần duyệt. */
@@ -145,8 +163,11 @@ public class ResearchEditorialService {
 
     public record ApproveBody(
             @NotNull(message = "Vui lòng chọn mức xung đột lợi ích.") Conflict conflict,
-            @NotNull(message = "Vui lòng chọn mức nhắc đến cá nhân / tổ chức.") Mention mention,
-            @Size(max = 2000, message = "Ghi chú tối đa 2000 ký tự.") String note) {
+            @NotNull(message = "Vui lòng chọn mức yếu tố con người.") Mention mention,
+            @Size(max = 2000, message = "Ghi chú tối đa 2000 ký tự.") String note,
+            @NotNull(message = "Vui lòng chọn mức yếu tố chính trị.") Political political,
+            @NotNull(message = "Vui lòng chọn phạm vi tác động.") Scope scope,
+            @NotNull(message = "Vui lòng chọn mức khẩn cấp.") Urgency urgency) {
     }
 
     public record CommentBody(
@@ -160,10 +181,21 @@ public class ResearchEditorialService {
     }
 
     // ============================== 2. TIÊU CHUẨN CHẤM ĐIỂM ==============================
-    // Tổng (0–10) = Lĩnh vực (0–3, tự động) + Xung đột lợi ích (0–3) + Nhắc đến cá nhân / tổ chức (0–4)
-    //   0–3: LOW      4–6: MEDIUM      7–10: HIGH
-    // Quy tắc bắt buộc: công kích thiếu dẫn chứng -> luôn HIGH; xung đột không khai báo -> ít nhất MEDIUM.
+    // 6 tiêu chí, BTV chọn MỨC NẶNG NHẤT đúng với bài ở mỗi tiêu chí. Tổng tối đa 19 điểm:
+    //   Lĩnh vực (0–3, tự động) + Yếu tố chính trị (0–4) + Yếu tố con người (0–3) + Phạm vi tác động (0–3)
+    //   + Mức khẩn cấp (0–3) + Xung đột lợi ích (0–3)
+    // Quy tắc bắt buộc (xét TRƯỚC điểm), theo thứ tự:
+    //   1. CHẶN DUYỆT: công kích thiếu dẫn chứng / lộ danh tính trẻ em, nạn nhân, người bệnh
+    //      -> BTV phải "Yêu cầu chỉnh sửa" hoặc "Từ chối".
+    //   2. BREAKING: nhạy cảm quốc gia; nguy hại đang xảy ra + từ nhiều tỉnh trở lên;
+    //      phê phán cơ quan nhà nước / cán bộ + toàn quốc; hoặc tổng >= 14.
+    //   3. Ít nhất HIGH: xung đột lợi ích không khai báo; phê phán cơ quan nhà nước / cán bộ; nguy hại đang xảy ra.
+    //   4. Còn lại theo điểm: 0–5 LOW, 6–9 MEDIUM, 10–13 HIGH.
+    // Người duyệt tiếp: BREAKING -> Tổng biên tập; LOW / MEDIUM / HIGH -> Phó TBT phụ trách lĩnh vực.
     // Frontend có bản sao (lib/researchEditorial.js) để tính ngay khi BTV chọn; backend luôn TỰ TÍNH LẠI.
+
+    private static final String BLOCKED_MENTION_MESSAGE =
+            "Bài vi phạm tiêu chuẩn về yếu tố con người, không được duyệt. Hãy gửi yêu cầu chỉnh sửa hoặc từ chối bài.";
 
     public enum Conflict {
         NONE(0),        // Không có
@@ -177,15 +209,58 @@ public class ResearchEditorialService {
         }
     }
 
+    /** Yếu tố con người. blocked = true: chọn mức này thì bài KHÔNG được duyệt (điểm chỉ để đọc lại dữ liệu cũ). */
     public enum Mention {
-        NONE(0),                     // Không nêu tên cụ thể
-        NEUTRAL(1),                  // Có nêu tên, trung lập (trích dẫn, lấy số liệu)
-        CRITICISM_WITH_EVIDENCE(3),  // Phê phán / cáo buộc có dẫn chứng
-        ATTACK_WITHOUT_EVIDENCE(4);  // Công kích / cáo buộc thiếu dẫn chứng
+        NONE(0, false),                     // Không nêu tên cụ thể
+        NEUTRAL(1, false),                  // Có nêu tên, trung lập (trích dẫn, lấy số liệu)
+        CRITICISM_WITH_EVIDENCE(3, false),  // Phê phán / cáo buộc có dẫn chứng
+        ATTACK_WITHOUT_EVIDENCE(4, true),   // Công kích / cáo buộc thiếu dẫn chứng (nguy cơ vu khống)
+        EXPOSES_VULNERABLE(4, true);        // Lộ danh tính trẻ em, nạn nhân, người bệnh (Luật Trẻ em, Luật Báo chí cấm)
+
+        public final int score;
+        public final boolean blocked;
+
+        Mention(int score, boolean blocked) {
+            this.score = score;
+            this.blocked = blocked;
+        }
+    }
+
+    public enum Political {
+        NONE(0),                // Không liên quan chính trị
+        POLICY(2),              // Phân tích, góp ý chính sách / pháp luật
+        STATE_CRITICISM(3),     // Phê phán cơ quan nhà nước, cán bộ / công chức cụ thể
+        NATIONAL_SENSITIVE(4);  // Chủ quyền, quốc phòng - an ninh, tôn giáo, dân tộc, đối ngoại, lãnh đạo cấp cao
 
         public final int score;
 
-        Mention(int score) {
+        Political(int score) {
+            this.score = score;
+        }
+    }
+
+    /** Phạm vi cộng đồng chịu tác động. Thứ tự khai báo = từ hẹp tới rộng (dùng compareTo để so sánh). */
+    public enum Scope {
+        LOCAL(0),       // Xã / phường, một nhóm nhỏ
+        PROVINCIAL(1),  // Một tỉnh / thành phố
+        REGIONAL(2),    // Nhiều tỉnh hoặc cả một ngành
+        NATIONAL(3);    // Toàn quốc
+
+        public final int score;
+
+        Scope(int score) {
+            this.score = score;
+        }
+    }
+
+    public enum Urgency {
+        NONE(0),           // Giá trị lâu dài, không gấp
+        TIMELY(1),         // Gắn với sự kiện đang diễn ra
+        PUBLIC_SAFETY(3);  // Cảnh báo nguy hại tới tính mạng, sức khoẻ, tài sản đang xảy ra
+
+        public final int score;
+
+        Urgency(int score) {
             this.score = score;
         }
     }
@@ -198,11 +273,24 @@ public class ResearchEditorialService {
         return field == null ? 1 : FIELD_SCORES.getOrDefault(field, 1);
     }
 
-    private static ResearchArticle.Priority priorityOf(int total, Conflict conflict, Mention mention) {
-        if (mention == Mention.ATTACK_WITHOUT_EVIDENCE || total >= 7) {
+    /** Tổng điểm 6 tiêu chí (0–19). */
+    private static int totalScore(int field, ApproveBody body) {
+        return field + body.political().score + body.mention().score + body.scope().score
+                + body.urgency().score + body.conflict().score;
+    }
+
+    /** Cấp độ theo quy tắc bắt buộc rồi mới tới điểm (mức chặn duyệt đã bị loại trước khi gọi hàm này). */
+    private static ResearchArticle.Priority priorityOf(int total, ApproveBody body) {
+        boolean widePublicHarm = body.urgency() == Urgency.PUBLIC_SAFETY && body.scope().compareTo(Scope.REGIONAL) >= 0;
+        boolean nationalStateCriticism = body.political() == Political.STATE_CRITICISM && body.scope() == Scope.NATIONAL;
+        if (body.political() == Political.NATIONAL_SENSITIVE || widePublicHarm || nationalStateCriticism || total >= 14) {
+            return ResearchArticle.Priority.BREAKING;
+        }
+        if (total >= 10 || body.conflict() == Conflict.UNDECLARED || body.political() == Political.STATE_CRITICISM
+                || body.urgency() == Urgency.PUBLIC_SAFETY) {
             return ResearchArticle.Priority.HIGH;
         }
-        return total >= 4 || conflict == Conflict.UNDECLARED ? ResearchArticle.Priority.MEDIUM : ResearchArticle.Priority.LOW;
+        return total >= 6 ? ResearchArticle.Priority.MEDIUM : ResearchArticle.Priority.LOW;
     }
 
     // ============================== 3. HÀNG ĐỢI + BIÊN TẬP BÀI VIẾT ==============================
@@ -213,7 +301,8 @@ public class ResearchEditorialService {
      * (trường hợp xấu nhất cả trang đều thuộc 1 bảng), trộn theo thời gian gửi rồi cắt đúng trang.
      *
      * @param status trạng thái hồ sơ (null = tất cả). Bài nghiên cứu quy đổi theo kết quả duyệt: chờ BTV = PENDING,
-     *               đã chuyển Phó TBT = DEPUTY_PENDING, BTV từ chối = REJECTED; trạng thái khác thì không có bài nghiên cứu.
+     *               đã chuyển Phó TBT = DEPUTY_PENDING, bài BREAKING chuyển Tổng biên tập = EIC_PENDING,
+     *               BTV từ chối = REJECTED; trạng thái khác thì không có bài nghiên cứu.
      * @param type   loại (null = tất cả); field: tên lĩnh vực (null / rỗng = tất cả)
      * Thứ tự: đang lọc "chờ tiếp nhận" thì cũ nhất trước (gửi trước xử lý trước), còn lại mới nhất trước.
      */
@@ -235,11 +324,14 @@ public class ResearchEditorialService {
             rows.forEach(submission -> merged.add(queueItemOf(submission)));
         }
 
+        // Lọc "Chờ TBT duyệt" không ra bài nghiên cứu (BTV thấy bài đó ở "Chờ Phó TBT duyệt", xem statusForEditor)
         boolean researchStatus = status == null || status == SubmissionStatus.PENDING
-                || status == SubmissionStatus.DEPUTY_PENDING || status == SubmissionStatus.REJECTED;
+                || (status != SubmissionStatus.EIC_PENDING
+                    && Arrays.stream(ResearchArticle.ReviewStatus.values()).anyMatch(value -> value.name().equals(status.name())));
         if ((type == null || type == QueueType.RESEARCH) && researchStatus) {
-            ResearchArticle.ReviewStatus review = status == SubmissionStatus.DEPUTY_PENDING ? ResearchArticle.ReviewStatus.DEPUTY_PENDING
-                    : status == SubmissionStatus.REJECTED ? ResearchArticle.ReviewStatus.REJECTED : null;
+            // Kết quả duyệt bài nghiên cứu trùng tên trạng thái hồ sơ (DEPUTY_PENDING / EIC_PENDING / REJECTED...)
+            ResearchArticle.ReviewStatus review = status == null || status == SubmissionStatus.PENDING ? null
+                    : ResearchArticle.ReviewStatus.valueOf(status.name());
             Page<ResearchArticle> rows = repository.searchResearch(ResearchArticle.Status.SUBMITTED, safeField,
                     status == null, review, firstRows.withSort(byTime("submittedAt", oldestFirst)));
             totalItems += rows.getTotalElements();
@@ -285,7 +377,7 @@ public class ResearchEditorialService {
                     return new ArticleItem(article.getId(), "NC-" + article.getId(), article.getTitle(), article.getField(),
                             article.getAuthor().getFullName(), article.getSubmittedAt(), requests.size(),
                             latest == null ? EditStatus.NOT_EDITED : EditStatus.valueOf(latest.getStatus().name()),
-                            lastActivityAt, article.getReviewStatus(), article.getPriority());
+                            lastActivityAt, statusForEditor(article.getReviewStatus()), null); // BTV không xem cấp độ
                 }));
     }
 
@@ -405,9 +497,11 @@ public class ResearchEditorialService {
     // ============================== 6. DUYỆT / TỪ CHỐI BÀI ==============================
 
     /**
-     * BTV DUYỆT: chấm điểm (backend tự tính lại), ghi 1 dòng APPROVE, chuyển bài tới Phó TBT phụ trách lĩnh vực
-     * (categories.deputy_eic_id), email báo Phó TBT và tác giả.
-     * Bị chặn khi: đã có kết quả, đang có yêu cầu chỉnh sửa chờ, hoặc lĩnh vực chưa có Phó TBT.
+     * BTV DUYỆT: chấm 6 tiêu chí (backend tự tính lại), ghi 1 dòng APPROVE, lưu cấp độ (priority) rồi chuyển bài tới
+     * Phó TBT phụ trách lĩnh vực (categories.deputy_eic_id, DEPUTY_PENDING) — MỌI cấp độ, kể cả BREAKING.
+     * Bài BREAKING: Phó TBT duyệt xong mới chuyển Tổng biên tập (LeadershipService). Email báo Phó TBT + tác giả.
+     * Bị chặn khi: đã có kết quả, đang có yêu cầu chỉnh sửa chờ, lĩnh vực chưa có Phó TBT,
+     * hoặc yếu tố con người ở mức chặn duyệt.
      */
     @Transactional
     public Review approve(String editorId, Long articleId, ApproveBody body) {
@@ -420,11 +514,23 @@ public class ResearchEditorialService {
         if (blockedReason != null) {
             throw AppException.conflict(blockedReason);
         }
+        // Bài đã được phân loại ở lần duyệt trước (Ban biên tập trả về, đã sửa) -> giữ nguyên kết quả cũ, bỏ qua điểm gửi lên
+        ApproveSnapshot previous = previousClassification(rows);
+        if (previous != null) {
+            body = new ApproveBody(previous.conflict(), previous.mention(), body.note(),
+                    previous.political(), previous.scope(), previous.urgency());
+        } else if (body.mention().blocked) {
+            throw AppException.invalidFields(Map.of("mention", BLOCKED_MENTION_MESSAGE));
+        }
 
-        int field = fieldScore(article.getField());
-        int total = field + body.conflict().score + body.mention().score;
+        int field = previous != null ? previous.fieldScore() : fieldScore(article.getField());
+        int total = previous != null ? previous.impactScore() : totalScore(field, body);
+        ResearchArticle.Priority priority = priorityOf(total, body);
+        boolean breaking = priority == ResearchArticle.Priority.BREAKING;
+        // MỌI bài (kể cả BREAKING) đều tới Phó TBT phụ trách lĩnh vực trước; bài BREAKING thì Phó TBT duyệt xong
+        // mới chuyển Tổng biên tập (Bàn duyệt: LeadershipService, quyết định ESCALATE)
         article.setReviewStatus(ResearchArticle.ReviewStatus.DEPUTY_PENDING);
-        article.setPriority(priorityOf(total, body.conflict(), body.mention()));
+        article.setPriority(priority);
         String note = body.note() == null || body.note().isBlank() ? null : body.note().trim();
         EditoralReview decision = repository.save(EditoralReview.builder()
                 .researchArticle(article)
@@ -433,17 +539,19 @@ public class ResearchEditorialService {
                 .action(ReviewAction.APPROVE)
                 .comments(note)
                 .contentSnapshot(toJson(new ApproveSnapshot(field, body.conflict(), body.mention(), total,
-                        deputy.getId(), deputy.getFullName())))
+                        deputy.getId(), deputy.getFullName(),
+                        body.political(), body.scope(), body.urgency(), null, null)))
                 .build());
 
-        sendMail(deputy, "[Tin Nóng Dân Sinh] Bài nghiên cứu chờ Phó TBT duyệt (mức %s)".formatted(article.getPriority()),
+        sendMail(deputy, "[Tin Nóng Dân Sinh] Bài nghiên cứu chờ Phó Tổng biên tập duyệt (mức %s)".formatted(priority),
                 "Biên tập viên <b>%s</b> đã duyệt bài nghiên cứu <b>\"%s\"</b> (NC-%d, lĩnh vực %s) và chuyển tới bạn. "
                         .formatted(escape(editor.getFullName()), escape(article.getTitle()), article.getId(), escape(article.getField()))
-                        + "Mức độ: <b>%s</b> (%d/10 điểm).".formatted(article.getPriority(), total)
+                        + "Mức độ: <b>%s</b> (%d/19 điểm).".formatted(priority, total)
+                        + (breaking ? " Bài BREAKING: sau khi bạn duyệt sẽ chuyển Tổng biên tập phê duyệt." : "")
                         + (note == null ? "" : "</p><p>Ghi chú của Biên tập viên: " + escape(note)));
-        sendMail(article.getAuthor(), "[Tin Nóng Dân Sinh] Bài nghiên cứu đã được Biên tập viên duyệt",
-                "Bài nghiên cứu <b>\"%s\"</b> của bạn đã được Biên tập viên duyệt và chuyển tới Phó Tổng biên tập xem xét."
-                        .formatted(escape(article.getTitle())));
+        // Chuyên gia chỉ được biết bài đã được duyệt, không biết các bước xử lý phía sau
+        sendMail(article.getAuthor(), "[Tin Nóng Dân Sinh] Bài nghiên cứu đã được duyệt",
+                "Bài nghiên cứu <b>\"%s\"</b> của bạn đã được duyệt.".formatted(escape(article.getTitle())));
         return new Review(toResult(article, decision), null);
     }
 
@@ -477,8 +585,11 @@ public class ResearchEditorialService {
     @Transactional(readOnly = true)
     public List<MyReviewResult> listMyReviewResults(String expertId) {
         userRepository.getActiveById(expertId);
+        // Dòng Duyệt / Từ chối của BTV; status = kết quả HIỆN TẠI của bài (có thể đã qua Ban biên tập).
+        // Bài bị Ban biên tập trả về BTV (review_status = null) thì chưa có kết quả, không hiện.
         return repository.findByResearchArticleAuthorIdOrderByIdDesc(expertId).stream()
-                .filter(row -> row.getAction() != ReviewAction.REQUEST_EDIT)
+                .filter(row -> byEditor(row) && row.getAction() != ReviewAction.REQUEST_EDIT)
+                .filter(row -> row.getResearchArticle().getReviewStatus() != null)
                 .map(row -> new MyReviewResult(row.getResearchArticle().getId(), row.getResearchArticle().getTitle(),
                         row.getResearchArticle().getReviewStatus(),
                         row.getAction() == ReviewAction.REJECT ? row.getComments() : null, row.getCreatedAt()))
@@ -515,22 +626,55 @@ public class ResearchEditorialService {
     /** 1 yêu cầu chỉnh sửa theo id. ownerId != null: chỉ khi thuộc bài của đúng Chuyên gia đó. Không thấy -> 404. */
     private EditoralReview findRequest(Long revisionId, String ownerId) {
         return repository.findById(revisionId)
-                .filter(row -> row.getAction() == ReviewAction.REQUEST_EDIT && row.getResearchArticle() != null)
+                .filter(row -> byEditor(row) && row.getAction() == ReviewAction.REQUEST_EDIT && row.getResearchArticle() != null)
                 .filter(row -> ownerId == null || ownerId.equals(row.getResearchArticle().getAuthor().getId()))
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy yêu cầu chỉnh sửa."));
     }
 
-    private static List<EditoralReview> requestsOf(List<EditoralReview> rows) {
-        return rows.stream().filter(row -> row.getAction() == ReviewAction.REQUEST_EDIT).toList();
+    /** Dòng do BTV ghi (Ban biên tập - Phó TBT / TBT - cũng ghi vào editorial_reviews, xem LeadershipService). */
+    private static boolean byEditor(EditoralReview row) {
+        return row.getReviewRole() == EditoralReview.ReviewRole.EDITOR;
     }
 
-    /** Dòng Duyệt / Từ chối của bài (mỗi bài có tối đa 1 dòng), chưa có thì null. */
+    /** Yêu cầu chỉnh sửa BTV gửi Chuyên gia (bỏ yêu cầu chỉnh sửa của Ban biên tập gửi BTV). */
+    private static List<EditoralReview> requestsOf(List<EditoralReview> rows) {
+        return rows.stream().filter(row -> byEditor(row) && row.getAction() == ReviewAction.REQUEST_EDIT).toList();
+    }
+
+    /**
+     * Dòng Duyệt / Từ chối CÒN HIỆU LỰC của BTV, chưa có thì null. rows phải xếp mới nhất trước.
+     * Ban biên tập "yêu cầu chỉnh sửa" sau lần duyệt đó thì bài quay lại tay BTV -> coi như chưa có kết quả.
+     */
     private static EditoralReview decisionOf(List<EditoralReview> rows) {
-        return rows.stream().filter(row -> row.getAction() != ReviewAction.REQUEST_EDIT).findFirst().orElse(null);
+        for (EditoralReview row : rows) {
+            if (!byEditor(row) && row.getAction() == ReviewAction.REQUEST_EDIT) {
+                return null;
+            }
+            if (byEditor(row) && row.getAction() != ReviewAction.REQUEST_EDIT) {
+                return row;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Ban biên tập (Phó TBT / TBT) yêu cầu chỉnh sửa mà SAU đó chưa có đề xuất nào của BTV được tác giả đồng ý.
+     * Mọi chỉnh sửa bài nghiên cứu đều phải qua tác giả xác nhận, nên BTV chưa được duyệt lại. rows: mới nhất trước.
+     */
+    private static boolean needsAcceptedRevision(List<EditoralReview> rows) {
+        for (EditoralReview row : rows) {
+            if (byEditor(row) && row.getAction() == ReviewAction.REQUEST_EDIT && row.getStatus() == RequestStatus.ACCEPTED) {
+                return false;
+            }
+            if (!byEditor(row) && row.getAction() == ReviewAction.REQUEST_EDIT) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean hasPendingRequest(List<EditoralReview> rows) {
-        return rows.stream().anyMatch(row -> row.getStatus() == RequestStatus.PENDING);
+        return rows.stream().anyMatch(row -> byEditor(row) && row.getStatus() == RequestStatus.PENDING);
     }
 
     private static void requireNoDecision(List<EditoralReview> rows) {
@@ -547,18 +691,44 @@ public class ResearchEditorialService {
         }
         User deputy = findDeputy(article);
         Conflict suggested = Boolean.TRUE.equals(article.getHasConflict()) ? Conflict.DECLARED : Conflict.NONE;
-        return new Review(null, new ApprovalInfo(fieldScore(article.getField()), suggested,
-                deputy == null ? null : deputy.getFullName(), blockedReason(article, rows, deputy)));
+        // BTV chỉ tick tiêu chí: KHÔNG trả điểm lĩnh vực, cấp độ, người nhận (fieldScore = 0, deputyName / eicName = null)
+        ApproveSnapshot old = previousClassification(rows);
+        Classification previous = old == null ? null
+                : new Classification(old.political(), old.mention(), old.scope(), old.urgency(), old.conflict());
+        return new Review(null, new ApprovalInfo(0, suggested, null, blockedReason(article, rows, deputy), null, previous));
+    }
+
+    /**
+     * Trạng thái bài nghiên cứu cho BTV xem: không lộ bước nội bộ của Ban biên tập.
+     * Bài đang ở Phó TBT hay đã lên Tổng biên tập (bài BREAKING) đều hiện như nhau = DEPUTY_PENDING ("đã duyệt, đang xử lý").
+     */
+    private static ResearchArticle.ReviewStatus statusForEditor(ResearchArticle.ReviewStatus status) {
+        return status == ResearchArticle.ReviewStatus.EIC_PENDING ? ResearchArticle.ReviewStatus.DEPUTY_PENDING : status;
+    }
+
+    /**
+     * Kết quả phân loại của lần BTV duyệt gần nhất (rows: mới nhất trước). null nếu bài chưa từng được duyệt,
+     * hoặc lần duyệt đó theo tiêu chuẩn cũ (thang 10, thiếu yếu tố chính trị / phạm vi / khẩn cấp) -> phải chấm lại.
+     */
+    private ApproveSnapshot previousClassification(List<EditoralReview> rows) {
+        for (EditoralReview row : rows) {
+            if (byEditor(row) && row.getAction() == ReviewAction.APPROVE && row.getContentSnapshot() != null) {
+                ApproveSnapshot snapshot = objectMapper.readValue(row.getContentSnapshot(), ApproveSnapshot.class);
+                return snapshot.political() == null || snapshot.scope() == null || snapshot.urgency() == null ? null : snapshot;
+            }
+        }
+        return null;
     }
 
     private ReviewResult toResult(ResearchArticle article, EditoralReview decision) {
         ApproveSnapshot score = decision.getContentSnapshot() == null ? null
                 : objectMapper.readValue(decision.getContentSnapshot(), ApproveSnapshot.class);
-        return new ReviewResult(article.getReviewStatus(), article.getPriority(),
-                score == null ? null : score.impactScore(), score == null ? null : score.fieldScore(),
+        // Chỉ trả các tiêu chí BTV đã tick; điểm, cấp độ, người nhận (Phó TBT / Tổng biên tập) để null -> BTV không thấy
+        return new ReviewResult(statusForEditor(article.getReviewStatus()), null, null, null,
                 score == null ? null : score.conflict(), score == null ? null : score.mention(),
-                decision.getComments(), decision.getReviewer().getFullName(),
-                score == null ? null : score.deputyName(), decision.getCreatedAt());
+                decision.getComments(), decision.getReviewer().getFullName(), null, decision.getCreatedAt(),
+                score == null ? null : score.political(), score == null ? null : score.scope(),
+                score == null ? null : score.urgency(), null);
     }
 
     /** Lý do chưa DUYỆT được (null = duyệt được). */
@@ -566,8 +736,12 @@ public class ResearchEditorialService {
         if (hasPendingRequest(rows)) {
             return PENDING_MESSAGE;
         }
+        if (needsAcceptedRevision(rows)) {
+            return "Ban biên tập đã yêu cầu chỉnh sửa bài. Hãy bấm \"Sửa bài\" gửi đề xuất cho Chuyên gia và chờ tác giả "
+                    + "đồng ý trước khi duyệt lại.";
+        }
         if (deputy == null) {
-            return "Lĩnh vực \"%s\" chưa có Phó Tổng biên tập phụ trách. Vui lòng liên hệ quản trị viên để phân công."
+            return "Lĩnh vực \"%s\" chưa được phân công người duyệt. Vui lòng liên hệ quản trị viên."
                     .formatted(Objects.toString(article.getField(), "chưa chọn"));
         }
         return null;
@@ -661,9 +835,10 @@ public class ResearchEditorialService {
     }
 
     private static QueueItem queueItemOf(ResearchArticle article) {
+        // DEPUTY_PENDING / REJECTED... trùng tên trạng thái hồ sơ nên đổi thẳng theo tên
+        // (EIC_PENDING hiện như DEPUTY_PENDING: BTV không biết bài đã lên tới bước nào của Ban biên tập)
         SubmissionStatus status = article.getReviewStatus() == null ? SubmissionStatus.PENDING
-                : article.getReviewStatus() == ResearchArticle.ReviewStatus.DEPUTY_PENDING
-                ? SubmissionStatus.DEPUTY_PENDING : SubmissionStatus.REJECTED;
+                : SubmissionStatus.valueOf(statusForEditor(article.getReviewStatus()).name());
         LocalDateTime sentAt = article.getSubmittedAt() != null ? article.getSubmittedAt() : article.getCreatedAt();
         return new QueueItem(QueueType.RESEARCH, "NC-" + article.getId(), article.getId(), article.getTitle(), status,
                 false, null, article.getField(), sentAt);

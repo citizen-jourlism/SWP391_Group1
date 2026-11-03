@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 /**
  * Admin TẠO TÀI KHOẢN cho người khác (ví dụ Biên tập viên, Phó Tổng biên tập...): POST /api/admin/users
@@ -38,6 +39,9 @@ public record CreateUserRequest(
         User.Role role,
 
         @StrongPassword
-        String password
+        String password,
+
+        // Chỉ dùng khi role = DEPUTY_EIC: id các chuyên mục (lĩnh vực) Phó TBT phụ trách, bắt buộc ≥ 1 (DeputyFieldService kiểm tra)
+        List<Long> categoryIds
 ) {
 }

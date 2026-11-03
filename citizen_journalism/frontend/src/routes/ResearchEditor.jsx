@@ -4,6 +4,7 @@ import SiteHeader from '../components/layout/SiteHeader'
 import ArticleBody from '../components/research/ArticleBody'
 import FigureEditor from '../components/research/FigureEditor'
 import ResearchReader from '../components/research/ResearchReader'
+import { PendingRevisionsBanner } from '../components/research/ResearchEditorial'
 import Alert from '../components/ui/Alert'
 import Avatar from '../components/ui/Avatar'
 import Badge from '../components/ui/Badge'
@@ -239,6 +240,8 @@ function EditorWorkspace({ options, article, initialNotice }) {
               Bài đã được khoá chỉnh sửa và chuyển tới Ban biên tập. Bạn xem lại bài bất cứ lúc nào trong mục Bài nghiên cứu của tôi.
             </Alert>
           )}
+          {/* Yêu cầu chỉnh sửa của bài này: đang chờ + lịch sử (trang danh sách chỉ còn hiện yêu cầu đang chờ) */}
+          <PendingRevisionsBanner articleId={submitted.id} />
           <ResearchReader article={submitted} author={user} />
         </main>
       </>

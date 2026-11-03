@@ -25,7 +25,7 @@ import '../../assets/styles/revision.css'
  *     - RevisionComments  : khung trao đổi + ô viết bình luận
  *     - ReasonDialog      : hộp nhập lý do bắt buộc trước khi từ chối
  *   Dùng ở trang "Bài nghiên cứu của tôi" (routes/ResearchList) của Chuyên gia:
- *     - PendingRevisionsBanner : yêu cầu chỉnh sửa đang chờ + lịch sử chỉnh sửa
+ *     - PendingRevisionsBanner : yêu cầu chỉnh sửa đang chờ (trang chi tiết bài: thêm lịch sử chỉnh sửa của bài đó)
  *     - ReviewResultNote       : khung kết quả duyệt nằm trong thẻ bài
  *
  * Mọi chữ người dùng nhập hiển thị bằng thẻ React thường (không dangerouslySetInnerHTML) nên không chạy được mã.
@@ -38,15 +38,19 @@ const FIELDS = [
   { key: 'content', label: 'Nội dung' },
 ]
 
-/** So sánh 4 ô của 2 phiên bản. original / proposed: { title, abstractText, keywords, content }. Ô không đổi chỉ hiện nhãn. */
-export function RevisionDiff({ original, proposed }) {
+/**
+ * So sánh các ô của 2 phiên bản. Mặc định 4 ô của bài nghiên cứu { title, abstractText, keywords, content };
+ * truyền fields = [{ key, label }] để dùng cho loại bài khác (ví dụ hồ sơ phản ánh: tiêu đề / tóm tắt / nội dung).
+ * Ô không đổi chỉ hiện nhãn.
+ */
+export function RevisionDiff({ original, proposed, fields = FIELDS }) {
   return (
     <div className="revision-diff">
       <p className="revision-diff__legend">
         <ins className="diff-add">Chữ thêm vào</ins>
         <del className="diff-del">Chữ bị xoá</del>
       </p>
-      {FIELDS.map(({ key, label }) => {
+      {fields.map(({ key, label }) => {
         const before = original[key] ?? ''
         const after = proposed[key] ?? ''
         const changed = before.trim() !== after.trim()
@@ -248,15 +252,20 @@ export function ReasonDialog({
 }
 
 /**
- * Khung đầu trang "Bài nghiên cứu của tôi": yêu cầu đang chờ (nút "Xem" -> /research/revisions/:id)
- * và "Lịch sử chỉnh sửa" (bấm để mở). Không có gì để báo (hoặc tải lỗi) thì không hiện gì.
+ * Khung YÊU CẦU CHỈNH SỬA của Chuyên gia. Không có gì để báo (hoặc tải lỗi) thì không hiện gì.
+ *   - Không truyền articleId (trang "Bài nghiên cứu của tôi"): CHỈ các yêu cầu đang chờ phản hồi (nút "Xem").
+ *     Chuyên gia đã xem và trả lời (đồng ý / từ chối) thì yêu cầu ẩn khỏi danh sách.
+ *   - Có articleId (trang chi tiết 1 bài đã nộp): yêu cầu đang chờ + "Lịch sử chỉnh sửa" của RIÊNG bài đó,
+ *     vẫn mở lại được bản gốc / bản đề xuất / bản sau chỉnh sửa (/research/revisions/:id).
  */
-export function PendingRevisionsBanner() {
+export function PendingRevisionsBanner({ articleId }) {
   const { data } = useAsyncData(() => researchService.listRevisions(), 'my-revisions')
-  if (!data?.length) return null
+  const items = articleId == null ? data : data?.filter((item) => item.articleId === articleId)
+  if (!items?.length) return null
 
-  const pending = data.filter((item) => item.status === 'PENDING')
-  const history = data.filter((item) => item.status !== 'PENDING')
+  const pending = items.filter((item) => item.status === 'PENDING')
+  const history = articleId == null ? [] : items.filter((item) => item.status !== 'PENDING')
+  if (!pending.length && !history.length) return null
 
   return (
     <section className="revision-banner">
@@ -314,20 +323,21 @@ export function PendingRevisionsBanner() {
 
 /**
  * Khung KẾT QUẢ DUYỆT trong thẻ bài. result: 1 phần tử của researchService.listReviewResults (trang cha tìm theo id bài).
- * REJECTED: khung đỏ + lý do; DEPUTY_PENDING: khung xanh "Đã duyệt". Không có kết quả thì không hiện gì.
+ * REJECTED / EIC_REJECTED: khung đỏ "Bị từ chối" (+ lý do của BTV nếu có);
+ * các trạng thái còn lại (đã duyệt, đang được xử lý tiếp): khung xanh "Đã duyệt". Không nêu bước xử lý nội bộ.
+ * Không có kết quả thì không hiện gì.
  */
 export function ReviewResultNote({ result }) {
   if (!result) return null
-  const rejected = result.status === 'REJECTED'
+  // Chuyên gia chỉ biết bài "Đã duyệt" hoặc "Bị từ chối" — không nêu ai duyệt, bài đang ở bước nào của toà soạn
+  const rejected = result.status === 'REJECTED' || result.status === 'EIC_REJECTED'
 
   return (
     <div className={`review-note ${rejected ? 'review-note--rejected' : 'review-note--approved'}`}>
       <div className="review-note__head">
         <Icon name={rejected ? 'alertCircle' : 'checkCircle'} size={15} />
         <strong>{rejected ? 'Bị từ chối' : 'Đã duyệt'}</strong>
-        <small>
-          {rejected ? 'Biên tập viên không duyệt' : 'Đã chuyển Phó Tổng biên tập xem xét'} · {formatDateTime(result.reviewedAt)}
-        </small>
+        <small>{formatDateTime(result.reviewedAt)}</small>
       </div>
       {/* Lý do giữ nguyên xuống dòng như Biên tập viên đã nhập (white-space: pre-wrap trong CSS) */}
       {rejected && result.reason && <p className="review-note__reason">Lý do: {result.reason}</p>}

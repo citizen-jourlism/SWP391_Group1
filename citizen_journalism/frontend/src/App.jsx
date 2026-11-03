@@ -48,6 +48,10 @@ import EditorVerificationReview from './routes/editor/EditorVerificationReview.j
 import AuditLogs from './routes/admin/AuditLogs'
 import EditorCategories from './routes/editor/EditorCategories.jsx'
 import Notifications from './routes/Notifications.jsx'
+import LeadershipLayout from './components/leadership/LeadershipLayout.jsx'
+import LeadershipQueue from './routes/leadership/LeadershipQueue.jsx'
+import LeadershipResearchDetail from './routes/leadership/LeadershipResearchDetail.jsx'
+import LeadershipSubmissionDetail from './routes/leadership/LeadershipSubmissionDetail.jsx'
 
 /**
  * Component gốc của ứng dụng: khai báo BẢN ĐỒ ĐƯỜNG DẪN (routing).
@@ -262,6 +266,21 @@ function App() {
             <Route path="assignments" element={<EditorAssignments />} />                 {/* Nhiệm vụ đã giao */}
             <Route path="articles" element={<EditorArticles />} />                       {/* Biên tập bài viết */}
             <Route path="members" element={<EditorPlanned page="members" />} />
+          </Route>
+
+          {/* ----- Bàn duyệt Ban biên tập: Phó TBT + Tổng biên tập. Route lồng nhau trong LeadershipLayout ----- */}
+          <Route
+            path="/leadership"
+            element={
+              <ProtectedRoute roles={['DEPUTY_EIC', 'EIC']}>
+                <LeadershipLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<LeadershipQueue key="SUBMISSION" kind="SUBMISSION" />} />          {/* Hồ sơ chờ duyệt */}
+            <Route path="research" element={<LeadershipQueue key="RESEARCH" kind="RESEARCH" />} />     {/* Bài nghiên cứu chờ duyệt */}
+            <Route path="submissions/:code" element={<LeadershipSubmissionDetail />} />              {/* Chi tiết 1 hồ sơ */}
+            <Route path="research/:id" element={<LeadershipResearchDetail />} />                      {/* Chi tiết 1 bài nghiên cứu */}
           </Route>
 
           {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link...): về trang chính theo vai trò */}
