@@ -26,7 +26,8 @@ public interface ViolationAppealRepository extends JpaRepository<ViolationAppeal
                                  Pageable pageable);
 
     @EntityGraph(attributePaths = {"user", "reviewedBy", "decidedBy"})
-    Optional<ViolationAppeal> findWithDetailsById(Long id);
+    @Query("select a from ViolationAppeal a where coalesce(a.legacyId, a.id) = :id")
+    Optional<ViolationAppeal> findWithDetailsById(@Param("id") Long id);
 
     boolean existsByUserIdAndStatusIn(String userId, Collection<ViolationAppeal.Status> statuses);
 }

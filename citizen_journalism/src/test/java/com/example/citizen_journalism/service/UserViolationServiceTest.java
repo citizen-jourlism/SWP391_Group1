@@ -188,6 +188,7 @@ class UserViolationServiceTest {
                 .build();
         UserViolation violation = violation(subject, UserViolation.Status.PENDING_APPROVAL, null);
         violation.setRelatedSubmission(submission);
+        violation.setReviewNote("Verified legal grounds for retracting this publication.");
         when(violationRepository.findWithDetailsById(1L)).thenReturn(java.util.Optional.of(violation));
         when(userRepository.getActiveById(leader.getId())).thenReturn(leader);
 

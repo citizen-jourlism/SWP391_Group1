@@ -23,6 +23,7 @@ import lombok.*;
  * danh sách tệp lưu dạng JSON ở cột documents.
  */
 @Entity
+@org.hibernate.annotations.SQLRestriction("application_kind = 'CONTRIBUTOR'")
 @Table(name = "contributor_applications")
 @Getter
 @Setter
@@ -30,6 +31,10 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class ContributorApplication extends BaseEntity {
+
+    @Column(name = "application_kind", length = 30)
+    @Builder.Default
+    private String applicationKind = "CONTRIBUTOR";
 
     @ManyToOne(fetch = FetchType.LAZY)
     @NotNull

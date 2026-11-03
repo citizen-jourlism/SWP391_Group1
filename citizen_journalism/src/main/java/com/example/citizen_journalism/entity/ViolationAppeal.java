@@ -1,74 +1,56 @@
 package com.example.citizen_journalism.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-@Entity
-@Table(name = "violation_appeals", indexes = {
-        @Index(name = "idx_violation_appeals_status_created", columnList = "status, created_at"),
-        @Index(name = "idx_violation_appeals_user_created", columnList = "user_id, created_at")
-})
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ViolationAppeal extends BaseEntity {
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @NotNull
+@Entity @Table(name="submissions")
+@org.hibernate.annotations.SQLRestriction("record_kind = 'ACCOUNT_APPEAL'")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class ViolationAppeal extends AccountSubmission {
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="author_id", nullable=false) @NotNull
     private User user;
-
-    @Column(name = "reason", nullable = false, columnDefinition = "TEXT")
+    @Column(name="content", nullable=false, columnDefinition="LONGTEXT")
     private String reason;
-
-    @Column(name = "evidence_note", columnDefinition = "TEXT")
+    @Column(name="workflow_evidence_note", columnDefinition="TEXT")
     private String evidenceNote;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
-    @Builder.Default
-    private Status status = Status.PENDING_EDITOR;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reviewed_by")
+    @Convert(converter=StatusConverter.class) @Column(name="status", nullable=false, length=50)
+    @Builder.Default private Status status = Status.PENDING_EDITOR;
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="workflow_reviewed_by")
     private User reviewedBy;
-
-    @Column(name = "review_note", columnDefinition = "TEXT")
+    @Column(name="workflow_review_note", columnDefinition="TEXT")
     private String reviewNote;
-
-    @Column(name = "reviewed_at")
+    @Column(name="workflow_reviewed_at")
     private LocalDateTime reviewedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "decided_by")
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="workflow_decided_by")
     private User decidedBy;
-
-    @Column(name = "decision_note", columnDefinition = "TEXT")
+    @Column(name="workflow_decision_note", columnDefinition="TEXT")
     private String decisionNote;
-
-    @Column(name = "decided_at")
+    @Column(name="workflow_decided_at")
     private LocalDateTime decidedAt;
-
-    public enum Status {
-        PENDING_EDITOR,
-        PENDING_FINAL,
-        APPROVED,
-        REJECTED
+    @Override protected String recordKind() { return "ACCOUNT_APPEAL"; }
+    public enum Status { PENDING_EDITOR, PENDING_FINAL, APPROVED, REJECTED }
+    @Converter
+    public static class StatusConverter implements AttributeConverter<Status,String> {
+        public String convertToDatabaseColumn(Status value) {
+            if(value == null) return null;
+            return switch(value) {
+                case PENDING_EDITOR -> "PENDING";
+                case PENDING_FINAL -> "DEPUTY_PENDING";
+                case APPROVED -> "PUBLISHED";
+                case REJECTED -> "REJECTED";
+            };
+        }
+        public Status convertToEntityAttribute(String value) {
+            if(value == null) return null;
+            return switch(value) {
+                case "PENDING" -> Status.PENDING_EDITOR;
+                case "DEPUTY_PENDING" -> Status.PENDING_FINAL;
+                case "PUBLISHED" -> Status.APPROVED;
+                case "REJECTED" -> Status.REJECTED;
+                default -> throw new IllegalArgumentException("Unknown appeal status: " + value);
+            };
+        }
     }
 }

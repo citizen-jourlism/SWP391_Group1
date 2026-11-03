@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "app.bootstrap.reputation-normalization-enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class ReputationScoreInitializer implements ApplicationRunner {
 

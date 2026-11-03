@@ -1,159 +1,79 @@
 package com.example.citizen_journalism.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-/** Báo cáo vi phạm và toàn bộ dấu vết xét duyệt liên quan đến một tài khoản. */
 @Entity
-@Table(name = "user_violations", indexes = {
-        @Index(name = "idx_user_violations_status_created", columnList = "status, created_at"),
-        @Index(name = "idx_user_violations_user_created", columnList = "user_id, created_at")
-})
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class UserViolation extends BaseEntity {
-
-    @jakarta.persistence.Version
-    @Column(nullable = false, columnDefinition = "bigint not null default 0")
+@Table(name="submissions")
+@org.hibernate.annotations.SQLRestriction("record_kind = 'ACCOUNT_VIOLATION'")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class UserViolation extends AccountSubmission {
+    @Version @Column(name="workflow_version", nullable=false, columnDefinition="bigint default 0")
     private long version;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @NotNull
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="author_id", nullable=false) @NotNull
     private User reportedUser;
-
-    @Column(name = "reported_user_id", nullable = false, length = 10)
-    private String currentReportedUserId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "related_submission_id")
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="duplicate_submission_id")
     private Submission relatedSubmission;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reported_by_id", nullable = false)
-    @NotNull
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="assigned_editor_id", nullable=false) @NotNull
     private User reportedBy;
-
-    @Column(name = "reported_by", nullable = false, length = 10)
-    private String legacyReportedById;
-
-    @Column(name = "violation_type", nullable = false, length = 40)
-    private String legacyViolationType;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 40)
-    @NotNull
+    @Enumerated(EnumType.STRING) @Column(name="workflow_violation_type", length=40) @NotNull
     private Type type;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "severity", nullable = false, length = 20)
-    @NotNull
+    @Enumerated(EnumType.STRING) @Column(name="workflow_severity", length=20) @NotNull
     private Severity severity;
-
-    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
+    @Column(name="content", nullable=false, columnDefinition="LONGTEXT")
     private String description;
-
-    @Column(name = "evidence_note", columnDefinition = "TEXT")
+    @Column(name="workflow_evidence_note", columnDefinition="TEXT")
     private String evidenceNote;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
-    @NotNull
+    @Convert(converter=StatusConverter.class) @Column(name="status", nullable=false, length=50) @NotNull
     private Status status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "proposed_action", length = 30)
+    @Enumerated(EnumType.STRING) @Column(name="workflow_action", length=30)
     private Action proposedAction;
-
-    @Column(name = "points_deducted")
+    @Column(name="workflow_points_deducted")
     private Integer pointsDeducted;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reviewed_by")
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="workflow_reviewed_by")
     private User reviewedBy;
-
-    @Column(name = "review_note", columnDefinition = "TEXT")
+    @Column(name="workflow_review_note", columnDefinition="TEXT")
     private String reviewNote;
-
-    @Column(name = "retraction_snapshot", columnDefinition = "LONGTEXT")
+    @Column(name="workflow_retraction_snapshot", columnDefinition="LONGTEXT")
     private String retractionSnapshot;
-
-    @Column(name = "reviewed_at")
+    @Column(name="workflow_reviewed_at")
     private LocalDateTime reviewedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "approved_by")
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="workflow_decided_by")
     private User approvedBy;
-
-    @Column(name = "approval_note", columnDefinition = "TEXT")
+    @Column(name="workflow_decision_note", columnDefinition="TEXT")
     private String approvalNote;
-
-    @Column(name = "approved_at")
+    @Column(name="workflow_decided_at")
     private LocalDateTime approvedAt;
+    @Override protected String recordKind() { return "ACCOUNT_VIOLATION"; }
 
-    @PrePersist
-    private void populateLegacyColumns() {
-        currentReportedUserId = reportedUser.getId();
-        legacyReportedById = reportedBy.getId();
-        legacyViolationType = legacyTypeOf(type);
-    }
-
-    private static String legacyTypeOf(Type type) {
-        return switch (type) {
-            case COPYRIGHT_VIOLATION -> "COPYRIGHT";
-            case FALSE_INFORMATION, INACCURATE_EVIDENCE -> "FAKE_NEWS";
-            case SPAM, HARASSMENT, POLICY_VIOLATION, OTHER -> "SPAM";
-        };
-    }
-
-    public enum Type {
-        SPAM,
-        FALSE_INFORMATION,
-        INACCURATE_EVIDENCE,
-        COPYRIGHT_VIOLATION,
-        HARASSMENT,
-        POLICY_VIOLATION,
-        OTHER
-    }
-
-    public enum Severity {
-        LOW,
-        MEDIUM,
-        HIGH,
-        CRITICAL
-    }
-
-    public enum Status {
-        PENDING_REVIEW,
-        PENDING_APPROVAL,
-        RESOLVED,
-        DISMISSED,
-        REJECTED
-    }
-
-    public enum Action {
-        WARNING,
-        DEDUCT_POINTS,
-        LOCK_ACCOUNT,
-        UNLOCK_ACCOUNT,
-        RETRACT_CONTENT
+    public enum Type { SPAM, FALSE_INFORMATION, INACCURATE_EVIDENCE, COPYRIGHT_VIOLATION, HARASSMENT, POLICY_VIOLATION, OTHER }
+    public enum Severity { LOW, MEDIUM, HIGH, CRITICAL }
+    public enum Status { PENDING_REVIEW, PENDING_APPROVAL, RESOLVED, DISMISSED, REJECTED }
+    public enum Action { WARNING, DEDUCT_POINTS, LOCK_ACCOUNT, UNLOCK_ACCOUNT, RETRACT_CONTENT }
+    @Converter
+    public static class StatusConverter implements AttributeConverter<Status,String> {
+        public String convertToDatabaseColumn(Status value) {
+            if(value == null) return null;
+            return switch(value) {
+                case PENDING_REVIEW -> "PENDING";
+                case PENDING_APPROVAL -> "DEPUTY_PENDING";
+                case RESOLVED -> "PUBLISHED";
+                case DISMISSED -> "CANCELLED";
+                case REJECTED -> "REJECTED";
+            };
+        }
+        public Status convertToEntityAttribute(String value) {
+            if(value == null) return null;
+            return switch(value) {
+                case "PENDING" -> Status.PENDING_REVIEW;
+                case "DEPUTY_PENDING" -> Status.PENDING_APPROVAL;
+                case "PUBLISHED" -> Status.RESOLVED;
+                case "CANCELLED" -> Status.DISMISSED;
+                case "REJECTED" -> Status.REJECTED;
+                default -> throw new IllegalArgumentException("Unknown violation status: " + value);
+            };
+        }
     }
 }

@@ -35,8 +35,8 @@ public class ExpertApplicationService {
         em.lock(user, LockModeType.PESSIMISTIC_WRITE);
         if (user.getRole()!=User.Role.CITIZEN && user.getRole()!=User.Role.CONTRIBUTOR)
             throw AppException.forbidden("Chỉ người dân hoặc cộng tác viên được đăng ký chuyên gia.", ErrorCode.FORBIDDEN);
-        long count = em.createQuery("select count(a) from ExpertApplication a where a.applicant.id=:user and a.status='PENDING'",Long.class)
-                .setParameter("user",userId).getSingleResult();
+        long count = em.createQuery("select count(a) from ExpertApplication a where a.applicant.id=:user and a.status=:pending",Long.class)
+                .setParameter("user",userId).setParameter("pending", "PENDING").getSingleResult();
         if(count>0) throw AppException.conflict("Bạn đang có đơn chuyên gia chờ xét duyệt.");
         ExpertApplication row=new ExpertApplication();
         row.setApplicant(user); row.setField(request.field().trim()); row.setQualifications(request.qualifications().trim());
@@ -57,7 +57,8 @@ public class ExpertApplicationService {
     public View review(String editorId,Long id,Review request) {
         User editor=users.getActiveById(editorId);
         if(editor.getRole()!=User.Role.EDITOR) throw AppException.forbidden("Chỉ biên tập viên được xét đơn.",ErrorCode.FORBIDDEN);
-        ExpertApplication row=em.find(ExpertApplication.class,id,LockModeType.PESSIMISTIC_WRITE);
+        ExpertApplication row=em.createQuery("select a from ExpertApplication a where coalesce(a.legacyId,a.id)=:id", ExpertApplication.class)
+                .setParameter("id",id).setLockMode(LockModeType.PESSIMISTIC_WRITE).getSingleResultOrNull();
         if(row==null) throw AppException.notFound("Không tìm thấy đơn.");
         if(!"PENDING".equals(row.getStatus())) throw AppException.conflict("Đơn đã được xét.");
         String note=request.note()==null ? "" : request.note().trim();

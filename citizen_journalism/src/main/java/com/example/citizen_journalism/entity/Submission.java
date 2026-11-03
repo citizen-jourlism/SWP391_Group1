@@ -10,6 +10,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 @Entity
+@org.hibernate.annotations.SQLRestriction("record_kind = 'CONTENT'")
 @Table(name = "submissions", indexes = {
     // 1. Tìm bài viết theo trạng thái và ngày tạo (cho Admin duyệt)
     @Index(name = "idx_submissions_status_created", columnList = "status, created_at"),
@@ -26,6 +27,10 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Submission extends BaseEntity {
+
+    @Column(name = "record_kind", length = 30)
+    @Builder.Default
+    private String recordKind = "CONTENT";
 
     @Enumerated(EnumType.STRING)
     @NotNull(message = "Type is required")

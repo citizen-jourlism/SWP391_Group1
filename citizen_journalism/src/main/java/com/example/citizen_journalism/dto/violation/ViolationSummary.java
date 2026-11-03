@@ -4,6 +4,7 @@ import com.example.citizen_journalism.entity.User;
 import com.example.citizen_journalism.entity.UserViolation;
 import java.time.LocalDateTime;
 
+/** Read-only API summary; this DTO does not define a database table. */
 public record ViolationSummary(
         Long id,
         String userId,
