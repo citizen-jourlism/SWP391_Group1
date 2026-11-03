@@ -35,6 +35,8 @@ build/
 
 ### Bien bi mat (mat khau DB, Gmail...) - xem .env.example ###
 .env
+### Cau hinh rieng tung may (cong, mat khau DB) - moi nguoi giu ban cua minh ###
+src/main/resources/application.properties
 
 ### File nguoi dung tai len (anh dai dien, bang chung...) ###
 uploads/

@@ -37,9 +37,10 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     /** Hồ sơ theo mã, CHỈ khi đúng người gửi (để người khác không xem được hồ sơ của mình bằng cách đổi mã trên URL). */
     Optional<Submission> findByTrackingCodeAndAuthorId(String trackingCode, String authorId);
 
-    /** Các hồ sơ của 1 người gửi, có phân trang (thứ tự sắp xếp truyền qua Pageable). */
+    /** Các hồ sơ KHÔNG ẩn danh của 1 người gửi, bỏ qua 1 loại (màn chấm uy tín), có phân trang. */
     @EntityGraph(attributePaths = "author")
-    Page<Submission> findByAuthorId(String authorId, Pageable pageable);
+    Page<Submission> findByAuthorIdAndIsAnonymousFalseAndTypeNot(String authorId, Submission.SubmissionType type,
+                                                                 Pageable pageable);
 
     /**
      * Các hồ sơ của 1 người gửi, có phân trang (thứ tự sắp xếp truyền qua Pageable).
@@ -86,6 +87,17 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     Page<Submission> searchForStaff(@Param("status") Submission.SubmissionStatus status,
                                     @Param("category") Submission.ReportCategory category,
                                     Pageable pageable);
+
+    /**
+     * Các hồ sơ đem so khi KIỂM TRA TIN TRÙNG (DuplicateDetectionService), mới nhất trước: gửi từ thời điểm `from`,
+     * khác hồ sơ đang xét, không phải bài CTV nộp, chưa bị huỷ.
+     */
+    @Query("select s from Submission s where s.id <> :id "
+            + "and s.type <> com.example.citizen_journalism.entity.Submission.SubmissionType.CONTRIBUTOR_POST "
+            + "and s.status <> com.example.citizen_journalism.entity.Submission.SubmissionStatus.CANCELLED "
+            + "and s.createdAt >= :from "
+            + "order by s.createdAt desc, s.id desc")
+    List<Submission> findDuplicateCheckPool(@Param("id") Long id, @Param("from") LocalDateTime from, Pageable pageable);
 
     /**
      * Cập nhật bộ đếm nhập sai PIN (xem SubmissionTrackingService.track).

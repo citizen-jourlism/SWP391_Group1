@@ -110,6 +110,9 @@ public class SubmissionApprovalService {
         if (assignmentRepository.existsBySubmissionIdAndStatusIn(submission.getId(), VERIFYING_STATUSES)) {
             return "Hồ sơ đã giao Cộng tác viên xác minh. Hãy duyệt kết quả xác minh, hoặc thu hồi nhiệm vụ trước.";
         }
+        if (submission.getPriority() == null) {
+            return "Hồ sơ chưa được đánh giá mức tác động. Hãy đánh giá trước khi duyệt chuyển Phó Tổng biên tập.";
+        }
         return null;
     }
 

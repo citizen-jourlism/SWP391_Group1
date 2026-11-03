@@ -31,7 +31,7 @@ public class ReputationLog extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @NotNull(message = "Reason is required")
-    @Column(name = "reason", nullable = false, length = 100)
+    @Column(name = "reason", nullable = false, length = 100, columnDefinition = "VARCHAR(100)") // VARCHAR: thêm lý do mới không phải sửa DB
     private ReputationReason reason;
 
     @ManyToOne(fetch = FetchType.LAZY)

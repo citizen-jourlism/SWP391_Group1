@@ -163,6 +163,9 @@ public class SubmissionVerificationReviewService {
         if (reportStatus != ReviewStatus.APPROVED) {
             return "Báo cáo của Cộng tác viên chưa được duyệt. Hãy duyệt báo cáo ở trang hồ sơ trước.";
         }
+        if (submission.getPriority() == null) {
+            return "Hồ sơ chưa được đánh giá mức tác động. Hãy đánh giá trước khi duyệt chuyển Phó Tổng biên tập.";
+        }
         return null;
     }
 

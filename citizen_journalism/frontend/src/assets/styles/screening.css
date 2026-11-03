@@ -73,15 +73,7 @@
 
 /* ResultView đặt trong khối trắng: thu hẹp lại, nút xếp ngang */
 .dup-result {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 16px 0;
-}
-
-.dup-result .result__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  padding: 0;
 }
 
 /* ---------- Màn hình hẹp ---------- */

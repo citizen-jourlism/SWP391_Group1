@@ -12,6 +12,8 @@ export const editorService = {
   // ----- Hàng đợi tin bài -----
   listSubmissions: (params) => api.get('/editor/submissions', { params: cleanParams(params) }),
   getSubmission: (code) => api.get(`/editor/submissions/${encodeURIComponent(code)}`),
+  /** { detail, senderRole, reputationReviewed }, xem routes/editor/EditorReputationSubmission.jsx */
+  getReputationSubmission: (code) => api.get(`/editor/reputation/submissions/${encodeURIComponent(code)}`),
   reviewReputationSubmission: (code, payload) => api.post(`/editor/reputation/submissions/${encodeURIComponent(code)}/review`, payload),
 
   // ----- Uy tín và xử phạt -----
@@ -45,15 +47,7 @@ export const editorService = {
   /** params: { editStatus: NOT_EDITED | PENDING | ACCEPTED | REJECTED, field, q (tìm trong tiêu đề), page, size } */
   listArticles: (params) => api.get('/editor/articles', { params: cleanParams(params) }),
 
-  // ----- Kiểm tra tin trùng (Check for Duplication) — backend CHƯA có, xem routes/editor/EditorDuplicateCheck.jsx -----
-  getDuplicates: (code) => api.get(`/editor/submissions/${encodeURIComponent(code)}/duplicates`),
-  /** Gộp hồ sơ `code` vào hồ sơ gốc `originalCode` (submissions.duplicate_submission_id = id hồ sơ gốc). */
-  mergeDuplicate: (code, originalCode, note) =>
-    api.post(`/editor/submissions/${encodeURIComponent(code)}/duplicates/merge`, { originalCode, note }),
-  /** Xác nhận không trùng: bỏ qua gợi ý của AI, hồ sơ xử lý như sự việc mới. */
-  dismissDuplicates: (code, note) => api.post(`/editor/submissions/${encodeURIComponent(code)}/duplicates/dismiss`, { note }),
-  /** Hoàn tác gộp: hồ sơ quay lại hàng đợi như trước khi gộp. */
-  unmergeDuplicate: (code) => api.post(`/editor/submissions/${encodeURIComponent(code)}/duplicates/unmerge`),
+  // Kiểm tra tin trùng (Check for Duplication): xem services/screeningService.js
 
   // ----- Giao nhiệm vụ xác minh hiện trường (backend: FieldAssignmentController) -----
   /** Cộng tác viên để chọn. params: { code, province, ward, q, minScore, sort: RECOMMENDED | SCORE_DESC | SCORE_ASC | WORKLOAD } */

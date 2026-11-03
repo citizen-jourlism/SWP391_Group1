@@ -10,7 +10,8 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 @Entity
-@org.hibernate.annotations.SQLRestriction("record_kind = 'CONTENT'")
+// record_kind NULL = hồ sơ có từ trước khi thêm cột (ddl-auto=update thêm cột rỗng), vẫn là tin bài thường
+@org.hibernate.annotations.SQLRestriction("(record_kind = 'CONTENT' or record_kind is null)")
 @Table(name = "submissions", indexes = {
     // 1. Tìm bài viết theo trạng thái và ngày tạo (cho Admin duyệt)
     @Index(name = "idx_submissions_status_created", columnList = "status, created_at"),

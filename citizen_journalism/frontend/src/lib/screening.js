@@ -29,13 +29,16 @@ export const formatGap = (minutes) => {
 
 /**
  * Các TÍN HIỆU khớp của một hồ sơ gợi ý (badge đỏ = khớp, xám = không khớp).
- * Ngưỡng "khớp": cách nhau ≤ 500 m, chênh ≤ 2 giờ, nội dung giống ≥ 70%, có ít nhất 1 ảnh tương tự.
+ * Ngưỡng "khớp": cách nhau ≤ 500 m (không có toạ độ thì so cùng tỉnh/thành), chênh ≤ 2 giờ, nội dung giống ≥ 70%.
  */
-export const matchSignals = ({ distanceMeters, minutesApart, contentSimilarity, similarImages, totalImages }) => [
-  { icon: 'mapPin', label: `Cách ${formatDistance(distanceMeters)}`, match: distanceMeters <= 500 },
-  { icon: 'clock', label: `Chênh ${formatGap(minutesApart)}`, match: minutesApart <= 120 },
+export const matchSignals = ({ distanceMeters, sameProvince, minutesApart, contentSimilarity }) => [
+  distanceMeters == null
+    ? { icon: 'mapPin', label: sameProvince ? 'Cùng tỉnh/thành' : 'Khác tỉnh/thành', match: Boolean(sameProvince) }
+    : { icon: 'mapPin', label: `Cách ${formatDistance(distanceMeters)}`, match: distanceMeters <= 500 },
+  minutesApart == null
+    ? { icon: 'clock', label: 'Không rõ thời gian', match: false }
+    : { icon: 'clock', label: `Chênh ${formatGap(minutesApart)}`, match: minutesApart <= 120 },
   { icon: 'fileText', label: `Nội dung giống ${contentSimilarity}%`, match: contentSimilarity >= 70 },
-  { icon: 'image', label: `Ảnh tương tự ${similarImages}/${totalImages}`, match: similarImages > 0 },
 ]
 
 /**

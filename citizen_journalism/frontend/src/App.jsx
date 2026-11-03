@@ -37,6 +37,7 @@ import EditorArticles from './routes/editor/EditorArticles.jsx'
 import EditorApplications from './routes/editor/EditorApplications.jsx'
 import EditorCategories from './routes/editor/EditorCategories.jsx'
 import EditorDuplicateCheck from './routes/editor/EditorDuplicateCheck.jsx'
+import EditorImpactAssessment from './routes/editor/EditorImpactAssessment.jsx'
 import EditorOverview from './routes/editor/EditorOverview.jsx'
 import EditorPipeline from './routes/editor/EditorPipeline.jsx'
 import ContributorHistory from './routes/contributor/ContributorHistory.jsx'
@@ -56,6 +57,7 @@ import EditorRejectSubmission from './routes/editor/EditorRejectSubmission.jsx'
 import EditorRequestInfo from './routes/editor/EditorRequestInfo.jsx'
 import EditorResearchDetail from './routes/editor/EditorResearchDetail.jsx'
 import EditorSubmissionDetail from './routes/editor/EditorSubmissionDetail.jsx'
+import EditorReputationSubmission from './routes/editor/EditorReputationSubmission.jsx'
 import EditorReputationResearchDetail from './routes/editor/EditorReputationResearchDetail.jsx'
 import EditorReputation from './routes/editor/EditorReputation.jsx'
 import EditorReputationAccount from './routes/editor/EditorReputationAccount.jsx'
@@ -286,7 +288,7 @@ function App() {
             <Route path="queue/:code" element={<EditorSubmissionDetail />} />           {/* Chi tiết 1 hồ sơ */}
             <Route path="reputation" element={<EditorReputation />} />
             <Route path="reputation/accounts/:accountId" element={<EditorReputationAccount />} />
-            <Route path="reputation/accounts/:accountId/submissions/:code" element={<EditorSubmissionDetail reputationMode />} />
+            <Route path="reputation/accounts/:accountId/submissions/:code" element={<EditorReputationSubmission />} />
             <Route path="reputation/accounts/:accountId/research/:id" element={<EditorReputationResearchDetail />} />
             <Route path="applications" element={<EditorApplications />} />              {/* Đơn đăng ký CTV */}
             <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
@@ -296,6 +298,7 @@ function App() {
             <Route path="queue/:code/reject" element={<EditorRejectSubmission />} />    {/* Từ chối 1 hồ sơ */}
             <Route path="queue/:code/request-info" element={<EditorRequestInfo />} /> {/* Yêu cầu bổ sung cho 1 hồ sơ */}
             <Route path="queue/:code/verification" element={<EditorVerificationReview />} /> {/* Duyệt kết quả xác minh của CTV */}
+            <Route path="queue/:code/impact" element={<EditorImpactAssessment />} />   {/* Đánh giá mức tác động */}
             <Route path="queue/research/:id" element={<EditorResearchDetail />} />     {/* Chi tiết 1 bài nghiên cứu */}
             <Route path="categories" element={<EditorCategories />} />
             <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}

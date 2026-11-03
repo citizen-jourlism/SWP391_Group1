@@ -193,13 +193,15 @@ class UserViolationServiceTest {
         when(userRepository.getActiveById(leader.getId())).thenReturn(leader);
 
         service.approve(leader.getId(), 1L, new ApproveViolationRequest(
-                ApproveViolationRequest.Decision.APPROVE, UserViolation.Action.RETRACT_CONTENT, null));
+                ApproveViolationRequest.Decision.APPROVE, UserViolation.Action.RETRACT_CONTENT,
+                "Căn cứ: kết luận xác minh cho thấy bài đăng sai sự thật."));
 
         assertEquals(User.Status.ACTIVE, subject.getStatus());
         assertEquals(UserViolation.Status.RESOLVED, violation.getStatus());
         assertEquals("Published report contents", violation.getRetractionSnapshot());
         verify(submissionEventService).record(submission, Submission.SubmissionStatus.RETRACTED,
-                SubmissionEvent.Actor.SYSTEM, "Nội dung đã được gỡ sau khi phê duyệt báo cáo vi phạm.", null);
+                SubmissionEvent.Actor.SYSTEM, "Nội dung đã được gỡ sau khi phê duyệt báo cáo vi phạm.",
+                "Căn cứ: kết luận xác minh cho thấy bài đăng sai sự thật.");
     }
 
     @Test

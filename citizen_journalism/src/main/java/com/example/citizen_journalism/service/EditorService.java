@@ -52,6 +52,11 @@ public class EditorService {
     private final SubmissionEventService submissionEventService;
     private final UserRepository userRepository;
     private final ResearchArticleRepository researchArticleRepository;
+    private final FieldAssignmentService fieldAssignmentService;
+
+    /** Hồ sơ đã kết thúc xử lý: không đánh dấu tin giả / gỡ bài được nữa. */
+    private static final java.util.Set<SubmissionStatus> CLOSED_STATUSES = java.util.EnumSet.of(
+            SubmissionStatus.REJECTED, SubmissionStatus.CANCELLED, SubmissionStatus.RETRACTED, SubmissionStatus.EIC_REJECTED);
 
     @Transactional(readOnly = true)
     public EditorOverview getOverview() {
@@ -80,11 +85,18 @@ public class EditorService {
                 .map(EditorSubmissionSummary::from));
     }
 
+    /** Chi tiết 1 hồ sơ cho bàn xử lý (GET /api/editor/submissions/{mã}), dạng dùng chung với các màn khác. */
+    public SubmissionDetail getSubmission(String trackingCode) {
+        return trackingService.getForStaff(trackingCode);
+    }
+
+    /** Chi tiết 1 bài gửi cho màn chấm uy tín, kèm vai trò người gửi và đã chấm điểm chưa. */
     @Transactional(readOnly = true)
-    public EditorSubmissionDetail getSubmission(String trackingCode) {
+    public EditorSubmissionDetail getReputationSubmission(String trackingCode) {
         String normalizedCode = trackingCode.trim().toUpperCase(java.util.Locale.ROOT);
         Submission submission = submissionRepository.findByTrackingCode(normalizedCode)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy hồ sơ."));
+        requireReputationSubmission(submission);
         return new EditorSubmissionDetail(
                 trackingService.getForStaff(normalizedCode), submission.getAuthor().getRole(),
                 reputationLogRepository.existsByContributionTypeAndContributionId(
@@ -93,10 +105,11 @@ public class EditorService {
 
     @Transactional
     public ReputationReviewResult<EditorSubmissionDetail> reviewSubmission(
-            String trackingCode, ReviewSubmissionRequest request) {
+            String editorId, String trackingCode, ReviewSubmissionRequest request) {
         String normalizedCode = trackingCode.trim().toUpperCase(java.util.Locale.ROOT);
         Submission submission = submissionRepository.findForReviewByTrackingCode(normalizedCode)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy hồ sơ."));
+        requireReputationSubmission(submission);
 
         User author = submission.getAuthor();
         requireReputationRole(author);
@@ -107,9 +120,15 @@ public class EditorService {
                 throw AppException.invalidFields(java.util.Map.of(
                         "reason", "Vui lòng ghi lý do tin giả, ít nhất 10 ký tự."));
             }
+            if (CLOSED_STATUSES.contains(submission.getStatus())) {
+                throw AppException.conflict("Hồ sơ đã kết thúc xử lý, không đánh dấu tin giả được nữa.");
+            }
             pointsChange = adjustReputation(author, -10,
                     ReputationLog.ContributionType.CITIZEN_SUBMISSION, submission.getId(),
                     ReputationLog.ReputationReason.CITIZEN_SUBMISSION_FAKE_NEWS, submission);
+            // Hồ sơ bị gỡ thì nhiệm vụ CTV đang chạy (nếu có) không còn cần nữa: thu hồi và báo CTV
+            fieldAssignmentService.revokeActive(submission, userRepository.getActiveById(editorId),
+                    "Hồ sơ bị xác định là tin giả nên nhiệm vụ không còn cần thiết.");
             if (submission.getStatus() != SubmissionStatus.RETRACTED) {
                 submissionEventService.record(submission, SubmissionStatus.RETRACTED,
                         SubmissionEvent.Actor.EDITOR,
@@ -124,7 +143,7 @@ public class EditorService {
                     submission);
             // Reputation scoring preserves the editorial approval and publishing stage.
         }
-        return new ReputationReviewResult<>(getSubmission(normalizedCode), pointsChange,
+        return new ReputationReviewResult<>(getReputationSubmission(normalizedCode), pointsChange,
                 author.getReputationScore(), author.getStatus());
     }
 
@@ -168,7 +187,9 @@ public class EditorService {
     @Transactional(readOnly = true)
     public PageResponse<ReputationSubmissionItem> listReputationSubmissions(String accountId, int page, int size) {
         findReputationAccount(accountId);
-        return PageResponse.from(submissionRepository.findByAuthorId(accountId,
+        // Không liệt kê hồ sơ gửi ẩn danh (lộ danh tính người gửi) và bài CTV nộp kèm báo cáo (không phải bài của họ gửi)
+        return PageResponse.from(submissionRepository.findByAuthorIdAndIsAnonymousFalseAndTypeNot(accountId,
+                Submission.SubmissionType.CONTRIBUTOR_POST,
                 Paging.of(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))))
                 .map(submission -> ReputationSubmissionItem.from(submission,
                         reputationLogRepository.existsByContributionTypeAndContributionId(
@@ -242,6 +263,14 @@ public class EditorService {
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tài khoản."));
         requireReputationRole(user);
         return user;
+    }
+
+    /** Hồ sơ ẩn danh và bài CTV nộp không chấm uy tín theo tài khoản: coi như không tồn tại. */
+    private static void requireReputationSubmission(Submission submission) {
+        if (Boolean.TRUE.equals(submission.getIsAnonymous())
+                || submission.getType() == Submission.SubmissionType.CONTRIBUTOR_POST) {
+            throw AppException.notFound("Không tìm thấy hồ sơ.");
+        }
     }
 
     private static void requireReputationRole(User user) {

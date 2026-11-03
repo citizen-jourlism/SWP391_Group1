@@ -36,7 +36,7 @@ public class ResearchArticle extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @NotNull
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20, columnDefinition = "VARCHAR(20)") // VARCHAR: thêm trạng thái mới không phải sửa DB
     private Status status;
 
     /** Tiêu đề (bản nháp có thể để trống). */

@@ -23,7 +23,8 @@ import lombok.*;
  * danh sách tệp lưu dạng JSON ở cột documents.
  */
 @Entity
-@org.hibernate.annotations.SQLRestriction("application_kind = 'CONTRIBUTOR'")
+// application_kind NULL = đơn có từ trước khi thêm cột, vẫn là đơn Cộng tác viên
+@org.hibernate.annotations.SQLRestriction("(application_kind = 'CONTRIBUTOR' or application_kind is null)")
 @Table(name = "contributor_applications")
 @Getter
 @Setter

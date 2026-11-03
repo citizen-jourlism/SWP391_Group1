@@ -766,6 +766,55 @@
   overflow-wrap: anywhere;
 }
 
+/* ---------- Ô lựa chọn dạng thẻ (radio .role-option): Kiểm tra tin trùng, Từ chối hồ sơ ---------- */
+.role-options {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.role-option {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1.5px solid var(--card-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.role-option:hover {
+  border-color: #b6c0d0;
+}
+
+.role-option.is-selected {
+  border-color: var(--orange);
+  background: #fff8f4;
+}
+
+.role-option input {
+  margin-top: 3px;
+  accent-color: var(--orange-strong);
+}
+
+.role-option strong {
+  display: block;
+  color: var(--navy-900);
+  font-size: 14px;
+}
+
+.role-option em {
+  color: var(--orange-strong);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.role-option small {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
 /* ---------- Thông tin đăng nhập vừa tạo (CreateUserDialog) ---------- */
 .credential-box {
   display: grid;

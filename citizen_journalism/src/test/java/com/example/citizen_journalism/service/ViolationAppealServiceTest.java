@@ -17,7 +17,6 @@ import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.repository.ViolationAppealRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 class ViolationAppealServiceTest {
 
@@ -28,11 +27,11 @@ class ViolationAppealServiceTest {
             appealRepository,
             userRepository,
             reputationLogRepository,
-            mock(PasswordEncoder.class),
+            mock(AuthService.class),
             mock(MailService.class));
 
     @Test
-    void deputyApprovalRestoresReputationToEightyOneAndUnlocksCitizen() {
+    void deputyApprovalRestoresMinimumReputationAndUnlocksCitizen() {
         User citizen = user("CT0001", User.Role.CITIZEN, User.Status.LOCKED, 64);
         User deputy = user("DE0001", User.Role.DEPUTY_EIC, User.Status.ACTIVE, 100);
         ViolationAppeal appeal = appeal(citizen);
@@ -43,9 +42,23 @@ class ViolationAppealServiceTest {
                 new DecideAppealRequest(DecideAppealRequest.Decision.APPROVE, null));
 
         assertEquals(ViolationAppeal.Status.APPROVED, result.status());
-        assertEquals(81, citizen.getReputationScore());
+        assertEquals(User.MIN_REPUTATION_SCORE, citizen.getReputationScore());
         assertEquals(User.Status.ACTIVE, citizen.getStatus());
         verify(reputationLogRepository).save(any(ReputationLog.class));
+    }
+
+    @Test
+    void approvalKeepsHigherReputationWithoutLog() {
+        User citizen = user("CT0001", User.Role.CITIZEN, User.Status.LOCKED, 95);
+        User deputy = user("DE0001", User.Role.DEPUTY_EIC, User.Status.ACTIVE, 100);
+        when(appealRepository.findWithDetailsById(1L)).thenReturn(java.util.Optional.of(appeal(citizen)));
+        when(userRepository.getActiveById(deputy.getId())).thenReturn(deputy);
+
+        service.decide(deputy.getId(), 1L, new DecideAppealRequest(DecideAppealRequest.Decision.APPROVE, null));
+
+        assertEquals(95, citizen.getReputationScore());
+        assertEquals(User.Status.ACTIVE, citizen.getStatus());
+        verify(reputationLogRepository, org.mockito.Mockito.never()).save(any(ReputationLog.class));
     }
 
     @Test

@@ -65,11 +65,17 @@ public class EditorReputationController {
         return ApiResponse.ok("OK", editorService.getReputationResearch(id));
     }
 
+    @GetMapping("/reputation/submissions/{trackingCode}")
+    public ApiResponse<EditorSubmissionDetail> getReputationSubmission(@PathVariable String trackingCode) {
+        return ApiResponse.ok("OK", editorService.getReputationSubmission(trackingCode));
+    }
+
     @PostMapping("/reputation/submissions/{trackingCode}/review")
     public ApiResponse<ReputationReviewResult<EditorSubmissionDetail>> reviewReputationSubmission(
-            @PathVariable String trackingCode, @Valid @RequestBody ReviewSubmissionRequest request) {
+            @AuthenticationPrincipal Jwt jwt, @PathVariable String trackingCode,
+            @Valid @RequestBody ReviewSubmissionRequest request) {
         ReputationReviewResult<EditorSubmissionDetail> result =
-                editorService.reviewSubmission(trackingCode, request);
+                editorService.reviewSubmission(jwt.getSubject(), trackingCode, request);
         return reputationReviewResponse(result);
     }
 

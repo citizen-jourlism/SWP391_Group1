@@ -39,7 +39,8 @@ class EditorServiceReviewTest {
             reputationLogRepository,
             submissionEventService,
             userRepository,
-            researchArticleRepository);
+            researchArticleRepository,
+            mock(FieldAssignmentService.class));
 
     @Test
     void approvingCitizenSubmissionAtMaximumDoesNotIncreaseReputation() {
@@ -50,7 +51,7 @@ class EditorServiceReviewTest {
         when(submissionRepository.findByTrackingCode("KB-2026-0001"))
                 .thenReturn(java.util.Optional.of(submission));
 
-        var result = service.reviewSubmission("kb-2026-0001",
+        var result = service.reviewSubmission("ED0001", "kb-2026-0001",
                 new ReviewSubmissionRequest(ReviewSubmissionRequest.Decision.APPROVE, null));
 
         assertEquals(SubmissionStatus.PENDING, submission.getStatus());
@@ -69,7 +70,7 @@ class EditorServiceReviewTest {
         when(submissionRepository.findByTrackingCode("KB-2026-0001"))
                 .thenReturn(java.util.Optional.of(submission));
 
-        var result = service.reviewSubmission("KB-2026-0001",
+        var result = service.reviewSubmission("ED0001", "KB-2026-0001",
                 new ReviewSubmissionRequest(ReviewSubmissionRequest.Decision.APPROVE, null));
 
         assertEquals(2, result.pointsChange());
@@ -85,7 +86,7 @@ class EditorServiceReviewTest {
         when(submissionRepository.findByTrackingCode("KB-2026-0001"))
                 .thenReturn(java.util.Optional.of(submission));
 
-        var result = service.reviewSubmission("KB-2026-0001",
+        var result = service.reviewSubmission("ED0001", "KB-2026-0001",
                 new ReviewSubmissionRequest(ReviewSubmissionRequest.Decision.FAKE_NEWS, "Thông tin đã được xác minh là sai."));
 
         assertEquals(SubmissionStatus.RETRACTED, submission.getStatus());
@@ -101,7 +102,7 @@ class EditorServiceReviewTest {
         when(submissionRepository.findForReviewByTrackingCode("KB-2026-0001"))
                 .thenReturn(java.util.Optional.of(submission));
 
-        AppException error = assertThrows(AppException.class, () -> service.reviewSubmission("KB-2026-0001",
+        AppException error = assertThrows(AppException.class, () -> service.reviewSubmission("ED0001", "KB-2026-0001",
                 new ReviewSubmissionRequest(ReviewSubmissionRequest.Decision.FAKE_NEWS, "Sai tin")));
 
         assertEquals(HttpStatus.BAD_REQUEST, error.getStatus());
@@ -117,7 +118,7 @@ class EditorServiceReviewTest {
         when(reputationLogRepository.existsByContributionTypeAndContributionId(
                 eq(ReputationLog.ContributionType.CITIZEN_SUBMISSION), eq(1L))).thenReturn(true);
 
-        AppException error = assertThrows(AppException.class, () -> service.reviewSubmission("KB-2026-0001",
+        AppException error = assertThrows(AppException.class, () -> service.reviewSubmission("ED0001", "KB-2026-0001",
                 new ReviewSubmissionRequest(ReviewSubmissionRequest.Decision.APPROVE, null)));
 
         assertEquals(HttpStatus.CONFLICT, error.getStatus());

@@ -1,0 +1,153 @@
+/* ===== ĐÁNH GIÁ MỨC TÁC ĐỘNG (routes/editor/EditorImpactAssessment.jsx) =====
+ * Dùng lại class có sẵn: admin.css (.admin-panel, .role-option), editor.css (.desk-*, .applicant),
+ * tracking.css (.detail-head__*), ui.css (.alert, .badge, .field, .checkbox, .btn, .result).
+ * File này chỉ thêm: lưới 2 cột, thang 4 mức, luồng duyệt.
+ */
+
+.impact-title {
+  margin: 0;
+  color: var(--navy-900);
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+/* ---------- Lưới: tiêu chí | kết quả ---------- */
+.impact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+.impact-form {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.impact-form:disabled {
+  opacity: 0.6;
+}
+
+.impact-form:disabled .role-option {
+  cursor: not-allowed;
+}
+
+.impact-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 12px 0 0;
+}
+
+.impact-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* ---------- Ô kết quả ---------- */
+.impact-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.impact-summary .admin-panel__header {
+  margin-bottom: 0;
+}
+
+.impact-level {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--navy-900);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Thang 4 mức (không hiện số điểm): dải đang chọn đậm, các dải khác mờ */
+.impact-scale {
+  display: flex;
+  gap: 2px;
+  height: 24px;
+}
+
+.impact-scale__band {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.35;
+}
+
+.impact-scale__band.is-current {
+  opacity: 1;
+}
+
+.impact-scale__band--low {
+  background: #1f9d55;
+}
+
+.impact-scale__band--medium {
+  background: var(--blue);
+}
+
+.impact-scale__band--high {
+  background: var(--orange);
+}
+
+.impact-scale__band--breaking {
+  background: var(--red);
+}
+
+/* Luồng duyệt: Bạn duyệt › Phó TBT (› Tổng biên tập) */
+.impact-route {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.impact-route__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--admin-line, #eef1f5);
+  color: var(--navy-900);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.impact-route__step--eic {
+  background: #fdecea;
+  color: var(--red);
+}
+
+.impact-summary + p,
+.impact-route + .field__hint {
+  margin: -6px 0 0;
+}
+
+@media (max-width: 1100px) {
+  .impact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .impact-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .impact-options {
+    grid-template-columns: 1fr;
+  }
+}

@@ -20,7 +20,6 @@ import com.example.citizen_journalism.util.Paging;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,16 +33,18 @@ public class ViolationAppealService {
     private final ViolationAppealRepository appealRepository;
     private final UserRepository userRepository;
     private final ReputationLogRepository reputationLogRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final AuthService authService;
+
+    /** Vai trò có điểm uy tín, tức có thể bị khoá tự động vì dưới 80 điểm, nên được gửi khiếu nại. */
+    private static final java.util.Set<User.Role> APPEALABLE_ROLES = java.util.EnumSet.of(User.Role.CITIZEN, User.Role.EXPERT);
     private final MailService mailService;
 
-    @Transactional
+    @Transactional(noRollbackFor = AppException.class) // Lưu số lần nhập sai mật khẩu dù có báo lỗi
     public ViolationAppealView create(CreateAppealRequest request) {
-        User user = userRepository.findByEmail(normalizeEmail(request.email()))
-                .filter(account -> passwordEncoder.matches(request.password(), account.getPasswordHash()))
-                .filter(account -> account.getStatus() == User.Status.LOCKED)
-                .filter(account -> account.getRole() == User.Role.CITIZEN)
-                .orElseThrow(() -> AppException.badRequest("Không thể gửi khiếu nại. Hãy kiểm tra thông tin đăng nhập và trạng thái tài khoản."));
+        User user = authenticate(request.email(), request.password());
+        if (user.getStatus() != User.Status.LOCKED || !APPEALABLE_ROLES.contains(user.getRole())) {
+            throw AppException.badRequest("Không thể gửi khiếu nại. Hãy kiểm tra thông tin đăng nhập và trạng thái tài khoản.");
+        }
         if (appealRepository.existsByUserIdAndStatusIn(user.getId(), OPEN_STATUSES)) {
             throw AppException.conflict("Tài khoản đang có khiếu nại chờ xử lý.");
         }
@@ -59,11 +60,9 @@ public class ViolationAppealService {
         return ViolationAppealView.from(appeal);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(noRollbackFor = AppException.class) // Lưu số lần nhập sai mật khẩu dù có báo lỗi
     public ViolationAppealView getOwn(AppealStatusRequest request) {
-        User user = userRepository.findByEmail(normalizeEmail(request.email()))
-                .filter(account -> passwordEncoder.matches(request.password(), account.getPasswordHash()))
-                .orElseThrow(() -> AppException.badRequest("Thông tin xác thực không chính xác."));
+        User user = authenticate(request.email(), request.password());
         ViolationAppeal appeal = find(request.appealId());
         if (!appeal.getUser().getId().equals(user.getId())) {
             throw AppException.notFound("Không tìm thấy khiếu nại.");
@@ -130,16 +129,20 @@ public class ViolationAppealService {
             }
             int previousScore = user.getReputationScore() == null
                     ? User.DEFAULT_REPUTATION_SCORE : user.getReputationScore();
-            user.setReputationScore(81);
+            // Mở khoá cần tối thiểu 80 điểm; ai đang cao hơn (bị khoá vì vi phạm khác) thì giữ nguyên điểm
+            int restoredScore = Math.max(previousScore, User.MIN_REPUTATION_SCORE);
+            user.setReputationScore(restoredScore);
             user.setStatus(User.Status.ACTIVE);
             user.setIsVerified(true);
             user.setFailedLoginAttempts(0);
             user.setLockedUntil(null);
-            reputationLogRepository.save(ReputationLog.builder()
-                    .user(user)
-                    .pointsChange(81 - previousScore)
-                    .reason(ReputationLog.ReputationReason.ACCOUNT_APPEAL_RESTORED)
-                    .build());
+            if (restoredScore != previousScore) {
+                reputationLogRepository.save(ReputationLog.builder()
+                        .user(user)
+                        .pointsChange(restoredScore - previousScore)
+                        .reason(ReputationLog.ReputationReason.ACCOUNT_APPEAL_RESTORED)
+                        .build());
+            }
             appeal.setStatus(ViolationAppeal.Status.APPROVED);
         } else {
             appeal.setStatus(ViolationAppeal.Status.REJECTED);
@@ -149,6 +152,14 @@ public class ViolationAppealService {
                         ? "Khiếu nại được chấp thuận và tài khoản đã được mở khóa."
                         : "Khiếu nại đã bị từ chối. Ghi chú: " + (note == null ? "Không có" : note));
         return ViolationAppealView.from(appeal);
+    }
+
+    /** Email + mật khẩu của API công khai: sai email báo giống sai mật khẩu, sai mật khẩu bị đếm như khi đăng nhập. */
+    private User authenticate(String email, String password) {
+        User user = userRepository.findByEmail(normalizeEmail(email))
+                .orElseThrow(() -> AppException.unauthorized(AuthService.INVALID_CREDENTIALS));
+        authService.checkPassword(user, password);
+        return user;
     }
 
     private ViolationAppeal find(Long id) {
