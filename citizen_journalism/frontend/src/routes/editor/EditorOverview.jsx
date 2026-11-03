@@ -169,10 +169,6 @@ function EditorOverview() {
               <span>Sắp có</span>
             </div>
             <div className="desk-shortcuts">
-              <Link to="/editor/screening">
-                <Icon name="search" size={18} />
-                Sàng lọc AI
-              </Link>
               <Link to="/editor/assignments">
                 <Icon name="mapPin" size={18} />
                 Giao nhiệm vụ

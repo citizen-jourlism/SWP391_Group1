@@ -129,7 +129,7 @@
 
 .profile-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
   width: 100%;
   margin-bottom: 18px;
@@ -161,12 +161,6 @@
   background: var(--info-bg);
   border-color: #cfe1fb;
   color: var(--blue);
-}
-
-.profile-stat--reward {
-  background: #fff7ed;
-  border-color: #fed7aa;
-  color: var(--orange-strong);
 }
 
 /* ---------- Ảnh đại diện (components/profile/AvatarUploader.jsx) ---------- */

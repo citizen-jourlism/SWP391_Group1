@@ -48,7 +48,6 @@ import ContributorTaskRevision from './routes/contributor/ContributorTaskRevisio
 import ContributorTasks from './routes/contributor/ContributorTasks.jsx'
 import EditorAssignContributor from './routes/editor/EditorAssignContributor.jsx'
 import EditorAssignments from './routes/editor/EditorAssignments.jsx'
-import EditorPlanned from './routes/editor/EditorPlanned.jsx'
 import ViolationReports, { ViolationReportDetail } from './routes/editor/ViolationReports.jsx'
 import UserPerformance from './routes/editor/UserPerformance.jsx'
 import EditorQueue from './routes/editor/EditorQueue.jsx'
@@ -319,8 +318,6 @@ function App() {
             <Route path="expert-applications" element={<ExpertReviewQueue mode="editor" />} /> {/* TungTT: BTV duyệt đơn Chuyên gia (bước 1) */}
             <Route path="categories" element={<EditorCategories />} />
             <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
-            {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
-            <Route path="screening" element={<EditorPlanned page="screening" />} />
             <Route path="assignments" element={<EditorAssignments />} />                 {/* Nhiệm vụ đã giao */}
             <Route path="articles" element={<EditorArticles />} />                       {/* Biên tập bài viết */}
             <Route path="members" element={<ViolationReports />} />
