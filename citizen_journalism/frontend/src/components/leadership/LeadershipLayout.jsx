@@ -16,6 +16,9 @@ const NAV_GROUPS = [
     label: 'Chờ tôi duyệt',
     items: [
       { to: '/leadership', end: true, icon: 'fileText', label: 'Hồ sơ phản ánh', title: 'Hồ sơ phản ánh chờ duyệt' },
+      { to: '/leadership/appeals', icon: 'user', label: 'Khi?u n?i m? kh?a', title: 'X?t duy?t m? kh?a t?i kho?n', roles: ['DEPUTY_EIC'] },
+      { to: '/leadership/violations', icon: 'shield', label: 'B?o c?o vi ph?m', title: 'Ph? duy?t x? l? vi ph?m', roles: ['DEPUTY_EIC'] },
+      { to: '/leadership/applications', icon: 'award', label: '??n C?ng t?c vi?n', title: 'Ph? duy?t n?ng c?p CTV', roles: ['DEPUTY_EIC'] },
       { to: '/leadership/research', icon: 'edit', label: 'Bài nghiên cứu', title: 'Bài nghiên cứu chờ duyệt' },
     ],
   },
@@ -37,7 +40,7 @@ function LeadershipLayout() {
       badge="Editorial Board"
       crumbRoot="Bàn duyệt"
       roleLabel={ROLE_LABELS[user?.role] ?? 'Ban biên tập'}
-      navGroups={NAV_GROUPS}
+      navGroups={NAV_GROUPS.map(group => ({ ...group, items: group.items.filter(item => !item.roles || item.roles.includes(user?.role)) }))}
       topbarExtra={
         // Khác bàn BTV / admin: Ban biên tập dùng được trang người dùng như mọi vai trò (về trang chủ, hồ sơ, đổi mật khẩu).
         // UserMenu có mục "Bàn biên tập" để quay lại đây; ô tên + ảnh mặc định của ConsoleLayout được ẩn bằng CSS.

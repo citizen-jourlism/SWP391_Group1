@@ -75,6 +75,11 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, "Dữ liệu gửi lên không đúng định dạng.", null);
     }
 
+    @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConcurrentDecision(org.springframework.dao.OptimisticLockingFailureException ex) {
+        return build(HttpStatus.CONFLICT, "Báo cáo vừa được xử lý ở phiên khác. Vui lòng tải lại.", null);
+    }
+
     /** Mọi lỗi còn lại (không lường trước). */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception ex) {

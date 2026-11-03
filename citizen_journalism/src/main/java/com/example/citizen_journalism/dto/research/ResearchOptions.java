@@ -15,5 +15,7 @@ public record ResearchOptions(
         long maxImageSizeMb,
         List<String> acceptedImageTypes,
         long draftCount,
-        long submittedCount) {
+        long submittedCount,
+        long approvedCount,
+        long rejectedCount) {
 }

@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 
 // Địa chỉ backend. Mặc định cổng 8080; có thể đổi bằng biến môi trường API_TARGET
 // (ví dụ khi chạy thêm một backend thử nghiệm ở cổng khác).
-const apiTarget = process.env.API_TARGET ?? 'http://localhost:8080'
+const apiTarget = process.env.API_TARGET ?? 'http://localhost:8082'
 
 // https://vite.dev/config/
 export default defineConfig({

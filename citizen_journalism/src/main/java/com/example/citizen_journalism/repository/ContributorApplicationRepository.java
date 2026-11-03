@@ -18,6 +18,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface ContributorApplicationRepository extends JpaRepository<ContributorApplication, Long> {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select a from ContributorApplication a where a.id = :id")
+    Optional<ContributorApplication> findForDecision(@org.springframework.data.repository.query.Param("id") Long id);
+
     /** Mọi đơn của 1 người, mới nhất trước (đơn đầu tiên = đơn hiện tại, còn lại là lịch sử). */
     List<ContributorApplication> findByApplicantIdOrderByCreatedAtDescIdDesc(String applicantId);
 

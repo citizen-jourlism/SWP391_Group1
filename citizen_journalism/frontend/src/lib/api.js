@@ -57,7 +57,9 @@ api.interceptors.response.use(
       status,
       message:
         body?.message ??
-        (error.response
+        (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT'
+          ? 'Máy chủ chưa phản hồi kịp. Vui lòng kiểm tra kết quả trước khi thực hiện lại.'
+          : error.response
           ? 'Đã có lỗi xảy ra, vui lòng thử lại.'
           : 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối mạng.'),
       code: body?.code ?? null, // Mã lỗi cho máy đọc, ví dụ 'ACCOUNT_NOT_VERIFIED' (xem backend ErrorCode.java)

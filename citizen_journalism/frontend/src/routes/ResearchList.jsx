@@ -20,12 +20,14 @@ import '../assets/styles/research.css'
  * Mở từ: menu tài khoản -> "Bài nghiên cứu của tôi", nút "Quản lý bản nháp" trong trình soạn thảo.
  *
  *   - Thẻ "Bản nháp": các bài đang viết dở -> "Viết tiếp" (mở trình soạn) hoặc "Xoá" (có hộp xác nhận).
- *   - Thẻ "Đã nộp" : các bài đã gửi toà soạn -> chỉ "Xem bài".
+ *   - Thẻ "Chờ duyệt" / "Đã duyệt": bài nghiên cứu đã gửi toà soạn -> chỉ "Xem bài".
  * Dữ liệu: GET /api/research?status=&page= (bài sửa gần nhất lên đầu); số lượng mỗi thẻ lấy từ GET /api/research/options.
  */
 const TABS = [
   { value: 'DRAFT', label: 'Bản nháp', countKey: 'draftCount' },
-  { value: 'SUBMITTED', label: 'Đã nộp', countKey: 'submittedCount' },
+  { value: 'SUBMITTED', label: 'Chờ duyệt', countKey: 'submittedCount' },
+  { value: 'APPROVED', label: 'Đã duyệt', countKey: 'approvedCount' },
+  { value: 'REJECTED', label: 'Đã từ chối', countKey: 'rejectedCount' },
 ]
 
 function ResearchList() {

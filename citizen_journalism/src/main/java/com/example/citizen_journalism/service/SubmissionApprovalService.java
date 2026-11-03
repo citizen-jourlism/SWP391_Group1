@@ -131,7 +131,7 @@ public class SubmissionApprovalService {
     /** Lần Biên tập viên duyệt gần nhất (editorial_reviews APPROVE do EDITOR ghi). */
     private ApproveSubmissionResponse.Approval approvalOf(Submission submission) {
         return reviewRepository
-                .findFirstBySubmissionAndActionOrderByCreatedAtDescIdDesc(submission, EditoralReview.ReviewAction.APPROVE)
+                .findFirstBySubmissionAndActionAndReviewRoleOrderByCreatedAtDescIdDesc(submission, EditoralReview.ReviewAction.APPROVE, EditoralReview.ReviewRole.EDITOR)
                 .filter(review -> review.getReviewRole() == EditoralReview.ReviewRole.EDITOR)
                 .map(review -> new ApproveSubmissionResponse.Approval(
                         review.getCreatedAt(),

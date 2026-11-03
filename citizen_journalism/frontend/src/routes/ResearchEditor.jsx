@@ -117,7 +117,7 @@ function EditorWorkspace({ options, article, initialNotice }) {
   const [formError, setFormError] = useState('')
   const [notice, setNotice] = useState(initialNotice ?? '')
   const [confirming, setConfirming] = useState(false)
-  const [submitted, setSubmitted] = useState(article?.status === 'SUBMITTED' ? article : null)
+  const [submitted, setSubmitted] = useState(article && article.status !== 'DRAFT' ? article : null)
   const checklistRef = useRef(null)
 
   const dirty = snapshotOf(doc, figures) !== saved.snapshot
@@ -226,7 +226,9 @@ function EditorWorkspace({ options, article, initialNotice }) {
               <Icon name="arrowLeft" size={16} />
               Bài nghiên cứu của tôi
             </Link>
-            <Badge tone="green">Đã nộp</Badge>
+            <Badge tone={submitted.status === 'APPROVED' ? 'green' : 'orange'}>
+              {RESEARCH_STATUS[submitted.status]?.label ?? 'Đã nộp'}
+            </Badge>
             <span className="research-bar__spacer" />
             <Button to="/research/new" className="btn--sm">
               <Icon name="plus" size={14} />
@@ -235,13 +237,18 @@ function EditorWorkspace({ options, article, initialNotice }) {
           </div>
         </div>
         <main className="research-layout research-layout--reader">
-          {article?.status !== 'SUBMITTED' && (
+          {article?.status === 'DRAFT' && (
             <Alert type="success" title="Đã nộp bài nghiên cứu cho toà soạn!">
               Bài đã được khoá chỉnh sửa và chuyển tới Ban biên tập. Bạn xem lại bài bất cứ lúc nào trong mục Bài nghiên cứu của tôi.
             </Alert>
           )}
           {/* Yêu cầu chỉnh sửa của bài này: đang chờ + lịch sử (trang danh sách chỉ còn hiện yêu cầu đang chờ) */}
           <PendingRevisionsBanner articleId={submitted.id} />
+          {submitted.status === 'APPROVED' && (
+            <Alert type="success" title="Bài nghiên cứu đã được duyệt">
+              Bài đã được duyệt và đủ điều kiện nhận điểm thưởng trong đợt tích lũy tiếp theo.
+            </Alert>
+          )}
           <ResearchReader article={submitted} author={user} />
         </main>
       </>
