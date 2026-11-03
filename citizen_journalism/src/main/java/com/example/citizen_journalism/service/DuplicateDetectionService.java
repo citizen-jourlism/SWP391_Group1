@@ -10,6 +10,7 @@ import com.example.citizen_journalism.repository.SubmissionRepository;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -35,20 +36,29 @@ import tools.jackson.databind.ObjectMapper;
  * Màn hình và các thao tác của Biên tập viên: DuplicateReviewService.
  *
  * Các bước của 1 lần quét (runCheck):
- *   1. LẬP CHỈ MỤC: cắt chữ của hồ sơ thành đoạn (tiêu đề, nội dung), tạo vector (TextEmbeddingService), lưu bảng
- *      submission_embeddings. Hồ sơ cũ trong cửa sổ windowDays ngày chưa có chỉ mục (hoặc tạo bằng model khác) cũng
- *      được lập luôn, nên không cần sửa luồng gửi hồ sơ. Chỉ so chữ: ảnh, audio, video không xét (nhóm quyết định 2026-11-03).
- *   2. TRUY XUẤT (Retrieval): so vector từng đoạn nội dung với các hồ sơ trong cửa sổ, cộng thêm tín hiệu tiêu đề,
- *      cùng tỉnh/thành, thời gian xảy ra -> chọn tối đa topK hồ sơ giống nhất.
- *   3. SINH KẾT LUẬN (Augmented Generation): gửi hồ sơ mới + các hồ sơ vừa truy xuất cho model chat
- *      (DuplicateJudgeService) chấm % trùng, nêu lý do và các cụm từ giống nhau. Không gọi được AI thì dùng điểm ở bước 2.
- *   4. GHI KẾT QUẢ: 1 dòng submission_events (actor SYSTEM, description bắt đầu CHECK_MARKER, note = JSON StoredResult);
- *      tóm tắt AI (nếu có) ghi vào submissions.ai_summary.
+ *   1. ĐỌC DỮ LIỆU (transaction ngắn, chỉ đọc): hồ sơ đang xét, các hồ sơ trong cửa sổ windowDays ngày, các đoạn chữ
+ *      của từng hồ sơ (tiêu đề, nội dung) và vector đã lưu ở bảng submission_embeddings.
+ *   2. TẠO VECTOR CÒN THIẾU (ngoài transaction): hồ sơ chưa có vector, vector cũ của nội dung đã sửa, hoặc vector tạo
+ *      bằng model khác thì tạo lại, GOM CHUNG nhiều hồ sơ vào ít lần gọi AI (TextEmbeddingService chia lô).
+ *      Cả lần quét luôn dùng MỘT model: AI lỗi thì cả lần quét chuyển sang vector dự phòng, vì vector khác model
+ *      không so được với nhau. Chỉ so chữ: ảnh, audio, video không xét (nhóm quyết định 2026-11-03).
+ *   3. LƯU VECTOR MỚI (transaction ngắn). Mỗi hồ sơ giữ vector của từng model riêng, nên khi AI lỗi rồi chạy lại
+ *      không phải tạo lại toàn bộ.
+ *   4. TRUY XUẤT (Retrieval): so vector từng đoạn nội dung, cộng thêm tín hiệu tiêu đề, cùng tỉnh/thành, thời gian
+ *      xảy ra -> chọn tối đa topK hồ sơ giống nhất.
+ *   5. SINH KẾT LUẬN (Augmented Generation): gửi hồ sơ mới + các hồ sơ vừa truy xuất cho model chat
+ *      (DuplicateJudgeService) chấm % trùng, nêu lý do và các cụm từ giống nhau. Không gọi được AI thì dùng điểm ở bước 4.
+ *   6. GHI KẾT QUẢ: 1 dòng submission_events (actor SYSTEM, description bắt đầu CHECK_MARKER, note = JSON StoredResult,
+ *      kèm "dấu vân tay" nội dung lúc quét); tóm tắt AI (nếu có) ghi vào submissions.ai_summary.
  *      Không thêm cột / bảng nào khác (quyết định của nhóm 2026-11-03). Dòng mới nhất là kết quả hiện tại.
+ *
+ * TẠI SAO gọi AI ngoài transaction? Lần quét đầu có thể phải tạo vector cho vài trăm hồ sơ; giữ transaction mở suốt
+ * thời gian chờ mạng sẽ giữ kết nối DB và khoá các dòng đang ghi rất lâu.
  *
  * Các dòng nhật ký có mã "[DUPLICATE_" là dữ liệu NỘI BỘ: SubmissionTrackingService bỏ chúng khỏi nhật ký người gửi xem.
  * Quét chạy trên luồng riêng (requestCheck), màn hình hiện "đang quét" cho tới khi có kết quả. Chỉ 1 luồng quét:
  * 2 lần quét chạy song song sẽ cùng lập chỉ mục cho các hồ sơ cũ chung cửa sổ, gây deadlock / trùng dòng trong DB.
+ * Quét lỗi thì nghỉ FAILURE_COOLDOWN mới cho quét lại hồ sơ đó, để màn hình tự tải lại không kích hoạt quét liên tục.
  */
 @Slf4j
 @Service
@@ -65,6 +75,8 @@ public class DuplicateDetectionService {
     static final int MAX_CONTENT_CHUNKS = 12;
     /** Số hồ sơ tối đa đem ra so trong 1 lần quét (mới nhất trước). */
     static final int MAX_POOL = 300;
+    /** Quét lỗi thì chờ từng này mới quét lại cùng hồ sơ. */
+    static final Duration FAILURE_COOLDOWN = Duration.ofMinutes(2);
 
     private final SubmissionRepository submissionRepository;
     private final SubmissionEmbeddingRepository embeddingRepository;
@@ -73,6 +85,7 @@ public class DuplicateDetectionService {
     private final DuplicateJudgeService judgeService;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transactions;
+    private final TransactionTemplate readOnlyTransactions;
 
     private final int threshold;
     private final int windowDays;
@@ -80,6 +93,8 @@ public class DuplicateDetectionService {
 
     /** Hồ sơ đang quét (id), để không chạy 2 lần quét cùng lúc cho 1 hồ sơ. */
     private final Set<Long> running = ConcurrentHashMap.newKeySet();
+    /** Lần quét lỗi gần nhất của từng hồ sơ (id -> thời điểm), xem FAILURE_COOLDOWN. */
+    private final Map<Long, Instant> failedAt = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newSingleThreadExecutor(task -> {
         Thread thread = new Thread(task, "duplicate-check");
         thread.setDaemon(true);
@@ -103,6 +118,8 @@ public class DuplicateDetectionService {
         this.judgeService = judgeService;
         this.objectMapper = objectMapper;
         this.transactions = new TransactionTemplate(transactionManager);
+        this.readOnlyTransactions = new TransactionTemplate(transactionManager);
+        this.readOnlyTransactions.setReadOnly(true);
         this.threshold = threshold;
         this.windowDays = windowDays;
         this.topK = topK;
@@ -117,9 +134,11 @@ public class DuplicateDetectionService {
      * @param textModel        model tạo vector đoạn chữ
      * @param judgeModel       "ai" khi model chat đã kết luận, "heuristic" khi dùng điểm truy xuất
      * @param summary          tóm tắt ngắn của model chat (null khi không có AI)
+     * @param fingerprint      dấu vân tay nội dung hồ sơ lúc quét (xem fingerprint); khác hiện tại = kết quả đã cũ
      */
     @JsonIgnoreProperties(ignoreUnknown = true) // kết quả cũ còn spamScore / credibilityScore (đã bỏ 2026-11-03)
-    public record StoredResult(String textModel, String judgeModel, String summary, int threshold, int windowDays, List<StoredCandidate> candidates) {
+    public record StoredResult(String textModel, String judgeModel, String summary, int threshold, int windowDays,
+                               String fingerprint, List<StoredCandidate> candidates) {
     }
 
     /**
@@ -137,6 +156,14 @@ public class DuplicateDetectionService {
         return event.getDescription() != null && event.getDescription().startsWith(INTERNAL_PREFIX);
     }
 
+    /**
+     * Dấu vân tay của phần chữ đem so (tiêu đề + các đoạn nội dung). Người gửi bổ sung hay Biên tập viên sửa nội dung
+     * đều làm đổi dấu vân tay, nên DuplicateReviewService biết kết quả cũ đã lỗi thời mà không cần dò nhật ký.
+     */
+    public static String fingerprint(Submission submission) {
+        return Integer.toHexString(String.join("\n", textsOf(submission)).hashCode());
+    }
+
     public int getThreshold() {
         return threshold;
     }
@@ -149,15 +176,23 @@ public class DuplicateDetectionService {
         return running.contains(submissionId);
     }
 
-    /** Xếp lịch quét trên luồng nền; đang quét rồi thì bỏ qua. */
+    /** Lần quét gần nhất của hồ sơ bị lỗi và chưa hết thời gian chờ. */
+    public boolean failedRecently(Long submissionId) {
+        Instant at = failedAt.get(submissionId);
+        return at != null && Instant.now().isBefore(at.plus(FAILURE_COOLDOWN));
+    }
+
+    /** Xếp lịch quét trên luồng nền; đang quét, hoặc vừa quét lỗi, thì bỏ qua. */
     public void requestCheck(Long submissionId) {
-        if (!running.add(submissionId)) {
+        if (failedRecently(submissionId) || !running.add(submissionId)) {
             return;
         }
         executor.submit(() -> {
             try {
                 runCheck(submissionId);
+                failedAt.remove(submissionId);
             } catch (RuntimeException ex) {
+                failedAt.put(submissionId, Instant.now());
                 log.error("Kiểm tra tin trùng cho hồ sơ id={} bị lỗi", submissionId, ex);
             } finally {
                 running.remove(submissionId);
@@ -172,12 +207,17 @@ public class DuplicateDetectionService {
 
     /** Quét ngay trên luồng hiện tại (luồng nền gọi; test gọi trực tiếp). */
     public StoredResult runCheck(Long submissionId) {
-        Analysis analysis = transactions.execute(status -> analyse(submissionId));
-        if (analysis == null) {
+        Snapshot snapshot = readOnlyTransactions.execute(status -> snapshot(submissionId));
+        if (snapshot == null) {
             return null;
         }
+        Indexed indexed = vectorsFor(snapshot);
+        if (!indexed.fresh().isEmpty()) {
+            transactions.executeWithoutResult(status -> saveVectors(indexed));
+        }
+        Analysis analysis = analyse(snapshot, indexed);
         DuplicateJudgeService.Judgement judgement = judgeService.judge(analysis.self(), analysis.candidates());
-        StoredResult result = buildResult(analysis, judgement);
+        StoredResult result = buildResult(analysis, judgement, snapshot.self().fingerprint());
         String note = objectMapper.writeValueAsString(result);
         transactions.executeWithoutResult(status -> {
             Submission submission = submissionRepository.findById(submissionId).orElse(null);
@@ -204,11 +244,7 @@ public class DuplicateDetectionService {
         return result;
     }
 
-    // ============================ BƯỚC 1 + 2: LẬP CHỈ MỤC, TRUY XUẤT ============================
-
-    /** Hồ sơ đang xét và các hồ sơ truy xuất được (đã chấm điểm, giống nhất trước). */
-    record Analysis(Doc self, List<Scored> candidates, String textModel) {
-    }
+    // ============================ BƯỚC 1: ĐỌC DỮ LIỆU ============================
 
     /** Ảnh chụp dữ liệu 1 hồ sơ đủ dùng ngoài transaction (gửi cho model chat). */
     record Doc(Long id, String trackingCode, String title, String summary, String content, String province,
@@ -223,99 +259,65 @@ public class DuplicateDetectionService {
         }
     }
 
-    /** 1 hồ sơ truy xuất được và các tín hiệu so với hồ sơ đang xét. */
-    record Scored(Doc doc, int contentSimilarity, int titleSimilarity, boolean sameProvince, long minutesApart,
-                  int score, List<String> matchedPhrases) {
+    /** 1 vector đã lưu ở submission_embeddings (dạng thô, đọc ra ngoài transaction). */
+    record StoredVector(ChunkType chunkType, int chunkIndex, String text, String json) {
     }
 
-    private Analysis analyse(Long submissionId) {
+    /**
+     * 1 hồ sơ đem so: dữ liệu để chấm điểm, các đoạn chữ hiện tại (đoạn 0 = tiêu đề), vector đã lưu theo từng model.
+     */
+    record Entry(Doc doc, List<String> texts, String fingerprint, Map<String, List<StoredVector>> stored) {
+    }
+
+    /** Hồ sơ đang xét và các hồ sơ trong cửa sổ so sánh. */
+    record Snapshot(Entry self, List<Entry> pool) {
+
+        List<Entry> all() {
+            List<Entry> all = new ArrayList<>(pool.size() + 1);
+            all.add(self);
+            all.addAll(pool);
+            return all;
+        }
+    }
+
+    private Snapshot snapshot(Long submissionId) {
         Submission self = submissionRepository.findById(submissionId).orElse(null);
         if (self == null) {
             return null;
         }
-        List<SubmissionEmbedding> selfRows = index(self, textEmbeddingService.currentModel());
-        String model = selfRows.stream()
-                .map(SubmissionEmbedding::getModel)
-                .findFirst()
-                .orElse(textEmbeddingService.currentModel());
-
         LocalDateTime base = self.getCreatedAt() == null ? LocalDateTime.now() : self.getCreatedAt();
         List<Submission> pool = submissionRepository.findDuplicateCheckPool(
                 self.getId(), base.minusDays(windowDays), PageRequest.of(0, MAX_POOL));
-        if (pool.isEmpty()) {
-            return new Analysis(docOf(self), List.of(), model);
+
+        List<Long> ids = new ArrayList<>(pool.size() + 1);
+        ids.add(self.getId());
+        pool.forEach(other -> ids.add(other.getId()));
+        // Vector đã lưu của cả cửa sổ trong 1 câu SQL, chia theo hồ sơ rồi theo model
+        Map<Long, Map<String, List<StoredVector>>> stored = new HashMap<>();
+        for (SubmissionEmbedding row : embeddingRepository.findBySubmissionIds(ids)) {
+            stored.computeIfAbsent(row.getSubmission().getId(), id -> new HashMap<>())
+                    .computeIfAbsent(row.getModel(), model -> new ArrayList<>())
+                    .add(new StoredVector(row.getChunkType(), row.getChunkIndex(), row.getChunkText(), row.getEmbedding()));
         }
 
-        // Hồ sơ chưa có chỉ mục bằng model hiện tại thì lập luôn (dữ liệu cũ, hoặc vừa đổi model)
-        List<Long> poolIds = pool.stream().map(Submission::getId).toList();
-        Set<Long> indexed = new HashSet<>(embeddingRepository.findIndexedSubmissionIds(poolIds, model));
+        List<Entry> entries = new ArrayList<>(pool.size());
         for (Submission other : pool) {
-            if (!indexed.contains(other.getId())) {
-                index(other, model);
-            }
+            entries.add(entryOf(other, stored));
         }
-
-        Map<Long, List<SubmissionEmbedding>> rowsBySubmission = new HashMap<>();
-        for (SubmissionEmbedding row : embeddingRepository.findBySubmissionIds(poolIds)) {
-            rowsBySubmission.computeIfAbsent(row.getSubmission().getId(), id -> new ArrayList<>()).add(row);
-        }
-
-        Doc selfDoc = docOf(self);
-        Chunks selfChunks = Chunks.of(selfRows, model, objectMapper);
-        List<Scored> scored = new ArrayList<>();
-        for (Submission other : pool) {
-            Chunks otherChunks = Chunks.of(rowsBySubmission.getOrDefault(other.getId(), List.of()), model, objectMapper);
-            scored.add(score(selfDoc, selfChunks, docOf(other), otherChunks, model));
-        }
-        // Chỉ đưa cho model chat những hồ sơ có điểm truy xuất đủ gần ngưỡng (AI có thể chấm cao hơn)
-        int floor = Math.max(0, threshold - 20);
-        List<Scored> top = scored.stream()
-                .filter(item -> item.score() >= floor)
-                .sorted(Comparator.comparingInt(Scored::score).reversed())
-                .limit(topK)
-                .toList();
-        return new Analysis(selfDoc, top, model);
+        return new Snapshot(entryOf(self, stored), entries);
     }
 
-    /**
-     * Lập (hoặc lập lại) chỉ mục của 1 hồ sơ. Đã có chỉ mục đúng model và đúng nội dung thì giữ nguyên.
-     *
-     * @return các dòng submission_embeddings của hồ sơ sau khi lập
-     */
-    List<SubmissionEmbedding> index(Submission submission, String model) {
+    private static Entry entryOf(Submission submission, Map<Long, Map<String, List<StoredVector>>> stored) {
+        return new Entry(docOf(submission), textsOf(submission), fingerprint(submission),
+                stored.getOrDefault(submission.getId(), Map.of()));
+    }
+
+    /** Các đoạn chữ đem so của 1 hồ sơ: đoạn 0 là tiêu đề, sau đó là các đoạn nội dung. */
+    static List<String> textsOf(Submission submission) {
         List<String> texts = new ArrayList<>();
         texts.add(submission.getTitle() == null ? "" : submission.getTitle());
         texts.addAll(contentChunks(submission));
-
-        List<SubmissionEmbedding> existing = embeddingRepository.findBySubmissionOrderByChunkTypeAscChunkIndexAsc(submission);
-        if (upToDate(existing, texts, model)) {
-            return existing;
-        }
-        embeddingRepository.deleteBySubmission(submission);
-        embeddingRepository.flush();
-
-        TextEmbeddingService.Embeddings embeddings = textEmbeddingService.embed(texts);
-        List<SubmissionEmbedding> rows = new ArrayList<>();
-        for (int i = 0; i < texts.size(); i++) {
-            rows.add(SubmissionEmbedding.builder()
-                    .submission(submission)
-                    .chunkType(i == 0 ? ChunkType.TITLE : ChunkType.CONTENT)
-                    .chunkIndex(i == 0 ? 0 : i - 1)
-                    .chunkText(texts.get(i))
-                    .embedding(objectMapper.writeValueAsString(embeddings.vectors().get(i)))
-                    .model(embeddings.model())
-                    .build());
-        }
-        return embeddingRepository.saveAll(rows);
-    }
-
-    private static boolean upToDate(List<SubmissionEmbedding> existing, List<String> texts, String model) {
-        List<String> storedTexts = existing.stream()
-                .filter(row -> model.equals(row.getModel()))
-                .map(SubmissionEmbedding::getChunkText)
-                .toList();
-        // TITLE xếp trước CONTENT (thứ tự enum) nên danh sách đoạn chữ so được theo thứ tự
-        return existing.size() == storedTexts.size() && storedTexts.equals(texts);
+        return texts;
     }
 
     /** Tóm tắt + nội dung, cắt theo câu thành các đoạn ≤ CHUNK_MAX_CHARS ký tự, tối đa MAX_CONTENT_CHUNKS đoạn. */
@@ -345,24 +347,155 @@ public class DuplicateDetectionService {
         return chunks.size() > MAX_CONTENT_CHUNKS ? chunks.subList(0, MAX_CONTENT_CHUNKS) : chunks;
     }
 
-    /** Các đoạn đã lưu của 1 hồ sơ, tách theo loại; vector đọc từ JSON. */
+    // ============================ BƯỚC 2 + 3: TẠO VÀ LƯU VECTOR ============================
+
+    /**
+     * Vector của mọi hồ sơ trong lần quét, cùng 1 model.
+     *
+     * @param vectors vector theo id hồ sơ, cùng thứ tự với Entry.texts
+     * @param fresh   các hồ sơ vừa tạo vector mới, cần lưu
+     */
+    record Indexed(String model, Map<Long, List<float[]>> vectors, List<Entry> fresh) {
+    }
+
+    /** Dùng lại vector đã lưu nếu còn đúng; phần còn thiếu tạo trong 1 lần gọi (TextEmbeddingService tự chia lô). */
+    private Indexed vectorsFor(Snapshot snapshot) {
+        List<Entry> entries = snapshot.all();
+        String model = textEmbeddingService.currentModel();
+        Map<Long, List<float[]>> vectors = new HashMap<>();
+        List<Entry> missing = collectCached(entries, model, vectors);
+
+        if (!missing.isEmpty() && !TextEmbeddingService.LOCAL_MODEL.equals(model)) {
+            List<String> texts = missing.stream().flatMap(entry -> entry.texts().stream()).toList();
+            TextEmbeddingService.Embeddings embeddings = textEmbeddingService.embed(texts);
+            if (model.equals(embeddings.model())) {
+                splitInto(missing, embeddings.vectors(), vectors);
+                return new Indexed(model, vectors, missing);
+            }
+            // AI lỗi: cả lần quét dùng vector dự phòng để mọi hồ sơ được so cùng 1 loại vector
+            log.warn("Không tạo được vector bằng {}, lần quét này dùng {}.", model, TextEmbeddingService.LOCAL_MODEL);
+            model = TextEmbeddingService.LOCAL_MODEL;
+            vectors.clear();
+            missing = collectCached(entries, model, vectors);
+        }
+        // Vector dự phòng tính ngay trong Java, không gọi mạng
+        for (Entry entry : missing) {
+            vectors.put(entry.doc().id(), entry.texts().stream().map(TextEmbeddingService::localEmbedding).toList());
+        }
+        return new Indexed(model, vectors, missing);
+    }
+
+    /** Đưa vector đã lưu còn đúng vào `vectors`; trả về các hồ sơ phải tạo lại. */
+    private List<Entry> collectCached(List<Entry> entries, String model, Map<Long, List<float[]>> vectors) {
+        List<Entry> missing = new ArrayList<>();
+        for (Entry entry : entries) {
+            List<float[]> cached = cachedVectors(entry, model);
+            if (cached == null) {
+                missing.add(entry);
+            } else {
+                vectors.put(entry.doc().id(), cached);
+            }
+        }
+        return missing;
+    }
+
+    /**
+     * Vector đã lưu của 1 hồ sơ theo model, chỉ khi các đoạn chữ lúc tạo vector giống hệt các đoạn hiện tại.
+     * Không có, đã cũ, hoặc đọc không được thì trả về null (tạo lại).
+     */
+    private List<float[]> cachedVectors(Entry entry, String model) {
+        List<StoredVector> rows = new ArrayList<>(entry.stored().getOrDefault(model, List.of()));
+        if (rows.size() != entry.texts().size()) {
+            return null;
+        }
+        // Tiêu đề trước, rồi các đoạn nội dung theo thứ tự, để so với Entry.texts
+        rows.sort(Comparator.comparing((StoredVector row) -> row.chunkType() == ChunkType.TITLE ? 0 : 1)
+                .thenComparingInt(StoredVector::chunkIndex));
+        List<float[]> result = new ArrayList<>(rows.size());
+        for (int i = 0; i < rows.size(); i++) {
+            StoredVector row = rows.get(i);
+            if (!entry.texts().get(i).equals(row.text()) || row.json() == null) {
+                return null;
+            }
+            try {
+                result.add(objectMapper.readValue(row.json(), float[].class));
+            } catch (RuntimeException ex) {
+                return null;
+            }
+        }
+        return result;
+    }
+
+    /** Chia danh sách vector phẳng trở lại cho từng hồ sơ, theo đúng thứ tự đã ghép. */
+    private static void splitInto(List<Entry> entries, List<float[]> flat, Map<Long, List<float[]>> vectors) {
+        int offset = 0;
+        for (Entry entry : entries) {
+            int size = entry.texts().size();
+            vectors.put(entry.doc().id(), List.copyOf(flat.subList(offset, offset + size)));
+            offset += size;
+        }
+    }
+
+    /** Thay vector cũ (cùng model) của các hồ sơ vừa tạo; vector của model khác giữ nguyên để lần sau dùng lại. */
+    private void saveVectors(Indexed indexed) {
+        List<SubmissionEmbedding> rows = new ArrayList<>();
+        for (Entry entry : indexed.fresh()) {
+            Long id = entry.doc().id();
+            embeddingRepository.deleteBySubmissionIdAndModel(id, indexed.model());
+            Submission submission = submissionRepository.getReferenceById(id);
+            List<float[]> vectors = indexed.vectors().get(id);
+            for (int i = 0; i < entry.texts().size(); i++) {
+                rows.add(SubmissionEmbedding.builder()
+                        .submission(submission)
+                        .chunkType(i == 0 ? ChunkType.TITLE : ChunkType.CONTENT)
+                        .chunkIndex(i == 0 ? 0 : i - 1)
+                        .chunkText(entry.texts().get(i))
+                        .embedding(objectMapper.writeValueAsString(vectors.get(i)))
+                        .model(indexed.model())
+                        .build());
+            }
+        }
+        embeddingRepository.saveAll(rows);
+    }
+
+    // ============================ BƯỚC 4: TRUY XUẤT ============================
+
+    /** Hồ sơ đang xét và các hồ sơ truy xuất được (đã chấm điểm, giống nhất trước). */
+    record Analysis(Doc self, List<Scored> candidates, String textModel) {
+    }
+
+    /** 1 hồ sơ truy xuất được và các tín hiệu so với hồ sơ đang xét. */
+    record Scored(Doc doc, int contentSimilarity, int titleSimilarity, boolean sameProvince, long minutesApart,
+                  int score, List<String> matchedPhrases) {
+    }
+
+    /** Vector của 1 hồ sơ, tách tiêu đề và nội dung. */
     record Chunks(float[] title, List<float[]> contents) {
 
-        static Chunks of(List<SubmissionEmbedding> rows, String model, ObjectMapper mapper) {
-            float[] title = null;
-            List<float[]> contents = new ArrayList<>();
-            for (SubmissionEmbedding row : rows) {
-                if (model.equals(row.getModel()) && row.getEmbedding() != null) {
-                    float[] vector = mapper.readValue(row.getEmbedding(), float[].class);
-                    if (row.getChunkType() == ChunkType.TITLE) {
-                        title = vector;
-                    } else {
-                        contents.add(vector);
-                    }
-                }
+        static Chunks of(List<float[]> vectors) {
+            if (vectors == null || vectors.isEmpty()) {
+                return new Chunks(null, List.of());
             }
-            return new Chunks(title, contents);
+            return new Chunks(vectors.get(0), vectors.subList(1, vectors.size()));
         }
+    }
+
+    private Analysis analyse(Snapshot snapshot, Indexed indexed) {
+        Doc selfDoc = snapshot.self().doc();
+        Chunks selfChunks = Chunks.of(indexed.vectors().get(selfDoc.id()));
+        List<Scored> scored = new ArrayList<>();
+        for (Entry other : snapshot.pool()) {
+            scored.add(score(selfDoc, selfChunks, other.doc(), Chunks.of(indexed.vectors().get(other.doc().id())),
+                    indexed.model()));
+        }
+        // Chỉ đưa cho model chat những hồ sơ có điểm truy xuất đủ gần ngưỡng (AI có thể chấm cao hơn)
+        int floor = Math.max(0, threshold - 20);
+        List<Scored> top = scored.stream()
+                .filter(item -> item.score() >= floor)
+                .sorted(Comparator.comparingInt(Scored::score).reversed())
+                .limit(topK)
+                .toList();
+        return new Analysis(selfDoc, top, indexed.model());
     }
 
     Scored score(Doc self, Chunks selfChunks, Doc other, Chunks otherChunks, String model) {
@@ -475,9 +608,9 @@ public class DuplicateDetectionService {
         return text == null ? "" : text.toLowerCase(Locale.ROOT);
     }
 
-    // ============================ BƯỚC 4: GHÉP KẾT QUẢ ============================
+    // ============================ BƯỚC 6: GHÉP KẾT QUẢ ============================
 
-    private StoredResult buildResult(Analysis analysis, DuplicateJudgeService.Judgement judgement) {
+    private StoredResult buildResult(Analysis analysis, DuplicateJudgeService.Judgement judgement, String fingerprint) {
         List<StoredCandidate> candidates = new ArrayList<>();
         for (Scored item : analysis.candidates()) {
             DuplicateJudgeService.Verdict verdict = judgement == null ? null : judgement.verdicts().get(item.doc().trackingCode());
@@ -496,7 +629,7 @@ public class DuplicateDetectionService {
 
         return new StoredResult(analysis.textModel(), judgement == null ? "heuristic" : "ai",
                 judgement == null ? null : judgement.summary(),
-                threshold, windowDays, candidates);
+                threshold, windowDays, fingerprint, candidates);
     }
 
     /** Lý do khi không có model chat: liệt kê các tín hiệu khớp. */

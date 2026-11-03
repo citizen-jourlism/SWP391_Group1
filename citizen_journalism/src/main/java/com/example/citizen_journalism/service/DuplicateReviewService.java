@@ -43,7 +43,9 @@ import tools.jackson.databind.ObjectMapper;
  *   - Kết luận: dòng submission_events actor EDITOR, description "[DUPLICATE_REVIEW] DUPLICATE <mã hồ sơ bị trùng>"
  *     hoặc "[DUPLICATE_REVIEW] DISTINCT", note = ghi chú nội bộ. Các dòng này không hiện trong nhật ký người gửi.
  *
- * Quét lại tự động khi mở màn hình mà chưa có kết quả, hoặc người gửi đã bổ sung thông tin sau lần quét gần nhất.
+ * Quét lại tự động khi mở màn hình mà chưa có kết quả, hoặc nội dung hồ sơ đã đổi sau lần quét gần nhất (người gửi
+ * bổ sung, Biên tập viên sửa): so "dấu vân tay" nội dung lưu cùng kết quả với nội dung hiện tại.
+ * Lần quét gần nhất bị lỗi thì báo FAILED và chờ một lúc mới quét lại (DuplicateDetectionService.FAILURE_COOLDOWN).
  */
 @Slf4j
 @Service
@@ -69,8 +71,8 @@ public class DuplicateReviewService {
         Submission submission = findSubmission(trackingCode);
         List<SubmissionEvent> events = eventRepository.findBySubmissionOrderByCreatedAtAscIdAsc(submission);
         SubmissionEvent check = latestCheck(events);
-        if (needsCheck(events, check) && !detectionService.isRunning(submission.getId())) {
-            detectionService.requestCheck(submission.getId());
+        if (needsCheck(submission, check == null ? null : readResult(check))) {
+            detectionService.requestCheck(submission.getId()); // Đang quét hoặc vừa quét lỗi thì tự bỏ qua
         }
         return toResponse(submission, events);
     }
@@ -142,31 +144,29 @@ public class DuplicateReviewService {
         return null;
     }
 
-    /** Cần quét khi chưa có kết quả, hoặc người gửi bổ sung thông tin sau lần quét gần nhất. */
-    static boolean needsCheck(List<SubmissionEvent> events, SubmissionEvent check) {
-        if (check == null) {
-            return true;
-        }
-        int checkIndex = events.indexOf(check);
-        return events.subList(checkIndex + 1, events.size()).stream()
-                .anyMatch(event -> event.getActor() == SubmissionEvent.Actor.REPORTER);
+    /** Cần quét khi chưa có kết quả (hoặc kết quả đọc không được), hoặc nội dung hồ sơ đã đổi từ lần quét đó. */
+    static boolean needsCheck(Submission submission, StoredResult result) {
+        return result == null || !DuplicateDetectionService.fingerprint(submission).equals(result.fingerprint());
     }
 
     private DuplicateCheckResponse toResponse(Submission submission, List<SubmissionEvent> events) {
         SubmissionEvent check = latestCheck(events);
         StoredResult result = check == null ? null : readResult(check);
-        boolean processing = result == null || needsCheck(events, check) || detectionService.isRunning(submission.getId());
+        boolean stale = needsCheck(submission, result);
+        boolean failed = stale && !detectionService.isRunning(submission.getId())
+                && detectionService.failedRecently(submission.getId());
+        boolean processing = !failed && (stale || detectionService.isRunning(submission.getId()));
 
         String summary = submission.getAiSummary() != null ? submission.getAiSummary()
                 : result == null ? null : result.summary();
         DuplicateCheckResponse.Screening screening = new DuplicateCheckResponse.Screening(
-                processing ? "PROCESSING" : "DONE",
+                failed ? "FAILED" : processing ? "PROCESSING" : "DONE",
                 summary,
                 result == null ? detectionService.getThreshold() : result.threshold(),
                 result == null ? detectionService.getWindowDays() : result.windowDays(),
                 check == null ? null : check.getCreatedAt());
 
-        List<DuplicateCheckResponse.Candidate> candidates = processing || result == null
+        List<DuplicateCheckResponse.Candidate> candidates = processing || failed || result == null
                 ? List.of()
                 : candidatesOf(submission, result);
         return new DuplicateCheckResponse(trackingService.getForStaff(submission.getTrackingCode()), screening,

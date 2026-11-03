@@ -39,6 +39,9 @@ public class TextEmbeddingService {
 
     private static final Duration RETRY_AFTER = Duration.ofMinutes(10);
 
+    /** Số đoạn chữ tối đa trong 1 lần gọi AI (giới hạn của API tạo vector theo lô). */
+    static final int MAX_BATCH = 100;
+
     /** Số chiều vector của model AI (gemini-embedding-001 cho phép rút gọn, 768 là đủ cho so khớp). */
     static final int REMOTE_DIMENSIONS = 768;
 
@@ -59,6 +62,10 @@ public class TextEmbeddingService {
     public record Embeddings(String model, List<float[]> vectors) {
     }
 
+    /**
+     * Tạo vector cho mọi đoạn, gọi AI theo lô MAX_BATCH đoạn. Tất cả cùng 1 model: chỉ cần 1 lô lỗi là cả danh sách
+     * dùng vector dự phòng, vì vector khác model không so được với nhau.
+     */
     public Embeddings embed(List<String> texts) {
         if (texts.isEmpty()) {
             return new Embeddings(currentModel(), List.of());
@@ -66,11 +73,16 @@ public class TextEmbeddingService {
         Client client = remoteClient();
         if (client != null) {
             try {
-                List<float[]> vectors = remoteEmbed(client, texts);
-                if (vectors.size() == texts.size()) {
-                    return new Embeddings(remoteLabel(), vectors);
+                List<float[]> vectors = new ArrayList<>(texts.size());
+                for (int from = 0; from < texts.size(); from += MAX_BATCH) {
+                    List<String> batch = texts.subList(from, Math.min(from + MAX_BATCH, texts.size()));
+                    List<float[]> batchVectors = remoteEmbed(client, batch);
+                    if (batchVectors.size() != batch.size()) {
+                        throw new IllegalStateException("model trả về " + batchVectors.size() + " vector cho " + batch.size() + " đoạn");
+                    }
+                    vectors.addAll(batchVectors);
                 }
-                log.warn("Model embedding trả về {} vector cho {} đoạn, dùng vector dự phòng.", vectors.size(), texts.size());
+                return new Embeddings(remoteLabel(), vectors);
             } catch (RuntimeException ex) {
                 log.warn("Không gọi được model embedding ({}), dùng vector dự phòng trong {} phút.",
                         ex.getMessage(), RETRY_AFTER.toMinutes());

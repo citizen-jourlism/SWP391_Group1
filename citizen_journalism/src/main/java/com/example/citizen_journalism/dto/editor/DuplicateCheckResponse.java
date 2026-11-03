@@ -23,7 +23,7 @@ public record DuplicateCheckResponse(
         Review review) {
 
     /**
-     * @param status           PROCESSING (đang quét, chưa có kết quả) | DONE
+     * @param status           PROCESSING (đang quét, chưa có kết quả) | DONE | FAILED (lần quét gần nhất bị lỗi, chờ một lúc rồi tự thử lại)
      * @param aiSummary        tóm tắt nội dung (cột submissions.ai_summary, nếu trống thì tóm tắt của lần quét)
      * @param threshold        % tương đồng tối thiểu để gợi ý
      * @param windowDays       chỉ so với hồ sơ gửi trong số ngày này

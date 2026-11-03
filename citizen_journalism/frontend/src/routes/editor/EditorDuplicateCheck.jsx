@@ -87,6 +87,7 @@ function EditorDuplicateCheck() {
   const status = SUBMISSION_STATUS[submission.status]
   const category = CATEGORY_BY_VALUE[submission.category]
   const scanning = screening.status === 'PROCESSING'
+  const failed = screening.status === 'FAILED' // Lần quét gần nhất lỗi: không có kết quả để tin
   // Mặc định so sánh với hồ sơ giống nhất (đầu danh sách)
   const selected = candidates.find((item) => item.trackingCode === selectedCode) ?? candidates[0]
 
@@ -154,7 +155,18 @@ function EditorDuplicateCheck() {
       </section>
 
       {/* ===== Kết quả quét AI ===== */}
-      {!scanning && (
+      {failed && (
+        <Alert type="error" title="Chưa quét được">
+          Hệ thống chưa so sánh được hồ sơ này (máy chủ AI hoặc dữ liệu gặp lỗi) và sẽ tự thử lại sau ít phút.
+          <div className="alert__actions">
+            <Button variant="secondary" className="btn--sm" onClick={reload}>
+              Thử lại
+            </Button>
+          </div>
+        </Alert>
+      )}
+
+      {!scanning && !failed && (
         <div className="admin-grid admin-grid--stats">
           <StatCard
             icon="copy"
@@ -217,7 +229,7 @@ function EditorDuplicateCheck() {
       )}
 
       {/* ===== Không có hồ sơ tương tự ===== */}
-      {!scanning && !review && candidates.length === 0 && (
+      {!scanning && !failed && !review && candidates.length === 0 && (
         <section className="admin-panel">
           <div className="dup-result">
             <ResultView compact
