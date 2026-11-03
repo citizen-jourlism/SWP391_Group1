@@ -16,9 +16,9 @@ const NAV_GROUPS = [
     label: 'Chờ tôi duyệt',
     items: [
       { to: '/leadership', end: true, icon: 'fileText', label: 'Hồ sơ phản ánh', title: 'Hồ sơ phản ánh chờ duyệt' },
-      { to: '/leadership/appeals', icon: 'user', label: 'Khi?u n?i m? kh?a', title: 'X?t duy?t m? kh?a t?i kho?n', roles: ['DEPUTY_EIC'] },
-      { to: '/leadership/violations', icon: 'shield', label: 'B?o c?o vi ph?m', title: 'Ph? duy?t x? l? vi ph?m', roles: ['DEPUTY_EIC'] },
-      { to: '/leadership/applications', icon: 'award', label: '??n C?ng t?c vi?n', title: 'Ph? duy?t n?ng c?p CTV', roles: ['DEPUTY_EIC'] },
+      { to: '/leadership/appeals', icon: 'user', label: 'Khiếu nại mở khóa', title: 'Xét duyệt mở khóa tài khoản', roles: ['DEPUTY_EIC'] },
+      { to: '/leadership/violations', icon: 'shield', label: 'Báo cáo vi phạm', title: 'Phê duyệt xử lý vi phạm', roles: ['DEPUTY_EIC'] },
+      { to: '/leadership/applications', icon: 'award', label: 'Đơn Cộng tác viên', title: 'Phê duyệt nâng cấp CTV', roles: ['DEPUTY_EIC'] },
       { to: '/leadership/research', icon: 'edit', label: 'Bài nghiên cứu', title: 'Bài nghiên cứu chờ duyệt' },
     ],
   },
