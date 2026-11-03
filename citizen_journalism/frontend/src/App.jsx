@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 import EditorLayout from './components/editor/EditorLayout.jsx'
@@ -52,7 +53,15 @@ import LeadershipLayout from './components/leadership/LeadershipLayout.jsx'
 import LeadershipQueue from './routes/leadership/LeadershipQueue.jsx'
 import LeadershipResearchDetail from './routes/leadership/LeadershipResearchDetail.jsx'
 import LeadershipSubmissionDetail from './routes/leadership/LeadershipSubmissionDetail.jsx'
-
+// Chức năng xét duyệt đơn cộng tác viên dành riêng cho Phó Tổng biên tập.
+import DeputyContributorApplications from './routes/leadership/DeputyContributorApplications.jsx'
+import DeputyContributorApplicationDetail from './routes/leadership/DeputyContributorApplicationDetail.jsx'
+// Màn hình quản lý Cộng tác viên.
+import DeputyContributorManagement from './routes/leadership/DeputyContributorManagement.jsx'
+import ExpertReviewQueue from './components/profile/ExpertReviewQueue.jsx'
+// TungTT - Iteration 3 Task 4 & 5
+import NewsroomPerformanceDashboard from './routes/leadership/NewsroomPerformanceDashboard.jsx'
+import EditorialStaffDirectory from './routes/leadership/EditorialStaffDirectory.jsx'
 /**
  * Component gốc của ứng dụng: khai báo BẢN ĐỒ ĐƯỜNG DẪN (routing).
  * Mỗi <Route path="..."> ứng với một trang trong thư mục src/routes/.
@@ -258,6 +267,7 @@ function App() {
             <Route path="queue/research/:id" element={<EditorResearchDetail />} />     {/* Chi tiết 1 bài nghiên cứu */}
             <Route path="applications" element={<EditorApplications />} />              {/* Đơn đăng ký CTV */}
             <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
+            <Route path="expert-applications" element={<ExpertReviewQueue mode="editor" />}/>{/* TungTT Editor duyệt đơn Expert bước 1 */}
             <Route path="categories" element={<EditorCategories />} />
             <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
             {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
@@ -281,6 +291,22 @@ function App() {
             <Route path="research" element={<LeadershipQueue key="RESEARCH" kind="RESEARCH" />} />     {/* Bài nghiên cứu chờ duyệt */}
             <Route path="submissions/:code" element={<LeadershipSubmissionDetail />} />              {/* Chi tiết 1 hồ sơ */}
             <Route path="research/:id" element={<LeadershipResearchDetail />} />                      {/* Chi tiết 1 bài nghiên cứu */}
+            {/* TungTT: Danh sách đơn đăng ký Contributor chờ Phó TBT duyệt */}
+            <Route
+              path="contributor-applications"
+              element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorApplications /></ProtectedRoute>}/>
+              {/* TungTT: Quản lý Cộng tác viên */}
+            <Route path="contributor-management" element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorManagement /></ProtectedRoute>}/>
+            {/* TungTT: Chi tiết và xét duyệt đơn đăng ký Contributor */}
+            <Route path="contributor-applications/:id"element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorApplicationDetail /></ProtectedRoute>}/>
+            {/* TungTT  Phó Tổng Biên tập duyệt đơn Expert */}
+            <Route path="expert-applications" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ExpertReviewQueue mode="deputy" /></ProtectedRoute>}/>
+
+            {/* TungTT - Iteration 3 Task 4: Dashboard hiệu suất tòa soạn */}
+            <Route path="newsroom-performance" element={<NewsroomPerformanceDashboard />}/>
+
+            {/* TungTT - Iteration 3 Task 5: Danh bạ nhân sự biên tập */}
+            <Route path="editorial-staff" element={<EditorialStaffDirectory />}/>
           </Route>
 
           {/* "*" = mọi đường dẫn không khớp ở trên (gõ sai link...): về trang chính theo vai trò */}

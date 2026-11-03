@@ -36,22 +36,25 @@ const NAV_GROUPS = [
     label: 'Cộng đồng',
     items: [
       { to: '/editor/applications', icon: 'award', label: 'Đơn đăng ký CTV', title: 'Đơn đăng ký Cộng tác viên' },
+
+      // TungTT - Iteration 3 Task 3: Editor duyệt đơn Expert
+      { to: '/editor/expert-applications', icon: 'fileText', label: 'Duyệt đơn Chuyên gia', title: 'Xét duyệt đăng ký Expert' },
+
       { to: '/editor/members', icon: 'shield', label: 'Uy tín & vi phạm', title: 'Uy tín & vi phạm', soon: true },
     ],
   },
 
-{
-  label: 'Quản lý nội dung',
-  items: [
-    {
-      to: '/editor/categories',
-      icon: 'fileText',
-      label: 'Quản lý chuyên mục',
-      title: 'Quản lý chuyên mục',
-    },
-  ],
-},
-
+  {
+    label: 'Quản lý nội dung',
+    items: [
+      {
+        to: '/editor/categories',
+        icon: 'fileText',
+        label: 'Quản lý chuyên mục',
+        title: 'Quản lý chuyên mục',
+      },
+    ],
+  },
 ]
 
 /**

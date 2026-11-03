@@ -1,0 +1,477 @@
+
+/* TungTT - Iteration 3 - Tasks 4 & 5 */
+
+.dni-page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-bottom: 36px;
+  display: grid;
+  gap: 20px;
+  color: #0f172a;
+}
+
+.dni-hero {
+  background: linear-gradient(115deg, #172554, #1d4ed8 70%, #3b82f6);
+  color: white;
+  border-radius: 19px;
+  padding: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.dni-eyebrow {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 1.5px;
+  opacity: .85;
+}
+
+.dni-hero h1 {
+  margin: 10px 0;
+  font-size: 27px;
+  color: white;
+}
+
+.dni-hero p {
+  margin: 0;
+  font-size: 14px;
+  opacity: .9;
+  line-height: 1.7;
+}
+
+.dni-hero__symbol {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: 18px;
+  background: #ffffff24;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.dni-panel,
+.dni-metric {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+}
+
+.dni-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 22px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dni-toolbar h2,
+.dni-section-heading h2 {
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+
+.dni-toolbar p,
+.dni-section-heading p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.dni-toolbar__actions,
+.dni-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dni-button,
+.dni-tabs button {
+  padding: 10px 14px;
+  border: 1px solid #dbe2ea;
+  background: white;
+  color: #334155;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.dni-button:hover:not(:disabled),
+.dni-tabs button:hover:not(.dni-tab--active) {
+  background: #f1f5f9;
+}
+
+.dni-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.dni-tabs .dni-tab--active,
+.dni-button--primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+.dni-button--link {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.dni-metrics {
+  padding: 22px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.dni-metrics--staff {
+  padding: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dni-metric {
+  min-width: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.dni-metric__icon {
+  width: 43px;
+  height: 43px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+  font-weight: 750;
+}
+
+.dni-tone--blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.dni-tone--purple {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.dni-tone--cyan {
+  background: #cffafe;
+  color: #0e7490;
+}
+
+.dni-tone--green {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.dni-tone--red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.dni-metric > span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.dni-metric strong {
+  font-size: 27px;
+  color: #0f172a;
+}
+
+.dni-metric small {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.dni-analysis {
+  padding: 23px 26px;
+}
+
+.dni-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.dni-analysis__rate {
+  font-size: 28px;
+  color: #16a34a;
+}
+
+.dni-progress {
+  height: 15px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #fee2e2;
+}
+
+.dni-progress__approved {
+  display: block;
+  height: 100%;
+  border-radius: 20px;
+  background: #16a34a;
+}
+
+.dni-legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 17px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.dni-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 7px;
+}
+
+.dni-dot--green {
+  background: #16a34a;
+}
+
+.dni-dot--red {
+  background: #ef4444;
+}
+
+.dni-error {
+  padding: 13px 18px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.dni-empty,
+.dni-footnote {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.dni-empty {
+  text-align: center;
+  padding: 35px !important;
+}
+
+.dni-search {
+  display: flex;
+  gap: 10px;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dni-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.dni-search input:focus {
+  border-color: #2563eb;
+  outline: 2px solid #bfdbfe;
+}
+
+.dni-table-wrap {
+  overflow-x: auto;
+}
+
+.dni-table {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+}
+
+.dni-table th,
+.dni-table td {
+  padding: 15px 18px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.dni-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.dni-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.dni-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dni-person strong,
+.dni-person small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.dni-person small {
+  color: #64748b;
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+.dni-avatar {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.dni-status {
+  display: inline-block;
+  padding: 7px 11px;
+  border-radius: 25px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.dni-status--active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.dni-status--other {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.dni-detail-grid {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.dni-detail-grid > div {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.dni-detail-grid span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.dni-detail-grid strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.dni-footnote {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .dni-metrics--staff {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dni-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .dni-hero {
+    padding: 22px;
+  }
+
+  .dni-hero__symbol {
+    display: none;
+  }
+
+  .dni-hero h1 {
+    font-size: 23px;
+  }
+
+  .dni-metrics--staff,
+  .dni-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dni-search {
+    flex-wrap: wrap;
+  }
+
+  .dni-search input {
+    flex-basis: 100%;
+  }
+}
+
+.dni-assignments {
+  padding: 0 24px 24px;
+}
+
+.dni-assignments h3 {
+  font-size: 16px;
+  margin: 0 0 15px;
+}
+
+.dni-assignment {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+
+.dni-assignment div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.dni-assignment strong {
+  overflow-wrap: anywhere;
+}
+
+.dni-assignment small,
+.dni-assignment span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .dni-assignment {
+    flex-wrap: wrap;
+  }
+}

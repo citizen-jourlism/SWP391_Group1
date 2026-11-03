@@ -17,6 +17,7 @@ import { toPayload } from '../lib/payload'
 import { ROLE_LABELS } from '../lib/roles'
 import { CITIZEN_ID_LENGTH, createValidator, rules, todayIso } from '../lib/validators'
 import { userService } from '../services/userService'
+import UpgradeRoleSection from '../components/profile/UpgradeRoleSection'
 
 /*
  * TRANG HỒ SƠ CÁ NHÂN — đường dẫn /account/profile, BẮT BUỘC đăng nhập (bọc <ProtectedRoute> trong App.jsx).
@@ -153,11 +154,30 @@ function Profile() {
             </section>
 
             {/* Đăng ký / theo dõi đơn Cộng tác viên. profileKey đổi (vừa lưu CCCD, ngày sinh...) -> mục này tự kiểm tra lại điều kiện */}
-            {CONTRIBUTOR_SECTION_ROLES.includes(profile.role) && (
-              <ContributorSection
-                profileKey={[profile.citizenId, profile.dateOfBirth, profile.address, profile.reputationScore].join('|')}
-              />
-            )}
+            {/*  Chuyển giữa đăng ký CTV và Expert */}
+{profile.role === 'CITIZEN' ? (
+  <UpgradeRoleSection
+    profile={profile}
+    profileKey={[
+      profile.citizenId,
+      profile.dateOfBirth,
+      profile.address,
+      profile.reputationScore,
+    ].join('|')}
+  />
+) : (
+  profile.role === 'CONTRIBUTOR' && (
+    <UpgradeRoleSection
+      profile={profile}
+      profileKey={[
+        profile.citizenId,
+        profile.dateOfBirth,
+        profile.address,
+        profile.reputationScore,
+      ].join('|')}
+    />
+  )
+)}
           </div>
         </div>
       )}
