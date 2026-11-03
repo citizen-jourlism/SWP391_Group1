@@ -86,7 +86,8 @@ public class ResearchEditorialController {
     @PostMapping("/api/editor/research/{id}/approve")
     public ApiResponse<Review> approve(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
                                        @Valid @RequestBody ApproveBody body) {
-        return ApiResponse.ok("Đã duyệt bài và chuyển tới Phó Tổng biên tập.", service.approve(jwt.getSubject(), id, body));
+        // Không nêu cấp độ / người nhận: BTV không cần biết bài được chuyển tới đâu
+        return ApiResponse.ok("Đã duyệt bài nghiên cứu.", service.approve(jwt.getSubject(), id, body));
     }
 
     @PostMapping("/api/editor/research/{id}/reject")

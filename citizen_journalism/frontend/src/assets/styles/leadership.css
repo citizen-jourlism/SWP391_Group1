@@ -1,0 +1,173 @@
+/*
+ * BÀN DUYỆT BAN BIÊN TẬP (Phó TBT / Tổng biên tập) — components/leadership/*, routes/leadership/*.
+ * Khung, bảng, thanh thao tác dùng lại editor.css / admin.css / revision.css; file này chỉ có phần riêng.
+ */
+
+/* ----- Thanh lọc phía trên danh sách ----- */
+.leadership-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.leadership-toolbar .search-box {
+  flex: 1 1 260px;
+}
+
+.leadership-toolbar .field {
+  flex: 0 1 220px;
+  margin: 0;
+}
+
+/* ----- Hộp duyệt: các dấu hiệu Breaking ----- */
+.breaking-signs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+}
+
+.breaking-signs legend {
+  padding: 0 6px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.breaking-signs__item small {
+  display: block;
+  margin: 2px 0 0 30px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ----- Ý kiến của toà soạn ----- */
+.leadership-notes h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+}
+
+.leadership-notes ul {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leadership-notes li {
+  padding: 12px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+}
+
+.leadership-notes__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.leadership-notes__head small {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.leadership-notes li p {
+  margin: 8px 0 0;
+  white-space: pre-wrap; /* giữ xuống dòng như người viết đã nhập */
+  line-height: 1.55;
+}
+
+.leadership-notes__empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* ----- Kết quả xác minh của CTV ----- */
+.leadership-verify dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+
+.leadership-verify dt {
+  color: var(--muted);
+}
+
+.leadership-verify dd {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.leadership-verify h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+}
+
+@media (max-width: 600px) {
+  .leadership-verify dl {
+    grid-template-columns: 1fr;
+  }
+
+  .leadership-notes__head small {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* ----- Thanh trên của Bàn duyệt: ngày + nút Trang chủ + menu tài khoản (LeadershipLayout) ----- */
+.leadership-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* Đã có UserMenu thì ẩn ô tên + ảnh mặc định của ConsoleLayout (tránh hiện 2 lần) */
+.admin__topbar:has(.leadership-topbar) .admin__me {
+  display: none;
+}
+
+.leadership-topbar__home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  color: var(--navy-700);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.leadership-topbar__home:hover {
+  background: #f1f4f9;
+}
+
+/* UserMenu vốn thiết kế cho nền tối (đầu trang chủ) -> đổi màu nút cho thanh trên nền sáng */
+.leadership-topbar .user-menu__trigger {
+  border-color: var(--card-border);
+  background: #fff;
+  color: var(--navy-900);
+}
+
+.leadership-topbar .user-menu__trigger:hover,
+.leadership-topbar .user-menu__trigger[aria-expanded='true'] {
+  background: #f1f4f9;
+}
+
+@media (max-width: 640px) {
+  .leadership-topbar__home span,
+  .leadership-topbar .user-menu__name {
+    display: none; /* màn hình hẹp: chỉ còn icon + ảnh đại diện */
+  }
+}

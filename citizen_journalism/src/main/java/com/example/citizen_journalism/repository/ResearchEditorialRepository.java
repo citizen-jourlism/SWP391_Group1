@@ -57,9 +57,12 @@ public interface ResearchEditorialRepository extends JpaRepository<EditoralRevie
     /**
      * Bài nghiên cứu đã nộp, theo lĩnh vực và KẾT QUẢ DUYỆT của BTV:
      *   anyReview = true -> không lọc; review = null -> chỉ bài chờ duyệt; review = X -> chỉ bài có review_status = X.
+     *   Riêng review = DEPUTY_PENDING lấy cả EIC_PENDING: BTV thấy 2 bước này như nhau (không biết bài đã lên Tổng biên tập).
      */
     @Query("select a from ResearchArticle a where a.status = :status and (:field is null or a.field = :field) "
-            + "and (:anyReview = true or (:review is null and a.reviewStatus is null) or a.reviewStatus = :review)")
+            + "and (:anyReview = true or (:review is null and a.reviewStatus is null) or a.reviewStatus = :review "
+            + "     or (:review = com.example.citizen_journalism.entity.ResearchArticle.ReviewStatus.DEPUTY_PENDING "
+            + "         and a.reviewStatus = com.example.citizen_journalism.entity.ResearchArticle.ReviewStatus.EIC_PENDING))")
     Page<ResearchArticle> searchResearch(@Param("status") ResearchArticle.Status status,
                                          @Param("field") String field,
                                          @Param("anyReview") boolean anyReview,

@@ -36,6 +36,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     /** Đã có tài khoản thuộc vai trò này chưa (dùng để đảm bảo chỉ có 1 admin). */
     boolean existsByRole(User.Role role);
 
+    /** Tài khoản đầu tiên (mã nhỏ nhất) theo vai trò + trạng thái, ví dụ Tổng biên tập đang hoạt động nhận bài BREAKING. */
+    Optional<User> findFirstByRoleAndStatusOrderByIdAsc(User.Role role, User.Status status);
+
     // ----- Thống kê cho Dashboard admin (AdminService.getStats) -----
     long countByRole(User.Role role);
 

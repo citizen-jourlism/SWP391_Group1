@@ -17,6 +17,9 @@ import { toPayload } from '../../lib/payload'
 import { ASSIGNABLE_ROLES, ROLE_LABELS, ROLE_TONES, STATUS_INFO } from '../../lib/roles'
 import { CITIZEN_ID_LENGTH, createValidator, rules, todayIso } from '../../lib/validators'
 import { adminService } from '../../services/adminService'
+import { deputyFieldService } from '../../services/deputyFieldService'
+import { DeputyFieldChips } from '../../components/admin/DeputyFieldPicker'
+import { ownedFieldIds } from '../../lib/deputyFields'
 
 /*
  * TRANG CHI TIẾT TÀI KHOẢN — /admin/users/:id (trang con trong AdminLayout, chỉ SYSTEM_ADMIN).
@@ -45,10 +48,15 @@ const validate = createValidator({
   address: [rules.optional(rules.maxLength(255, 'Địa chỉ tối đa 255 ký tự.'))],
   dateOfBirth: [rules.optional(rules.pastDate('Ngày sinh phải là một ngày trong quá khứ.'))],
   role: [rules.required('Vui lòng chọn vai trò.')],
+  // Chỉ Phó TBT: phải còn ≥ 1 lĩnh vực phụ trách (backend DeputyFieldService.sync kiểm tra lại)
+  categoryIds: [
+    rules.when((values) => values.role === 'DEPUTY_EIC', (value) => (value?.length ? '' : 'Vui lòng chọn ít nhất 1 lĩnh vực phụ trách.')),
+  ],
 })
 
-/** Dữ liệu backend -> giá trị form (ô trống dùng '' vì thẻ <input> không nhận null). */
-const toFormValues = (user) => ({
+/** Dữ liệu backend -> giá trị form (ô trống dùng '' vì thẻ <input> không nhận null). categoryIds: lĩnh vực đang phụ trách. */
+const toFormValues = (user, categoryIds = []) => ({
+  categoryIds,
   fullName: user.fullName ?? '',
   phone: user.phone ?? '',
   citizenId: user.citizenId ?? '',
@@ -62,6 +70,8 @@ const toFormValues = (user) => ({
 function AdminUserDetail() {
   const { id } = useParams()
   const { data: user, error, reload, setData } = useAsyncData(() => adminService.getUser(id), id)
+  // Lĩnh vực (chuyên mục) + người phụ trách: biết Phó TBT này đang phụ trách gì, và để đổi vai trò sang Phó TBT
+  const { data: deputyFields, error: fieldsError, reload: reloadFields } = useAsyncData(() => deputyFieldService.list(), id)
   const [resetting, setResetting] = useState(false) // Đang mở hộp thoại đặt lại mật khẩu
 
   if (error && !user) {
@@ -111,8 +121,21 @@ function AdminUserDetail() {
           </div>
           {user.role === 'SYSTEM_ADMIN' ? (
             <Alert type="info">Đây là tài khoản quản trị hệ thống, không thể chỉnh sửa.</Alert>
+          ) : fieldsError ? (
+            <Alert type="error">{fieldsError}</Alert>
+          ) : !deputyFields ? (
+            <div className="skeleton skeleton--page" aria-busy="true" />
           ) : (
-            <UserEditForm key={user.id} user={user} onSaved={setData} />
+            // Chờ có danh sách lĩnh vực để form nhận đúng lĩnh vực đang phụ trách làm giá trị ban đầu
+            <UserEditForm
+              key={user.id}
+              user={user}
+              fields={deputyFields}
+              onSaved={(saved) => {
+                setData(saved)
+                reloadFields() // Cập nhật lại ai đang phụ trách lĩnh vực nào
+              }}
+            />
           )}
         </section>
 
@@ -152,16 +175,19 @@ function AdminUserDetail() {
 }
 
 /** Form sửa (tách riêng để useForm nhận đúng giá trị ban đầu SAU khi tải xong tài khoản). */
-function UserEditForm({ user, onSaved }) {
-  const form = useForm(toFormValues(user), validate)
+function UserEditForm({ user, fields, onSaved }) {
+  const owned = ownedFieldIds(fields, user.id) // Lĩnh vực tài khoản này đang phụ trách
+  const form = useForm(toFormValues(user, owned), validate)
   const [confirming, setConfirming] = useState(false)
   const [notice, setNotice] = useState('')
   const roleChanged = form.values.role !== user.role
+  const fieldNote = deputyFieldNote(fields, owned, form.values)
 
   // Gọi API. Lỗi (ví dụ CCCD trùng) được useForm gắn vào đúng ô / hộp lỗi đầu form.
   const save = form.handleSubmit(async (values) => {
     const response = await adminService.updateUser(user.id, toPayload(values))
-    form.reset(toFormValues(response.data)) // Đặt mốc mới -> nút Lưu tắt lại
+    // Đặt mốc mới -> nút Lưu tắt lại (không còn là Phó TBT thì backend đã gỡ hết lĩnh vực)
+    form.reset(toFormValues(response.data, response.data.role === 'DEPUTY_EIC' ? values.categoryIds : []))
     onSaved(response.data)
     setNotice(response.message)
   })
@@ -196,6 +222,15 @@ function UserEditForm({ user, onSaved }) {
           <TextField label="Ngày sinh" icon="calendar" type="date" max={todayIso()} {...form.field('dateOfBirth')} />
           <SelectField label="Vai trò" options={ROLE_OPTIONS} required {...form.field('role')} />
         </div>
+        {form.values.role === 'DEPUTY_EIC' && (
+          <DeputyFieldChips
+            fields={fields}
+            ownerId={user.id}
+            value={form.values.categoryIds}
+            onChange={(ids) => form.setValue('categoryIds', ids)}
+            error={form.errorOf('categoryIds')}
+          />
+        )}
         <AddressFields form={form} />
 
         <div className="modal__actions">
@@ -216,13 +251,29 @@ function UserEditForm({ user, onSaved }) {
           `Lưu thay đổi cho ${user.fullName} (${user.id})?` +
           (roleChanged
             ? ` Vai trò sẽ đổi từ "${ROLE_LABELS[user.role]}" thành "${ROLE_LABELS[form.values.role]}" và có hiệu lực ngay.`
-            : '')
+            : '') +
+          fieldNote
         }
         confirmLabel="Xác nhận lưu"
         onConfirm={() => save()}
         onClose={() => setConfirming(false)}
       />
     </>
+  )
+}
+
+/**
+ * Câu báo thêm / gỡ lĩnh vực phụ trách cho hộp xác nhận ('' nếu không đổi gì).
+ * Không còn là Phó TBT -> mọi lĩnh vực đang phụ trách bị gỡ (DeputyFieldService.sync).
+ */
+function deputyFieldNote(fields, owned, values) {
+  const chosen = values.role === 'DEPUTY_EIC' ? values.categoryIds : []
+  const names = (ids) => fields.filter((field) => ids.includes(field.id)).map((field) => field.name).join(', ')
+  const added = chosen.filter((fieldId) => !owned.includes(fieldId))
+  const removed = owned.filter((fieldId) => !chosen.includes(fieldId))
+  return (
+    (added.length ? ` Thêm lĩnh vực phụ trách: ${names(added)}.` : '') +
+    (removed.length ? ` Gỡ lĩnh vực phụ trách: ${names(removed)}.` : '')
   )
 }
 

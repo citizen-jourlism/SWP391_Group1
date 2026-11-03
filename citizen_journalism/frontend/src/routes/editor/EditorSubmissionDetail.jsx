@@ -3,6 +3,8 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import FieldReportCard from '../../components/contributor/FieldReportCard'
 import ApproveSubmissionDialog from '../../components/editor/ApproveSubmissionDialog'
 import AssignmentHistoryDialog from '../../components/editor/AssignmentHistoryDialog'
+import SubmissionEditPanel from '../../components/editor/SubmissionEditPanel'
+import { LeadershipNotes } from '../../components/leadership/LeadershipDecision'
 import { ReasonDialog } from '../../components/research/ResearchEditorial'
 import SubmissionDetail from '../../components/submission/SubmissionDetail'
 import Alert from '../../components/ui/Alert'
@@ -23,8 +25,10 @@ import { formatDateTime } from '../../lib/format'
 import { REJECTABLE_STATUSES } from '../../lib/rejection'
 import { REQUESTABLE_STATUSES } from '../../lib/requestInfo'
 import { editorService } from '../../services/editorService'
+import { leadershipService } from '../../services/leadershipService'
 import { reviewStartService } from '../../services/reviewStartService'
 import '../../assets/styles/assignment.css'
+import '../../assets/styles/leadership.css' // Khung "Ý kiến của Ban biên tập"
 
 /*
  * CHI TIẾT 1 HỒ SƠ TRONG HÀNG ĐỢI — /editor/queue/:code (Biên tập viên).
@@ -55,6 +59,7 @@ function EditorSubmissionDetail() {
     () => editorService.getLatestAssignment(code),
     `assignment|${code}`,
   )
+  const { data: leadershipNotes } = useAsyncData(() => leadershipService.submissionNotes(code), `notes|${code}`)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [approveOpen, setApproveOpen] = useState(false)
   const [startOpen, setStartOpen] = useState(false)
@@ -89,6 +94,8 @@ function EditorSubmissionDetail() {
       {/* Thu hồi xong thì thông báo "đã giao" không còn đúng nữa */}
       <Alert type="success">{notice || (assignmentRunning && state?.notice)}</Alert>
       {!data && !error && <div className="skeleton skeleton--page" />}
+      {/* Ý kiến của Phó TBT / Tổng biên tập (ví dụ yêu cầu chỉnh sửa trả hồ sơ về BTV) — không có thì không hiện */}
+      <LeadershipNotes title="Ý kiến của Ban biên tập" notes={leadershipNotes} />
 
       {data && (
         <>
@@ -146,6 +153,15 @@ function EditorSubmissionDetail() {
           </section>
           {assignment && <CurrentAssignment assignment={assignment} onCancelled={setAssignment} />}
           {assignment?.status === 'COMPLETED' && <AssignmentReport assignmentId={assignment.id} onReviewed={reloadAssignment} />}
+          {/* Sửa trực tiếp tiêu đề / tóm tắt / nội dung (chỉ khi đang thẩm định), lưu luôn không cần người gửi xác nhận */}
+          <SubmissionEditPanel
+            key={data.trackingCode}
+            detail={data}
+            onSaved={(response) => {
+              setData(response.data)
+              setNotice(response.message)
+            }}
+          />
           <SubmissionDetail detail={data} />
           <ConfirmDialog
             open={startOpen}
