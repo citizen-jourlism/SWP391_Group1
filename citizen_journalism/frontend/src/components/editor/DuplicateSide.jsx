@@ -7,19 +7,17 @@ import { FILE_TYPE_INFO } from '../../lib/submission'
 /**
  * MỘT CỘT trong khối "So sánh chi tiết" của màn Kiểm tra tin trùng (routes/editor/EditorDuplicateCheck.jsx).
  * Thông tin / nội dung / tệp hiển thị bằng các class của SubmissionDetail (tracking.css: detail-facts, detail-content)
- * và EvidenceList (submit.css: evidence-list), chỉ thêm:
- *   - cụm từ AI thấy giống bên kia được tô vàng (<mark className="dup-mark">)
- *   - nhãn "Giống" cạnh tệp AI thấy giống tệp bên kia
+ * và EvidenceList (submit.css: evidence-list), chỉ thêm: cụm từ AI thấy giống bên kia được tô vàng
+ * (<mark className="dup-mark">). Tệp đính kèm chỉ để xem, không so (Kiểm tra tin trùng chỉ so chữ).
  *
  * Props:
  *   - tag, tagTone   : nhãn đầu cột, ví dụ "Hồ sơ đang xét" (dark) / "Hồ sơ gợi ý · 94%" (orange)
  *   - status         : nhãn trạng thái bên phải (không bắt buộc) { label, tone }
  *   - record         : hồ sơ { trackingCode, title, createdAt, address, province, content, evidences, anonymous, assignedEditorName }
  *   - phrases        : các cụm từ cần tô vàng
- *   - similarUrls    : Set url các tệp giống bên kia
  *   - extraFact      : { label, value } ô thông tin thứ 2 (Người gửi / Phụ trách)
  */
-function DuplicateSide({ tag, tagTone, status, record, phrases, similarUrls, extraFact }) {
+function DuplicateSide({ tag, tagTone, status, record, phrases, extraFact }) {
   return (
     <article className="dup-side">
       <div className="detail-head__top">
@@ -69,7 +67,6 @@ function DuplicateSide({ tag, tagTone, status, record, phrases, similarUrls, ext
                     {typeInfo.label} · {formatFileSize(evidence.size)}
                   </small>
                 </span>
-                {similarUrls.has(evidence.url) && <Badge tone="red">Giống</Badge>}
               </li>
             )
           })}

@@ -179,7 +179,11 @@ public class SubmissionTrackingService {
                 requestNote,
                 rejection,
                 evidences,
-                events.stream().map(TimelineEntry::from).toList());
+                events.stream()
+                        .filter(event -> !DuplicateDetectionService.isInternalEvent(event)) // dữ liệu nội bộ Kiểm tra tin trùng
+                        .filter(event -> !ImpactScoreService.isInternalEvent(event)) // dữ liệu nội bộ Đánh giá mức tác động
+                        .map(TimelineEntry::from)
+                        .toList());
     }
 
     /**

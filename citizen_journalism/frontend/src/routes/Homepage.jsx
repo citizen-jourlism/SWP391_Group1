@@ -4,26 +4,28 @@ import SiteHeader from '../components/layout/SiteHeader'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import '../assets/styles/homepage.css'
 
+// Thang điểm tác động (Impact Score): điểm = A + B + C, từ 15 đến 100. Giữ khớp với ngưỡng ở backend.
 const scoreCards = [
 	{
-		title: 'Khu Vực Xay Ra (Location Scope)',
-		details: [['Phạm vi', '10 điểm'], ['Cập nhật', '20 điểm'], ['Độ phức tạp', '30 điểm'], ['Ảnh hưởng', '40 điểm']],
+		title: 'Khu Vực Ảnh Hưởng (Location Scope)',
+		details: [['Một hộ / một điểm', '5 điểm'], ['Một phường / xã', '10 điểm'], ['Nhiều xã / quận, huyện', '20 điểm'], ['Toàn tỉnh hoặc liên tỉnh', '30 điểm']],
 	},
 	{
-		title: 'Quy Mô Dân Số (Affected Population)',
-		details: [['Cá nhân', '10 điểm'], ['Quy mô 11 - 100', '20 điểm'], ['Quy mô 101 - 1000', '30 điểm'], ['Quy mô 1001+', '40 điểm']],
+		title: 'Số Người Bị Ảnh Hưởng (Affected Population)',
+		details: [['Dưới 10 người', '5 điểm'], ['10 - 100 người', '10 điểm'], ['101 - 1.000 người', '20 điểm'], ['Trên 1.000 người', '30 điểm']],
 	},
 	{
-		title: 'Loại Tình Chất (Severity & Nature)',
-		details: [['Đánh giá', '10 điểm'], ['Sức khỏe', '20 điểm'], ['Khẩn cấp', '25 điểm'], ['Tác động môi trường', '35 điểm']],
+		title: 'Tính Chất Vấn Đề (Severity & Nature)',
+		details: [['Phiền toái, dịch vụ công', '5 điểm'], ['Quyền lợi, tài sản, kinh tế', '15 điểm'], ['Sức khỏe, môi trường, an toàn', '25 điểm'], ['Đe dọa tính mạng, thảm họa', '40 điểm']],
 	},
 ]
 
+// Đe dọa tính mạng hoặc nội dung nhạy cảm: tối thiểu mức HIGH. HIGH / BREAKING do Tổng biên tập duyệt.
 const impactLevels = [
-	['Mức 1: LOW (30 - 50)', 'Ảnh hưởng nhỏ, cần theo dõi và can thiệp kịp thời.'],
-	['Mức 2: MEDIUM (55 - 75)', 'Chú ý trung bình, cần xử lý trong thời gian ngắn.'],
-	['Mức 3: HIGH (80 - 100)', 'Nguy hiểm và cần phối hợp nhiều đơn vị để giải quyết.'],
-	['Mức 4: BREAKING (105 - 130)', 'Rất nghiêm trọng, có thể ảnh hưởng lớn đến cộng đồng.'],
+	['Mức 1: LOW (15 - 39)', 'Ảnh hưởng nhỏ, cục bộ; xử lý theo thứ tự thông thường.'],
+	['Mức 2: MEDIUM (40 - 59)', 'Ảnh hưởng một cộng đồng; cần xử lý trong ngày.'],
+	['Mức 3: HIGH (60 - 79)', 'Ảnh hưởng rộng hoặc nguy hiểm; cần Tổng biên tập duyệt.'],
+	['Mức 4: BREAKING (80 - 100)', 'Rất nghiêm trọng, quy mô lớn, đang diễn ra; ưu tiên cao nhất.'],
 ]
 
 const features = [
@@ -98,7 +100,7 @@ function Homepage() {
 
 				<section className="score-section">
 					<div className="section-head">
-						<h2>QUY CHUẨN ĐÁNH GIÁ THANG ĐIỂM TÁC ĐỘNG (IMPACT SCORE 30 - 130 ĐIỂM)</h2>
+						<h2>QUY CHUẨN ĐÁNH GIÁ THANG ĐIỂM TÁC ĐỘNG (IMPACT SCORE 15 - 100 ĐIỂM)</h2>
 						<a href="#">Xem tất cả</a>
 					</div>
 					<div className="score-grid">

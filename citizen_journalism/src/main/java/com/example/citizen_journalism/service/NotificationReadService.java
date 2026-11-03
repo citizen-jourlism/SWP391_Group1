@@ -25,6 +25,10 @@ public class NotificationReadService {
 
         // 1. Thông báo từ lịch sử xử lý hồ sơ tin báo.
         for (SubmissionEvent event : repository.submissionEvents(userId)) {
+            // Kết quả AI / kết luận Kiểm tra tin trùng là dữ liệu nội bộ của toà soạn, người gửi không thấy
+            if (DuplicateDetectionService.isInternalEvent(event) || ImpactScoreService.isInternalEvent(event)) {
+                continue;
+            }
             String code = event.getSubmission().getTrackingCode();
 
             result.add(new NotificationItem(
