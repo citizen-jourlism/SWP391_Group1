@@ -43,7 +43,8 @@ const validate = createValidator({
 
 function EditorAssignContributor() {
   const { code } = useParams()
-  const { data: detail, error } = useAsyncData(() => editorService.getSubmission(code), code)
+  const { data: editorData, error } = useAsyncData(() => editorService.getSubmission(code), code)
+  const detail = editorData?.detail ?? editorData
   const { data: latest, loading: latestLoading } = useAsyncData(() => editorService.getLatestAssignment(code), `latest|${code}`)
 
   const backLink = (

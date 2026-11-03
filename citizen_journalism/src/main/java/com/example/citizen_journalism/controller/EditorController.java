@@ -13,6 +13,7 @@ import com.example.citizen_journalism.dto.editor.DuplicateCheckResponse;
 import com.example.citizen_journalism.dto.editor.EditorApplicationDetail;
 import com.example.citizen_journalism.dto.editor.EditorOverview;
 import com.example.citizen_journalism.dto.editor.EditorPipeline;
+import com.example.citizen_journalism.dto.editor.EditorSubmissionSummary;
 import com.example.citizen_journalism.dto.editor.InfoRequestResponse;
 import com.example.citizen_journalism.dto.editor.RejectSubmissionRequest;
 import com.example.citizen_journalism.dto.editor.RequestInfoRequest;
@@ -21,7 +22,6 @@ import com.example.citizen_journalism.dto.editor.ReviewApplicationRequest;
 import com.example.citizen_journalism.dto.editor.VerificationReviewRequest;
 import com.example.citizen_journalism.dto.editor.VerificationReviewResponse;
 import com.example.citizen_journalism.dto.submission.SubmissionDetail;
-import com.example.citizen_journalism.dto.submission.SubmissionSummary;
 import com.example.citizen_journalism.entity.ContributorApplication;
 import com.example.citizen_journalism.entity.Submission;
 import com.example.citizen_journalism.service.ContributorApplicationService;
@@ -56,6 +56,9 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /api/editor/pipeline?category=                     -> bảng tiến độ toà soạn: hồ sơ đang xử lý theo từng bước
  *   GET  /api/editor/submissions?status=&category=&page=    -> hàng đợi tin bài (chỉ xem)
  *   GET  /api/editor/submissions/{mã hồ sơ}                 -> chi tiết 1 hồ sơ
+ *   GET  /api/editor/reputation/accounts                    -> danh sách Citizen / Expert
+ *   GET  /api/editor/reputation/accounts/{id}/submissions   -> bài gửi của tài khoản
+ *   GET  /api/editor/reputation/accounts/{id}/research      -> bài nghiên cứu của Expert
  *   POST /api/editor/submissions/{mã hồ sơ}/start-review    -> tiếp nhận thẩm định: hồ sơ chuyển "Đang thẩm định", BTV phụ trách
  *   GET  /api/editor/submissions/{mã hồ sơ}/rejection       -> dữ liệu màn Từ chối hồ sơ
  *   POST /api/editor/submissions/{mã hồ sơ}/reject          -> từ chối hồ sơ, kèm phản hồi cho người gửi
@@ -83,6 +86,7 @@ public class EditorController {
     private final EditorService editorService;
     private final EditorPipelineService pipelineService;
     private final ContributorApplicationService applicationService;
+
     private final SubmissionRejectionService rejectionService;
     private final SubmissionInfoRequestService infoRequestService;
     private final SubmissionApprovalService approvalService;
@@ -104,7 +108,7 @@ public class EditorController {
     // ----------------------------- Hàng đợi tin bài -----------------------------
 
     @GetMapping("/submissions")
-    public ApiResponse<PageResponse<SubmissionSummary>> listSubmissions(
+    public ApiResponse<PageResponse<EditorSubmissionSummary>> listSubmissions(
             @RequestParam(required = false) Submission.SubmissionStatus status,
             @RequestParam(required = false) Submission.ReportCategory category,
             @RequestParam(defaultValue = "0") int page,
@@ -235,4 +239,5 @@ public class EditorController {
     public ResponseEntity<Resource> openApplicationDocument(@PathVariable Long id, @PathVariable int index) {
         return FileResponses.inline(applicationService.openDocumentForStaff(id, index));
     }
+
 }

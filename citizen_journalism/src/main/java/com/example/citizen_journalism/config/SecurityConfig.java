@@ -25,6 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
  *      /api/submissions/**                         -> CITIZEN, CONTRIBUTOR, EXPERT (gửi tin / khiếu nại)
  *      /api/contributor-applications/**            -> CITIZEN, CONTRIBUTOR (đơn đăng ký Cộng tác viên)
  *      /api/editor/**                              -> chỉ EDITOR (bàn làm việc Biên tập viên)
+ *      /api/leadership/**                          -> chỉ DEPUTY_EIC (duyệt khiếu nại mở khóa)
  *      /api/contributor/**                         -> chỉ CONTRIBUTOR (nhiệm vụ xác minh của Cộng tác viên)
  *      /api/research/**                            -> chỉ EXPERT (bài nghiên cứu, bản nháp)
  *      /api/leadership/notes/**                    -> EDITOR, DEPUTY_EIC, EIC (ý kiến của Ban biên tập)
@@ -49,6 +50,8 @@ public class SecurityConfig {
             "/api/auth/login",
             "/api/auth/forgot-password",
             "/api/auth/reset-password",
+            "/api/appeals",
+            "/api/appeals/status",
             "/api/tracking"); // Tra cứu hồ sơ bằng mã + PIN (TrackingController)
 
     private final RestAuthenticationHandler restAuthenticationHandler;
@@ -64,6 +67,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("SYSTEM_ADMIN")
+                .requestMatchers("/api/leadership/appeals/**", "/api/leadership/violations/**", "/api/leadership/applications/**").hasRole("DEPUTY_EIC")
                 // Gửi tin / khiếu nại: người dân, cộng tác viên, chuyên gia (nhân sự toà soạn và admin thì không)
                 .requestMatchers("/api/submissions/**").hasAnyRole("CITIZEN", "CONTRIBUTOR", "EXPERT")
                 // Đăng ký / theo dõi đơn Cộng tác viên: người dân (nộp đơn) và CTV (xem lại đơn cũ)

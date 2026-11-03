@@ -43,7 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     /** Thông báo CHUNG khi sai tài khoản hoặc sai mật khẩu (không tiết lộ tài khoản có tồn tại hay không). */
-    private static final String INVALID_CREDENTIALS = "Tài khoản hoặc mật khẩu không đúng.";
+    static final String INVALID_CREDENTIALS = "Tài khoản hoặc mật khẩu không đúng.";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -139,23 +139,7 @@ public class AuthService {
         User user = findByIdentifier(request.identifier())
                 .orElseThrow(() -> AppException.unauthorized(INVALID_CREDENTIALS));
 
-        LocalDateTime now = LocalDateTime.now();
-        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(now)) {
-            throw AppException.tooManyRequests("Bạn đã nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau "
-                    + TimeUtils.minutesUntil(now, user.getLockedUntil()) + " phút.");
-        }
-
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            if (registerFailedLogin(user, now)) {
-                throw AppException.tooManyRequests("Bạn đã nhập sai mật khẩu " + maxLoginAttempts
-                        + " lần. Tài khoản tạm khoá đăng nhập trong " + lockMinutes + " phút.");
-            }
-            throw AppException.unauthorized(INVALID_CREDENTIALS);
-        }
-
-        // Đúng mật khẩu -> xoá dấu vết các lần sai trước đó.
-        user.setFailedLoginAttempts(0);
-        user.setLockedUntil(null);
+        checkPassword(user, request.password());
 
         if (user.getStatus() == User.Status.PENDING_OTP) {
             throw AppException.forbidden("Tài khoản chưa xác thực email. Vui lòng xác thực để đăng nhập.",
@@ -168,6 +152,31 @@ public class AuthService {
 
         JwtService.IssuedToken token = jwtService.issue(user, request.isRememberMe());
         return new LoginResponse(token.value(), token.expiresAt(), UserSummary.from(user));
+    }
+
+    /**
+     * Kiểm tra mật khẩu, dùng chung cho đăng nhập và các API công khai nhận email + mật khẩu (khiếu nại mở khoá),
+     * để mọi nơi cùng chịu giới hạn sai maxLoginAttempts lần, không nơi nào thành chỗ dò mật khẩu.
+     *   - Đang bị khoá tạm do sai nhiều -> 429 "thử lại sau X phút"
+     *   - Sai -> tăng biến đếm, đủ số lần thì khoá tạm; 401 thông báo chung
+     *   - Đúng -> xoá dấu vết các lần sai trước đó
+     * Nơi gọi phải dùng @Transactional(noRollbackFor = AppException.class), nếu không số lần sai không được lưu.
+     */
+    public void checkPassword(User user, String rawPassword) {
+        LocalDateTime now = LocalDateTime.now();
+        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(now)) {
+            throw AppException.tooManyRequests("Bạn đã nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau "
+                    + TimeUtils.minutesUntil(now, user.getLockedUntil()) + " phút.");
+        }
+        if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
+            if (registerFailedLogin(user, now)) {
+                throw AppException.tooManyRequests("Bạn đã nhập sai mật khẩu " + maxLoginAttempts
+                        + " lần. Tài khoản tạm khoá đăng nhập trong " + lockMinutes + " phút.");
+            }
+            throw AppException.unauthorized(INVALID_CREDENTIALS);
+        }
+        user.setFailedLoginAttempts(0);
+        user.setLockedUntil(null);
     }
 
     /**

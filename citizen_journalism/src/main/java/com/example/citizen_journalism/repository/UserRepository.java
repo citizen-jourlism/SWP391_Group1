@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -38,6 +39,9 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     /** Tài khoản đầu tiên (mã nhỏ nhất) theo vai trò + trạng thái, ví dụ Tổng biên tập đang hoạt động nhận bài BREAKING. */
     Optional<User> findFirstByRoleAndStatusOrderByIdAsc(User.Role role, User.Status status);
+    @Modifying
+    @Query("update User u set u.reputationScore = :maximum where u.reputationScore > :maximum")
+    int capReputationScores(@Param("maximum") int maximum);
 
     // ----- Thống kê cho Dashboard admin (AdminService.getStats) -----
     long countByRole(User.Role role);

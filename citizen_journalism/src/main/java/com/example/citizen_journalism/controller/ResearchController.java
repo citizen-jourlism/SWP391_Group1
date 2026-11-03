@@ -30,7 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
  * Mọi thao tác chỉ trên bài CỦA CHÍNH MÌNH (mã người dùng lấy từ token).
  *
  *   GET    /api/research/options              -> lĩnh vực, điều kiện nộp bài, giới hạn ảnh, số bản nháp / bài đã nộp
- *   GET    /api/research?status=DRAFT&page=   -> danh sách bản nháp (hoặc SUBMITTED = bài đã nộp)
+ *   GET    /api/research?status=DRAFT&page=   -> danh sách bản nháp, bài chờ duyệt hoặc bài đã duyệt
  *   GET    /api/research/{id}                 -> mở 1 bài
  *   POST   /api/research                      -> bài mới (multipart: "data" JSON + "files" ảnh mới); action DRAFT / SUBMIT
  *   PUT    /api/research/{id}                 -> lưu tiếp bản nháp hoặc nộp bài (multipart như trên)

@@ -95,7 +95,7 @@ export const SUBMISSION_STATUS = {
   PUBLISHED: { label: 'Đã đăng tải', tone: 'green', stage: 6, hint: 'Bài viết đã được xuất bản.' },
   CORRECTED: { label: 'Đã đính chính', tone: 'green', stage: 6, hint: 'Bài viết đã được đính chính sau khi đăng.' },
   CANCELLED: { label: 'Đã huỷ', tone: 'neutral', stage: 1, ended: true, hint: 'Hồ sơ đã bị huỷ.' },
-  RETRACTED: { label: 'Đã gỡ bài', tone: 'red', stage: 5, ended: true, hint: 'Bài viết đã bị gỡ sau khi đăng.' },
+  RETRACTED: { label: 'Đã từ chối và gỡ', tone: 'red', stage: 5, ended: true, hint: 'Hồ sơ đã bị từ chối và gỡ khỏi hệ thống.' },
 }
 
 /** Ai thực hiện một bước trong nhật ký (khớp SubmissionEvent.Actor ở backend). Chỉ hiện vai trò, không hiện tên. */

@@ -132,6 +132,10 @@ public class AdminService {
             throw AppException.badRequest("Chỉ có thể khoá hoặc mở khoá tài khoản.");
         }
         User user = findManageableUser(userId);
+        // Khoá vì điểm uy tín dưới 80 thì phải mở qua khiếu nại / phê duyệt vi phạm (có xét lại điểm); khoá thường admin mở được
+        if (user.getStatus() == User.Status.LOCKED && status == User.Status.ACTIVE && user.hasBelowMinimumReputation()) {
+            throw AppException.badRequest("Tài khoản bị khoá vì điểm uy tín dưới 80, phải mở qua khiếu nại hoặc mục Phê duyệt vi phạm.");
+        }
         user.setStatus(status);
         if (status == User.Status.ACTIVE) {
             user.setIsVerified(true);   // Mở khoá một tài khoản chưa xác thực = admin xác nhận hộ

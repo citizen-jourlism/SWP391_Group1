@@ -38,7 +38,7 @@ import tools.jackson.databind.ObjectMapper;
  *
  *   - create / update : LƯU NHÁP (action DRAFT) hoặc NỘP (action SUBMIT). Cùng 1 hàm save() cho cả 2,
  *                       khác nhau ở bước kiểm tra: nháp chỉ cần có chút nội dung, nộp thì phải đủ điều kiện.
- *   - list / get      : danh sách bản nháp / bài đã nộp, mở 1 bài để viết tiếp hoặc xem lại.
+ *   - list / get      : danh sách bản nháp / bài đã nộp hoặc duyệt, mở lại để viết tiếp hoặc xem.
  *   - delete          : xoá bản nháp (kèm xoá ảnh trên ổ đĩa).
  * Chỉ tác giả thao tác được trên bài của mình; bài đã nộp thì khoá, không sửa / xoá.
  *
@@ -79,7 +79,9 @@ public class ResearchArticleService {
                 MAX_IMAGE_BYTES / 1024 / 1024,
                 FileStorageService.IMAGE_TYPES.keySet().stream().sorted().toList(),
                 articleRepository.countByAuthorIdAndStatus(userId, Status.DRAFT),
-                articleRepository.countByAuthorIdAndStatus(userId, Status.SUBMITTED));
+                articleRepository.countByAuthorIdAndStatus(userId, Status.SUBMITTED),
+                articleRepository.countByAuthorIdAndStatus(userId, Status.APPROVED),
+                articleRepository.countByAuthorIdAndStatus(userId, Status.REJECTED));
     }
 
     /** Danh sách bài theo trạng thái, bài sửa / nộp gần nhất lên đầu. */

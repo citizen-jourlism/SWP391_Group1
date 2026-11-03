@@ -14,7 +14,9 @@ export const countWords = (text) => {
 /** Trạng thái bài: nhãn + màu Badge. Khớp enum ResearchArticle.Status ở backend. */
 export const RESEARCH_STATUS = {
   DRAFT: { label: 'Bản nháp', tone: 'neutral' },
-  SUBMITTED: { label: 'Đã nộp', tone: 'green' },
+  SUBMITTED: { label: 'Chờ duyệt', tone: 'orange' },
+  APPROVED: { label: 'Đã duyệt', tone: 'green' },
+  REJECTED: { label: 'Đã từ chối', tone: 'red' },
 }
 
 /**

@@ -10,6 +10,7 @@ export default defineConfig({
   plugins: [react({ include: /\.[jt]sx?$/ })],
   server: {
     port: 5173,
+    strictPort: true,
     // Chuyển tiếp các đường dẫn này sang backend Spring Boot (apiTarget, mặc định cổng 8080):
     //   /api     -> các API
     //   /uploads -> file người dùng tải lên (ảnh đại diện...), backend phục vụ trong WebConfig.java

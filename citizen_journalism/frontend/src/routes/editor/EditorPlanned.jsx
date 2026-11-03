@@ -34,17 +34,6 @@ const PLANNED_PAGES = {
     ],
     actions: ['Soạn bài mới', 'Trình duyệt'],
   },
-  members: {
-    icon: 'shield',
-    title: 'Uy tín & vi phạm',
-    description: 'Theo dõi điểm uy tín của người dân, hiệu suất của Cộng tác viên và xử lý các trường hợp vi phạm.',
-    features: [
-      'Bảng xếp hạng điểm uy tín, lịch sử cộng / trừ điểm',
-      'Hiệu suất Cộng tác viên: nhiệm vụ đúng hạn, độ chính xác',
-      'Cảnh cáo, trừ điểm, gắn cờ hoặc đề xuất khoá tài khoản vi phạm',
-    ],
-    actions: ['Gửi cảnh cáo', 'Trừ điểm uy tín'],
-  },
 }
 
 function EditorPlanned({ page }) {

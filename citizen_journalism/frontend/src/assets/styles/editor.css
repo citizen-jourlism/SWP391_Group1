@@ -335,6 +335,45 @@
   max-width: 380px;
 }
 
+.reputation-account-table {
+  min-width: 760px;
+  table-layout: fixed;
+}
+
+.reputation-account-table th:nth-child(1),
+.reputation-account-table td:nth-child(1) { width: 26%; }
+.reputation-account-table th:nth-child(2),
+.reputation-account-table td:nth-child(2) { width: 15%; }
+.reputation-account-table th:nth-child(3),
+.reputation-account-table td:nth-child(3) { width: 15%; }
+.reputation-account-table th:nth-child(4),
+.reputation-account-table td:nth-child(4) { width: 17%; }
+.reputation-account-table th:nth-child(5),
+.reputation-account-table td:nth-child(5) { width: 13%; }
+.reputation-account-table th:nth-child(6),
+.reputation-account-table td:nth-child(6) { width: 14%; }
+
+.reputation-account-table td {
+  overflow-wrap: anywhere;
+}
+
+.reputation-account-table td:first-child strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reputation-account-table .data-table__note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reputation-account-table .data-table__actions {
+  overflow-wrap: normal;
+}
+
 /* Link "Mở / Xét duyệt" cuối dòng */
 .desk-open {
   display: inline-flex;
