@@ -18,8 +18,22 @@ const NAV_GROUPS = [
       { to: '/leadership', end: true, icon: 'fileText', label: 'Hồ sơ phản ánh', title: 'Hồ sơ phản ánh chờ duyệt' },
       { to: '/leadership/appeals', icon: 'user', label: 'Khiếu nại xử phạt', title: 'Xét duyệt khiếu nại xử phạt', roles: ['DEPUTY_EIC'] },
       { to: '/leadership/violations', icon: 'shield', label: 'Báo cáo vi phạm', title: 'Phê duyệt xử lý vi phạm', roles: ['DEPUTY_EIC'] },
-      { to: '/leadership/applications', icon: 'award', label: 'Đơn Cộng tác viên', title: 'Phê duyệt nâng cấp CTV', roles: ['DEPUTY_EIC'] },
       { to: '/leadership/research', icon: 'edit', label: 'Bài nghiên cứu', title: 'Bài nghiên cứu chờ duyệt' },
+      // TungTT - Iteration 3 Task 1: Duyệt đơn CTV
+      { to: '/leadership/contributor-applications', icon: 'fileText', label: 'Duyệt đơn cộng tác viên', title: 'Danh sách đơn đăng ký cộng tác viên', roles: ['DEPUTY_EIC'] },
+      // TungTT - Iteration 3 Task 3: Duyệt đơn Expert
+      { to: '/leadership/expert-applications', icon: 'award', label: 'Duyệt đơn Chuyên gia', title: 'Xét duyệt nâng cấp Citizen thành Expert', roles: ['DEPUTY_EIC'] },
+    ],
+  },
+  {
+    label: 'Quản lý tòa soạn',
+    items: [
+      // TungTT - Iteration 3 Task 2: Quản lý CTV
+      { to: '/leadership/contributor-management', icon: 'user', label: 'Quản lý Cộng tác viên', title: 'Danh sách Cộng tác viên', roles: ['DEPUTY_EIC'] },
+      // TungTT - Iteration 3 Task 4: Dashboard hiệu suất tòa soạn
+      { to: '/leadership/newsroom-performance', icon: 'activity', label: 'Hiệu suất tòa soạn', title: 'Dashboard hiệu suất và quy trình biên tập' },
+      // TungTT - Iteration 3 Task 5: Danh bạ nhân sự biên tập
+      { to: '/leadership/editorial-staff', icon: 'phone', label: 'Danh bạ nhân sự', title: 'Danh bạ nhân sự và hồ sơ được phân công' },
     ],
   },
 ]

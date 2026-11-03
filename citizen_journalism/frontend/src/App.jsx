@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AdminLayout from './components/admin/AdminLayout.jsx'
 import EditorLayout from './components/editor/EditorLayout.jsx'
@@ -50,8 +51,6 @@ import EditorAssignments from './routes/editor/EditorAssignments.jsx'
 import EditorPlanned from './routes/editor/EditorPlanned.jsx'
 import ViolationReports, { ViolationReportDetail } from './routes/editor/ViolationReports.jsx'
 import UserPerformance from './routes/editor/UserPerformance.jsx'
-import ExpertApplications from './routes/editor/ExpertApplications.jsx'
-import LeadershipApplications from './routes/leadership/LeadershipApplications.jsx'
 import EditorQueue from './routes/editor/EditorQueue.jsx'
 import EditorRejectSubmission from './routes/editor/EditorRejectSubmission.jsx'
 import EditorRequestInfo from './routes/editor/EditorRequestInfo.jsx'
@@ -66,7 +65,15 @@ import Notifications from './routes/Notifications.jsx'
 import LeadershipQueue from './routes/leadership/LeadershipQueue.jsx'
 import LeadershipResearchDetail from './routes/leadership/LeadershipResearchDetail.jsx'
 import LeadershipSubmissionDetail from './routes/leadership/LeadershipSubmissionDetail.jsx'
-
+// Chức năng xét duyệt đơn cộng tác viên dành riêng cho Phó Tổng biên tập.
+import DeputyContributorApplications from './routes/leadership/DeputyContributorApplications.jsx'
+import DeputyContributorApplicationDetail from './routes/leadership/DeputyContributorApplicationDetail.jsx'
+// Màn hình quản lý Cộng tác viên.
+import DeputyContributorManagement from './routes/leadership/DeputyContributorManagement.jsx'
+import ExpertReviewQueue from './components/profile/ExpertReviewQueue.jsx'
+// TungTT - Iteration 3 Task 4 & 5
+import NewsroomPerformanceDashboard from './routes/leadership/NewsroomPerformanceDashboard.jsx'
+import EditorialStaffDirectory from './routes/leadership/EditorialStaffDirectory.jsx'
 /**
  * Component gốc của ứng dụng: khai báo BẢN ĐỒ ĐƯỜNG DẪN (routing).
  * Mỗi <Route path="..."> ứng với một trang trong thư mục src/routes/.
@@ -268,9 +275,18 @@ function App() {
             <Route path="research/:id" element={<LeadershipResearchDetail />} />                      {/* Chi tiết 1 bài nghiên cứu */}
             <Route path="appeals" element={<ProtectedRoute roles={['DEPUTY_EIC']}><EditorAppeals scope="leadership" /></ProtectedRoute>} />
             <Route path="violations" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ViolationReports leadership /></ProtectedRoute>} />
-            <Route path="applications" element={<ProtectedRoute roles={['DEPUTY_EIC']}><LeadershipApplications /></ProtectedRoute>} />
             <Route path="violations/:id" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ViolationReportDetail leadership /></ProtectedRoute>} />
             <Route path="approvals/appeals/:id" element={<ProtectedRoute roles={['DEPUTY_EIC']}><LeadershipAppealDetail /></ProtectedRoute>} />
+            {/* TungTT: Phó TBT duyệt đơn đăng ký Cộng tác viên (danh sách + chi tiết) */}
+            <Route path="contributor-applications" element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorApplications /></ProtectedRoute>} />
+            <Route path="contributor-applications/:id" element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorApplicationDetail /></ProtectedRoute>} />
+            {/* TungTT: Quản lý Cộng tác viên */}
+            <Route path="contributor-management" element={<ProtectedRoute roles={['DEPUTY_EIC']}><DeputyContributorManagement /></ProtectedRoute>} />
+            {/* TungTT: Phó TBT duyệt đơn Chuyên gia (bước 2, quyết định cuối) */}
+            <Route path="expert-applications" element={<ProtectedRoute roles={['DEPUTY_EIC']}><ExpertReviewQueue mode="deputy" /></ProtectedRoute>} />
+            {/* TungTT: Dashboard hiệu suất tòa soạn + Danh bạ nhân sự biên tập (Phó TBT và TBT) */}
+            <Route path="newsroom-performance" element={<NewsroomPerformanceDashboard />} />
+            <Route path="editorial-staff" element={<EditorialStaffDirectory />} />
           </Route>
 
           {/* ----- Bàn làm việc Biên tập viên: chỉ EDITOR. Cũng là route lồng nhau trong EditorLayout ----- */}
@@ -300,6 +316,7 @@ function App() {
             <Route path="queue/:code/verification" element={<EditorVerificationReview />} /> {/* Duyệt kết quả xác minh của CTV */}
             <Route path="queue/:code/impact" element={<EditorImpactAssessment />} />   {/* Đánh giá mức tác động */}
             <Route path="queue/research/:id" element={<EditorResearchDetail />} />     {/* Chi tiết 1 bài nghiên cứu */}
+            <Route path="expert-applications" element={<ExpertReviewQueue mode="editor" />} /> {/* TungTT: BTV duyệt đơn Chuyên gia (bước 1) */}
             <Route path="categories" element={<EditorCategories />} />
             <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
             {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
@@ -308,7 +325,6 @@ function App() {
             <Route path="articles" element={<EditorArticles />} />                       {/* Biên tập bài viết */}
             <Route path="members" element={<ViolationReports />} />
             <Route path="performance" element={<UserPerformance />} />
-            <Route path="expert-applications" element={<ExpertApplications />} />
             <Route path="violations" element={<ViolationReports />} />
             <Route path="violations/:id" element={<ViolationReportDetail />} />
           </Route>

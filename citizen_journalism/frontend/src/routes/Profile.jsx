@@ -2,8 +2,6 @@ import { useState } from 'react'
 import AccountLayout from '../components/layout/AccountLayout'
 import AvatarUploader from '../components/profile/AvatarUploader'
 import ChangeEmailDialog from '../components/profile/ChangeEmailDialog'
-import ContributorSection from '../components/contributor/ContributorSection'
-import { ExpertApplicationSection } from './editor/ExpertApplications'
 import Alert from '../components/ui/Alert'
 import AddressFields from '../components/ui/AddressFields'
 import Button from '../components/ui/Button'
@@ -18,6 +16,7 @@ import { toPayload } from '../lib/payload'
 import { ROLE_LABELS } from '../lib/roles'
 import { CITIZEN_ID_LENGTH, createValidator, rules, todayIso } from '../lib/validators'
 import { userService } from '../services/userService'
+import UpgradeRoleSection from '../components/profile/UpgradeRoleSection'
 
 /*
  * TRANG HỒ SƠ CÁ NHÂN — đường dẫn /account/profile, BẮT BUỘC đăng nhập (bọc <ProtectedRoute> trong App.jsx).
@@ -153,10 +152,10 @@ function Profile() {
               />
             </section>
 
-            {/* Đăng ký / theo dõi đơn Cộng tác viên. profileKey đổi (vừa lưu CCCD, ngày sinh...) -> mục này tự kiểm tra lại điều kiện */}
-            {['CITIZEN', 'CONTRIBUTOR', 'EXPERT'].includes(profile.role) && <ExpertApplicationSection role={profile.role} />}
+            {/* TungTT: Đăng ký nâng cấp tài khoản (tab CTV / Chuyên gia). profileKey đổi (vừa lưu CCCD, ngày sinh...) -> mục này tự kiểm tra lại điều kiện */}
             {CONTRIBUTOR_SECTION_ROLES.includes(profile.role) && (
-              <ContributorSection
+              <UpgradeRoleSection
+                profile={profile}
                 profileKey={[profile.citizenId, profile.dateOfBirth, profile.province, profile.ward, profile.address, profile.reputationScore].join('|')}
               />
             )}

@@ -24,7 +24,6 @@ class ConsolidatedWorkflowPersistenceTest {
     @Autowired EntityManager em;
     @Autowired JdbcTemplate jdbc;
     @Autowired PasswordEncoder encoder;
-    @Autowired ExpertApplicationService experts;
     @Autowired UserViolationService violations;
     @Autowired ViolationAppealService appeals;
     @Autowired SubmissionRepository submissions;
@@ -39,23 +38,6 @@ class ConsolidatedWorkflowPersistenceTest {
         user("TE9001", User.Role.EDITOR, User.Status.ACTIVE);
         user("TD9001", User.Role.DEPUTY_EIC, User.Status.ACTIVE);
         em.flush();
-    }
-
-    @Test
-    void expertApplicationCanBeSubmittedAndApprovedWithoutEnteringContributorQueue() {
-        long before = contributors.count();
-        var created=experts.apply("TC9001",new ExpertApplicationService.Apply(
-                "Science", "Qualifications and relevant research experience", "https://example.com/proof"));
-        em.flush(); em.clear();
-        assertEquals("PENDING",experts.mine("TC9001").get(0).status());
-        assertEquals("https://example.com/proof",experts.mine("TC9001").get(0).evidence());
-        assertEquals(1, experts.list("PENDING",0,10).items().stream().filter(v -> v.id().equals(created.id())).count());
-        assertEquals(before, contributors.count());
-        experts.review("TE9001",created.id(),new ExpertApplicationService.Review(true,"Verified credentials"));
-        em.flush(); em.clear();
-        assertEquals("APPROVED",experts.mine("TC9001").get(0).status());
-        assertEquals(User.Role.EXPERT,em.find(User.class,"TC9001").getRole());
-        assertEquals(before,contributors.count());
     }
 
     @Test
@@ -117,7 +99,6 @@ class ConsolidatedWorkflowPersistenceTest {
         assertTrue(contributors.findById(application.getId()).isPresent());
         assertNull(em.find(UserViolation.class,content.getId()));
         assertNull(em.find(ViolationAppeal.class,content.getId()));
-        assertNull(em.find(ExpertApplication.class,application.getId()));
         assertEquals(violationCount,violationRepository.countByStatus(UserViolation.Status.PENDING_REVIEW));
     }
 
