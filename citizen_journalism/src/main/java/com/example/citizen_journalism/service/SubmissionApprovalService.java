@@ -113,7 +113,8 @@ public class SubmissionApprovalService {
         if (submission.getPriority() == null) {
             return "Hồ sơ chưa được đánh giá mức tác động. Hãy đánh giá trước khi duyệt chuyển Phó Tổng biên tập.";
         }
-        return null;
+        // Chưa phân loại chuyên mục / chuyên mục chưa có Phó TBT thì không biết chuyển cho ai
+        return SubmissionCategoryService.routingProblem(submission);
     }
 
     private ApproveSubmissionResponse toContext(Submission submission) {
