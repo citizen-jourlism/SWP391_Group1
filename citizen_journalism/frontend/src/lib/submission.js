@@ -64,11 +64,11 @@ export const MB = 1024 * 1024
 
 /**
  * Các GIAI ĐOẠN xử lý một hồ sơ, hiển thị dạng thanh tiến trình (components/submission/ProcessSteps.jsx).
- * Tiếp nhận -> Sàng lọc -> Biên tập viên -> Xác minh thực địa -> Lãnh đạo duyệt (+ Đăng tải).
+ * Tiếp nhận -> Biên tập viên -> Xác minh thực địa -> Lãnh đạo duyệt (+ Đăng tải).
+ * (Kiểm tra tin trùng / tin rác là việc Biên tập viên làm trong bước thẩm định, không tách thành bước riêng.)
  */
 export const PROCESS_STAGES = [
   { title: 'Tiếp nhận', description: 'Hồ sơ đã vào hệ thống.' },
-  { title: 'Sàng lọc', description: 'Kiểm tra trùng lặp, tin rác.' },
   { title: 'Biên tập viên thẩm định', description: 'Đánh giá giá trị báo chí, có thể đề nghị bổ sung.' },
   { title: 'Xác minh thực địa', description: 'Cộng tác viên kiểm chứng tại hiện trường (nếu cần).' },
   { title: 'Lãnh đạo duyệt', description: 'Phó TBT / Tổng biên tập phê duyệt.' },
@@ -83,19 +83,19 @@ export const PROCESS_STAGES = [
  *   - hint         : 1 câu giải thích hiện dưới nhãn trạng thái
  */
 export const SUBMISSION_STATUS = {
-  PENDING: { label: 'Đã tiếp nhận', tone: 'blue', stage: 1, hint: 'Hồ sơ đang chờ toà soạn sàng lọc.' },
-  IN_REVIEW: { label: 'Đang thẩm định', tone: 'blue', stage: 2, hint: 'Biên tập viên đang xem xét hồ sơ của bạn.' },
-  NEED_MORE_INFO: { label: 'Cần bổ sung', tone: 'orange', stage: 2, hint: 'Toà soạn cần thêm thông tin để tiếp tục xử lý.' },
-  REJECTED: { label: 'Không tiếp nhận', tone: 'red', stage: 2, ended: true, hint: 'Hồ sơ không đủ điều kiện để toà soạn xử lý tiếp.' },
-  DEPUTY_PENDING: { label: 'Chờ Phó TBT duyệt', tone: 'purple', stage: 4, hint: 'Bài viết đang chờ Phó Tổng biên tập phê duyệt.' },
-  DEPUTY_REJECTED: { label: 'Đang biên tập lại', tone: 'orange', stage: 2, hint: 'Bài viết được trả lại để chỉnh sửa.' },
-  EIC_PENDING: { label: 'Chờ TBT duyệt', tone: 'purple', stage: 4, hint: 'Bài viết đang chờ Tổng biên tập phê duyệt.' },
-  EIC_REJECTED: { label: 'Không được duyệt', tone: 'red', stage: 4, ended: true, hint: 'Ban biên tập quyết định không đăng tải.' },
-  READY_FOR_PUBLISHING: { label: 'Chờ đăng tải', tone: 'green', stage: 5, hint: 'Bài viết đã được duyệt, sắp xuất bản.' },
-  PUBLISHED: { label: 'Đã đăng tải', tone: 'green', stage: 6, hint: 'Bài viết đã được xuất bản.' },
-  CORRECTED: { label: 'Đã đính chính', tone: 'green', stage: 6, hint: 'Bài viết đã được đính chính sau khi đăng.' },
+  PENDING: { label: 'Đã tiếp nhận', tone: 'blue', stage: 1, hint: 'Hồ sơ đang chờ Biên tập viên tiếp nhận thẩm định.' },
+  IN_REVIEW: { label: 'Đang thẩm định', tone: 'blue', stage: 1, hint: 'Biên tập viên đang xem xét hồ sơ của bạn.' },
+  NEED_MORE_INFO: { label: 'Cần bổ sung', tone: 'orange', stage: 1, hint: 'Toà soạn cần thêm thông tin để tiếp tục xử lý.' },
+  REJECTED: { label: 'Không tiếp nhận', tone: 'red', stage: 1, ended: true, hint: 'Hồ sơ không đủ điều kiện để toà soạn xử lý tiếp.' },
+  DEPUTY_PENDING: { label: 'Chờ Phó TBT duyệt', tone: 'purple', stage: 3, hint: 'Bài viết đang chờ Phó Tổng biên tập phê duyệt.' },
+  DEPUTY_REJECTED: { label: 'Đang biên tập lại', tone: 'orange', stage: 1, hint: 'Bài viết được trả lại để chỉnh sửa.' },
+  EIC_PENDING: { label: 'Chờ TBT duyệt', tone: 'purple', stage: 3, hint: 'Bài viết đang chờ Tổng biên tập phê duyệt.' },
+  EIC_REJECTED: { label: 'Không được duyệt', tone: 'red', stage: 3, ended: true, hint: 'Ban biên tập quyết định không đăng tải.' },
+  READY_FOR_PUBLISHING: { label: 'Chờ đăng tải', tone: 'green', stage: 4, hint: 'Bài viết đã được duyệt, sắp xuất bản.' },
+  PUBLISHED: { label: 'Đã đăng tải', tone: 'green', stage: 5, hint: 'Bài viết đã được xuất bản.' },
+  CORRECTED: { label: 'Đã đính chính', tone: 'green', stage: 5, hint: 'Bài viết đã được đính chính sau khi đăng.' },
   CANCELLED: { label: 'Đã huỷ', tone: 'neutral', stage: 1, ended: true, hint: 'Hồ sơ đã bị huỷ.' },
-  RETRACTED: { label: 'Đã từ chối và gỡ', tone: 'red', stage: 5, ended: true, hint: 'Hồ sơ đã bị từ chối và gỡ khỏi hệ thống.' },
+  RETRACTED: { label: 'Đã từ chối và gỡ', tone: 'red', stage: 4, ended: true, hint: 'Hồ sơ đã bị từ chối và gỡ khỏi hệ thống.' },
 }
 
 /** Ai thực hiện một bước trong nhật ký (khớp SubmissionEvent.Actor ở backend). Chỉ hiện vai trò, không hiện tên. */

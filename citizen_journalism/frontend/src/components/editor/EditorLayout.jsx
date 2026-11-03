@@ -22,7 +22,6 @@ const NAV_GROUPS = [
     label: 'Tiếp nhận',
     items: [
       { to: '/editor/queue', icon: 'fileText', label: 'Hàng đợi tin bài', title: 'Hàng đợi tin bài' },
-      { to: '/editor/screening', icon: 'search', label: 'Sàng lọc AI', title: 'Sàng lọc AI & kiểm tra tin trùng', soon: true },
     ],
   },
   {

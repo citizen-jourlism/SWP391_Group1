@@ -10,18 +10,6 @@ import Icon from '../../components/ui/Icon'
  * CSS: assets/styles/editor.css (mục "Trang sắp có").
  */
 const PLANNED_PAGES = {
-  screening: {
-    icon: 'search',
-    title: 'Sàng lọc AI & kiểm tra tin trùng',
-    description: 'Xem kết quả AI chấm điểm tin rác và gợi ý tin trùng lặp để Biên tập viên tự ra quyết định.',
-    features: [
-      'Điểm nghi vấn tin rác (0–100) và cảnh báo rủi ro cho từng hồ sơ',
-      'Tóm tắt nội dung tự động bằng AI',
-      'Gợi ý các hồ sơ có thể trùng sự việc, so sánh song song rồi ghi nhận kết luận',
-      'Từ chối nhanh tin rác / nội dung không phù hợp',
-    ],
-    actions: ['Đánh dấu tin rác'],
-  },
   articles: {
     icon: 'edit',
     title: 'Biên tập bài viết',
