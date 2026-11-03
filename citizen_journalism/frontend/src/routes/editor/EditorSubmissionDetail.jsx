@@ -43,6 +43,8 @@ import '../../assets/styles/leadership.css' // Khung "Ý kiến của Ban biên 
  *     nút "Giao CTV khác" khi CTV từ chối / huỷ hoặc nhiệm vụ đã bị thu hồi.
  *   - "Yêu cầu bổ sung" mở /editor/queue/<mã>/request-info (EditorRequestInfo), hiện khi hồ sơ Đã tiếp nhận / Đang thẩm định;
  *     hồ sơ đang "Cần bổ sung" thì thành "Xem yêu cầu bổ sung".
+ *   - "Đánh giá mức tác động" (hồ sơ Đang thẩm định) mở /editor/queue/<mã>/impact (EditorImpactAssessment);
+ *     phải đánh giá trước thì mới duyệt chuyển Phó TBT được.
  *   - "Duyệt & chuyển Phó TBT" (tin nóng Đang thẩm định, chưa giao CTV) mở hộp thoại ApproveSubmissionDialog.
  *   - "Duyệt kết quả xác minh" (CTV đã nộp báo cáo) mở /editor/queue/<mã>/verification (EditorVerificationReview).
  *   - "Từ chối" mở /editor/queue/<mã>/reject (EditorRejectSubmission), chỉ bật khi hồ sơ còn ở bước biên tập.
@@ -125,6 +127,12 @@ function EditorSubmissionDetail() {
                 <Button to={`/editor/queue/${code}/request-info`} variant="secondary" className="btn--sm">
                   <Icon name="info" size={14} />
                   {data.status === 'NEED_MORE_INFO' ? 'Xem yêu cầu bổ sung' : 'Yêu cầu bổ sung'}
+                </Button>
+              )}
+              {data.status === 'IN_REVIEW' && (
+                <Button to={`/editor/queue/${code}/impact`} variant="secondary" className="btn--sm">
+                  <Icon name="activity" size={14} />
+                  Đánh giá mức tác động
                 </Button>
               )}
               {data.status === 'IN_REVIEW' && assignment?.status === 'COMPLETED' && (

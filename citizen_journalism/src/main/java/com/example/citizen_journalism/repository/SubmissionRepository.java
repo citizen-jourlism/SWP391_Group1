@@ -71,6 +71,17 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
                                     Pageable pageable);
 
     /**
+     * Các hồ sơ đem so khi KIỂM TRA TIN TRÙNG (DuplicateDetectionService), mới nhất trước: gửi từ thời điểm `from`,
+     * khác hồ sơ đang xét, không phải bài CTV nộp, chưa bị huỷ.
+     */
+    @Query("select s from Submission s where s.id <> :id "
+            + "and s.type <> com.example.citizen_journalism.entity.Submission.SubmissionType.CONTRIBUTOR_POST "
+            + "and s.status <> com.example.citizen_journalism.entity.Submission.SubmissionStatus.CANCELLED "
+            + "and s.createdAt >= :from "
+            + "order by s.createdAt desc, s.id desc")
+    List<Submission> findDuplicateCheckPool(@Param("id") Long id, @Param("from") LocalDateTime from, Pageable pageable);
+
+    /**
      * Cập nhật bộ đếm nhập sai PIN (xem SubmissionTrackingService.track).
      * TẠI SAO viết câu UPDATE riêng thay vì setPinFailedAttempts()? Câu UPDATE trực tiếp KHÔNG làm đổi
      * cột updated_at, nên "Cập nhật lần cuối" của hồ sơ vẫn đúng là lúc toà soạn xử lý, không bị nhảy

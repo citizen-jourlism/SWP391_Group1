@@ -861,6 +861,39 @@
   width: 100%;
 }
 
+/* Bản thu gọn (ResultView compact): 1 hàng trong thẻ của màn làm việc, nút không kéo hết khung */
+.result--compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  text-align: left;
+}
+
+.result--compact .result__icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  box-shadow: none;
+}
+
+.result--compact .result__text {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.result--compact .result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: auto;
+  margin-left: auto;
+}
+
+.result--compact .result__actions > * {
+  width: auto;
+}
+
 /* ---------- Animation ---------- */
 @keyframes spin {
   to { transform: rotate(360deg); }

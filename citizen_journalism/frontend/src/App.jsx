@@ -29,6 +29,7 @@ import EditorApplicationDetail from './routes/editor/EditorApplicationDetail.jsx
 import EditorArticles from './routes/editor/EditorArticles.jsx'
 import EditorApplications from './routes/editor/EditorApplications.jsx'
 import EditorDuplicateCheck from './routes/editor/EditorDuplicateCheck.jsx'
+import EditorImpactAssessment from './routes/editor/EditorImpactAssessment.jsx'
 import EditorOverview from './routes/editor/EditorOverview.jsx'
 import EditorPipeline from './routes/editor/EditorPipeline.jsx'
 import ContributorHistory from './routes/contributor/ContributorHistory.jsx'
@@ -255,13 +256,13 @@ function App() {
             <Route path="queue/:code/reject" element={<EditorRejectSubmission />} />    {/* Từ chối 1 hồ sơ */}
             <Route path="queue/:code/request-info" element={<EditorRequestInfo />} /> {/* Yêu cầu bổ sung cho 1 hồ sơ */}
             <Route path="queue/:code/verification" element={<EditorVerificationReview />} /> {/* Duyệt kết quả xác minh của CTV */}
+            <Route path="queue/:code/impact" element={<EditorImpactAssessment />} />   {/* Đánh giá mức tác động */}
             <Route path="queue/research/:id" element={<EditorResearchDetail />} />     {/* Chi tiết 1 bài nghiên cứu */}
             <Route path="applications" element={<EditorApplications />} />              {/* Đơn đăng ký CTV */}
             <Route path="applications/:id" element={<EditorApplicationDetail />} />     {/* Xét 1 đơn */}
             <Route path="categories" element={<EditorCategories />} />
             <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
             {/* Các mục "Sắp có": cùng 1 trang giới thiệu, khác nội dung theo prop page */}
-            <Route path="screening/:code" element={<EditorDuplicateCheck />} />         {/* Kiểm tra tin trùng của 1 hồ sơ */}
             <Route path="screening" element={<EditorPlanned page="screening" />} />
             <Route path="assignments" element={<EditorAssignments />} />                 {/* Nhiệm vụ đã giao */}
             <Route path="articles" element={<EditorArticles />} />                       {/* Biên tập bài viết */}
