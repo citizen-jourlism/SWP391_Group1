@@ -75,6 +75,8 @@ public class DuplicateDetectionService {
     static final int MAX_CONTENT_CHUNKS = 12;
     /** Số hồ sơ tối đa đem ra so trong 1 lần quét (mới nhất trước). */
     static final int MAX_POOL = 300;
+    /** % giống nội dung coi là gần như chép lại. */
+    static final int NEAR_COPY = 85;
     /** Quét lỗi thì chờ từng này mới quét lại cùng hồ sơ. */
     static final Duration FAILURE_COOLDOWN = Duration.ofMinutes(2);
 
@@ -252,6 +254,11 @@ public class DuplicateDetectionService {
 
         String fullText() {
             return String.join("\n", nonBlank(title), nonBlank(summary), nonBlank(content)).trim();
+        }
+
+        /** Tóm tắt + nội dung (không có tiêu đề). */
+        String bodyText() {
+            return String.join("\n", nonBlank(summary), nonBlank(content)).trim();
         }
 
         private static String nonBlank(String value) {
@@ -499,20 +506,11 @@ public class DuplicateDetectionService {
     }
 
     Scored score(Doc self, Chunks selfChunks, Doc other, Chunks otherChunks, String model) {
-        // Nội dung: trung bình, với mỗi đoạn của hồ sơ đang xét, độ giống của đoạn gần nhất bên kia
-        double contentCosine = 0;
-        if (!selfChunks.contents().isEmpty() && !otherChunks.contents().isEmpty()) {
-            double sum = 0;
-            for (float[] mine : selfChunks.contents()) {
-                double best = 0;
-                for (float[] theirs : otherChunks.contents()) {
-                    best = Math.max(best, TextEmbeddingService.cosine(mine, theirs));
-                }
-                sum += best;
-            }
-            contentCosine = sum / selfChunks.contents().size();
-        }
-        int content = toPercent(model, contentCosine);
+        // Nội dung: so cả 2 chiều rồi lấy chiều cao hơn, để bài ngắn và bài dài kể cùng sự việc không bị chấm thấp
+        // chỉ vì bài dài có thêm chi tiết. Lấy thêm tỉ lệ cụm 3 từ của bài ngắn có nguyên văn trong bài dài.
+        double contentCosine = Math.max(averageBest(selfChunks.contents(), otherChunks.contents()),
+                averageBest(otherChunks.contents(), selfChunks.contents()));
+        int content = Math.max(toPercent(model, contentCosine), containment(self.bodyText(), other.bodyText()));
         int title = toPercent(model, TextEmbeddingService.cosine(selfChunks.title(), otherChunks.title()));
 
         boolean sameProvince = self.province() != null && other.province() != null
@@ -527,6 +525,50 @@ public class DuplicateDetectionService {
         return new Scored(other, content, title, sameProvince, minutesApart == Long.MAX_VALUE ? -1 : minutesApart,
                 (int) Math.min(100, Math.round(score)),
                 commonPhrases(self.fullText(), other.fullText()));
+    }
+
+    /** Trung bình, với mỗi đoạn bên from, độ giống của đoạn gần nhất bên to. */
+    private static double averageBest(List<float[]> from, List<float[]> to) {
+        if (from.isEmpty() || to.isEmpty()) {
+            return 0;
+        }
+        double sum = 0;
+        for (float[] mine : from) {
+            double best = 0;
+            for (float[] theirs : to) {
+                best = Math.max(best, TextEmbeddingService.cosine(mine, theirs));
+            }
+            sum += best;
+        }
+        return sum / from.size();
+    }
+
+    /** Số cụm 3 từ tối thiểu của bài ngắn hơn để tính tỉ lệ nguyên văn (bài quá ngắn thì bỏ qua). */
+    private static final int CONTAINMENT_MIN_GRAMS = 5;
+
+    /**
+     * % cụm 3 từ liền nhau của bài NGẮN HƠN có nguyên văn trong bài kia (không phân biệt hoa thường, dấu câu).
+     * Bài ngắn là bản rút gọn / chép lại của bài dài thì gần 100%, dù bài dài có thêm nhiều chi tiết.
+     */
+    static int containment(String a, String b) {
+        Set<String> gramsA = trigrams(a);
+        Set<String> gramsB = trigrams(b);
+        Set<String> smaller = gramsA.size() <= gramsB.size() ? gramsA : gramsB;
+        Set<String> larger = smaller == gramsA ? gramsB : gramsA;
+        if (smaller.size() < CONTAINMENT_MIN_GRAMS) {
+            return 0;
+        }
+        long shared = smaller.stream().filter(larger::contains).count();
+        return (int) Math.round(100.0 * shared / smaller.size());
+    }
+
+    private static Set<String> trigrams(String text) {
+        List<String> words = tokens(lower(text));
+        Set<String> grams = new HashSet<>();
+        for (int i = 0; i + 3 <= words.size(); i++) {
+            grams.add(words.get(i) + " " + words.get(i + 1) + " " + words.get(i + 2));
+        }
+        return grams;
     }
 
     /**
@@ -614,7 +656,10 @@ public class DuplicateDetectionService {
         List<StoredCandidate> candidates = new ArrayList<>();
         for (Scored item : analysis.candidates()) {
             DuplicateJudgeService.Verdict verdict = judgement == null ? null : judgement.verdicts().get(item.doc().trackingCode());
-            int similarity = verdict == null ? item.score() : verdict.similarity();
+            // Nội dung gần như chép lại thì không để model chat hạ điểm xuống dưới điểm truy xuất
+            int similarity = verdict == null ? item.score()
+                    : item.contentSimilarity() >= NEAR_COPY ? Math.max(verdict.similarity(), item.score())
+                    : verdict.similarity();
             if (similarity < threshold) {
                 continue;
             }

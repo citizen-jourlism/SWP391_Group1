@@ -64,7 +64,6 @@ function SubmissionReceipt({ receipt, onNew }) {
       {receipt.notifiedEmail ? (
         <Alert type="success">
           Biên nhận đã được gửi tới <strong>{receipt.notifiedEmail}</strong>.
-          {receipt.printedToConsole && ' (Máy chủ đang ở chế độ phát triển: email được in ra cửa sổ backend.)'}
         </Alert>
       ) : (
         <Alert type="warning">Chưa gửi được email biên nhận. Vui lòng sao chép hoặc chụp lại mã hồ sơ và mã PIN ở trên.</Alert>
