@@ -100,6 +100,17 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     List<Submission> findDuplicateCheckPool(@Param("id") Long id, @Param("from") LocalDateTime from, Pageable pageable);
 
     /**
+     * Có hồ sơ (cùng điều kiện với findDuplicateCheckPool) gửi SAU lần kiểm tra tin trùng gần nhất không: có thì kết quả
+     * cũ chưa so với hồ sơ đó, cần quét lại.
+     */
+    @Query("select count(s) > 0 from Submission s where s.id <> :id "
+            + "and s.type <> com.example.citizen_journalism.entity.Submission.SubmissionType.CONTRIBUTOR_POST "
+            + "and s.status <> com.example.citizen_journalism.entity.Submission.SubmissionStatus.CANCELLED "
+            + "and s.createdAt >= :from and s.createdAt >= :after")
+    boolean existsNewerForDuplicateCheck(@Param("id") Long id, @Param("from") LocalDateTime from,
+                                         @Param("after") LocalDateTime after);
+
+    /**
      * Cập nhật bộ đếm nhập sai PIN (xem SubmissionTrackingService.track).
      * TẠI SAO viết câu UPDATE riêng thay vì setPinFailedAttempts()? Câu UPDATE trực tiếp KHÔNG làm đổi
      * cột updated_at, nên "Cập nhật lần cuối" của hồ sơ vẫn đúng là lúc toà soạn xử lý, không bị nhảy

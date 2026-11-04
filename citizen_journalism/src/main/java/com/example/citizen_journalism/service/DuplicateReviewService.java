@@ -15,6 +15,7 @@ import com.example.citizen_journalism.repository.UserRepository;
 import com.example.citizen_journalism.service.DuplicateDetectionService.StoredCandidate;
 import com.example.citizen_journalism.service.DuplicateDetectionService.StoredResult;
 import com.example.citizen_journalism.util.TextUtils;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -71,7 +72,7 @@ public class DuplicateReviewService {
         Submission submission = findSubmission(trackingCode);
         List<SubmissionEvent> events = eventRepository.findBySubmissionOrderByCreatedAtAscIdAsc(submission);
         SubmissionEvent check = latestCheck(events);
-        if (needsCheck(submission, check == null ? null : readResult(check))) {
+        if (isStale(submission, check, check == null ? null : readResult(check))) {
             detectionService.requestCheck(submission.getId()); // Đang quét hoặc vừa quét lỗi thì tự bỏ qua
         }
         return toResponse(submission, events);
@@ -149,10 +150,23 @@ public class DuplicateReviewService {
         return result == null || !DuplicateDetectionService.fingerprint(submission).equals(result.fingerprint());
     }
 
+    /**
+     * Kết quả cũ không còn đúng: nội dung hồ sơ đã đổi (needsCheck), hoặc có hồ sơ mới gửi SAU lần quét đó
+     * (hồ sơ trùng gửi sau thì lúc quét hồ sơ này nó chưa có nên chưa được so).
+     */
+    private boolean isStale(Submission submission, SubmissionEvent check, StoredResult result) {
+        if (needsCheck(submission, result)) {
+            return true;
+        }
+        LocalDateTime base = submission.getCreatedAt() == null ? LocalDateTime.now() : submission.getCreatedAt();
+        return submissionRepository.existsNewerForDuplicateCheck(submission.getId(),
+                base.minusDays(detectionService.getWindowDays()), check.getCreatedAt());
+    }
+
     private DuplicateCheckResponse toResponse(Submission submission, List<SubmissionEvent> events) {
         SubmissionEvent check = latestCheck(events);
         StoredResult result = check == null ? null : readResult(check);
-        boolean stale = needsCheck(submission, result);
+        boolean stale = isStale(submission, check, result);
         boolean failed = stale && !detectionService.isRunning(submission.getId())
                 && detectionService.failedRecently(submission.getId());
         boolean processing = !failed && (stale || detectionService.isRunning(submission.getId()));
