@@ -65,7 +65,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /api/editor/submissions/{mã hồ sơ}/info-request    -> dữ liệu màn Yêu cầu bổ sung
  *   POST /api/editor/submissions/{mã hồ sơ}/request-info    -> yêu cầu người gửi bổ sung, hồ sơ chuyển "Cần bổ sung"
  *   GET  /api/editor/submissions/{mã hồ sơ}/approval        -> dữ liệu hộp thoại Duyệt tin nóng
- *   POST /api/editor/submissions/{mã hồ sơ}/approve         -> duyệt tin nóng, chuyển Phó Tổng biên tập phê duyệt
+ *   POST /api/editor/submissions/{mã hồ sơ}/approve         -> duyệt tin nóng / khiếu nại, chuyển Phó Tổng biên tập phê duyệt
  *   GET  /api/editor/submissions/{mã hồ sơ}/verification-review -> dữ liệu màn Duyệt kết quả xác minh (bài CTV + tin gốc)
  *   POST /api/editor/submissions/{mã hồ sơ}/verification-review -> duyệt kết quả xác minh, chuyển Phó Tổng biên tập phê duyệt
  *   GET  /api/editor/submissions/{mã hồ sơ}/duplicates          -> Kiểm tra tin trùng: kết quả quét AI (RAG) + hồ sơ tương tự

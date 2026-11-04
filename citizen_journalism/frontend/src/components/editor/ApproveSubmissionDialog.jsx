@@ -7,11 +7,12 @@ import { useAsyncData } from '../../hooks/useAsyncData'
 import { approvalService } from '../../services/approvalService'
 
 /*
- * HỘP THOẠI DUYỆT TIN NÓNG — mở từ nút "Duyệt & chuyển Phó TBT" ở routes/editor/EditorSubmissionDetail.jsx.
+ * HỘP THOẠI DUYỆT HỒ SƠ (tin nóng / khiếu nại) — mở từ nút "Duyệt & chuyển Phó TBT" ở routes/editor/EditorSubmissionDetail.jsx.
  * Luồng: ApproveSubmissionDialog -> approvalService -> EditorController -> SubmissionApprovalService.
  *
  * Khi mở: GET /api/editor/submissions/{mã}/approval -> { submission, approvable, blockedReason, deputyName, approval }
- *   - approvable = false: hiện blockedReason (không phải tin nóng / không ở trạng thái Đang thẩm định), khoá nút duyệt
+ *   - approvable = false: hiện blockedReason (chưa đánh giá mức tác động, chưa phân loại chuyên mục,
+ *     không ở trạng thái Đang thẩm định...), khoá nút duyệt
  *   - deputyName: Phó TBT phụ trách lĩnh vực; null thì ghi chung "Phó Tổng biên tập"
  * Khi xác nhận: POST .../approve { note } -> hồ sơ chuyển "Chờ Phó TBT duyệt". Ghi chú chỉ toà soạn thấy,
  * người gửi không đọc được. Thành công thì gọi onApproved(kết quả) để trang chi tiết cập nhật lại.
@@ -51,7 +52,7 @@ function ApproveSubmissionDialog({ code, onClose, onApproved }) {
   const deputy = data?.deputyName ? `Phó Tổng biên tập ${data.deputyName}` : 'Phó Tổng biên tập'
 
   return (
-    <Modal open title="Duyệt tin nóng" onClose={running ? () => { } : onClose}>
+    <Modal open title="Duyệt & chuyển Phó TBT"onClose={running ? () => { } : onClose}>
       <Alert type="error">{loadError}</Alert>
       {!data && !loadError && <div className="skeleton skeleton--card" />}
 

@@ -46,7 +46,8 @@ import '../../assets/styles/leadership.css' // Khung "Ý kiến của Ban biên 
  *     hồ sơ đang "Cần bổ sung" thì thành "Xem yêu cầu bổ sung".
  *   - "Đánh giá mức tác động" (hồ sơ Đang thẩm định) mở /editor/queue/<mã>/impact (EditorImpactAssessment);
  *     phải đánh giá trước thì mới duyệt chuyển Phó TBT được.
- *   - "Duyệt & chuyển Phó TBT" (tin nóng Đang thẩm định, chưa giao CTV) mở hộp thoại ApproveSubmissionDialog.
+ *   - "Duyệt & chuyển Phó TBT" (tin nóng / khiếu nại Đang thẩm định, chưa giao CTV) mở hộp thoại ApproveSubmissionDialog.
+ *     Giao CTV là tuỳ chọn; bắt buộc chỉ có đánh giá mức tác động + phân loại chuyên mục (hộp thoại báo nếu còn thiếu).
  *   - "Duyệt kết quả xác minh" (CTV đã nộp báo cáo) mở /editor/queue/<mã>/verification (EditorVerificationReview).
  *   - "Từ chối" mở /editor/queue/<mã>/reject (EditorRejectSubmission), chỉ bật khi hồ sơ còn ở bước biên tập.
  *   - "Lịch sử" mở AssignmentHistoryDialog: giao cho ai, ai nhận, ai từ chối, lý do...
@@ -70,9 +71,8 @@ function EditorSubmissionDetail() {
   const [notice, setNotice] = useState('') // Thông báo thành công sau khi tiếp nhận / duyệt
   const canAssignFirst = !assignment && !assignmentLoading && ASSIGNABLE_SUBMISSION_STATUSES.includes(data?.status)
   const assignmentRunning = ACTIVE_ASSIGNMENT_STATUSES.includes(assignment?.status)
-  // Duyệt chuyển Phó TBT: tin nóng Đang thẩm định chưa giao CTV. Đã giao thì đi qua "Duyệt kết quả xác minh"
-  const canApprove =
-    data?.category === 'HOT_NEWS' && data.status === 'IN_REVIEW' && !assignmentRunning && assignment?.status !== 'COMPLETED'
+  // Duyệt chuyển Phó TBT: tin nóng / khiếu nại Đang thẩm định chưa giao CTV. Đã giao thì đi qua "Duyệt kết quả xác minh"
+  const canApprove = data?.status === 'IN_REVIEW' && !assignmentRunning && assignment?.status !== 'COMPLETED'
 
   const handleApproved = (response) => {
     setData(response.data.submission)
