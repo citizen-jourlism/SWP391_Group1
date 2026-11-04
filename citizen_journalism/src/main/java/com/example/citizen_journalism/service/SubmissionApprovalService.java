@@ -23,8 +23,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * DUYỆT TIN NÓNG (Approve Breaking News) — Biên tập viên duyệt tin nóng đạt yêu cầu và chuyển lên
+ * DUYỆT HỒ SƠ (Approve Breaking News) — Biên tập viên duyệt tin nóng hoặc khiếu nại đạt yêu cầu và chuyển lên
  * Phó Tổng biên tập phê duyệt tiếp.
+ * BẮT BUỘC trước khi chuyển: đã đánh giá mức tác động + đã phân loại chuyên mục (có Phó TBT phụ trách).
+ * Giao CTV xác minh là TUỲ CHỌN: đã giao thì hồ sơ đi qua bước Duyệt kết quả xác minh thay vì nút này.
  * API: EditorController (GET /api/editor/submissions/{mã}/approval, POST .../approve).
  * Frontend: nút "Duyệt & chuyển Phó TBT" ở routes/editor/EditorSubmissionDetail.jsx
  * (hộp thoại components/editor/ApproveSubmissionDialog.jsx).
@@ -48,6 +50,11 @@ public class SubmissionApprovalService {
      * Hồ sơ mới (PENDING) phải tiếp nhận trước; đang "Cần bổ sung" thì phải chờ người gửi trả lời.
      */
     private static final Set<SubmissionStatus> APPROVABLE_STATUSES = Set.of(SubmissionStatus.IN_REVIEW);
+
+    /** Loại hồ sơ duyệt được ở đây: tin nóng và khiếu nại (gồm cả phóng sự điều tra, cũng lưu loại COMPLAINT). */
+    private static final Set<Submission.SubmissionType> APPROVABLE_TYPES = Set.of(
+            Submission.SubmissionType.HOT_NEWS,
+            Submission.SubmissionType.COMPLAINT);
 
     /** Hồ sơ có nhiệm vụ ở các trạng thái này thì phải đi qua bước Duyệt kết quả xác minh. */
     private static final Set<FieldAssignment.AssignmentStatus> VERIFYING_STATUSES = Set.of(
@@ -99,10 +106,10 @@ public class SubmissionApprovalService {
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy hồ sơ."));
     }
 
-    /** Lý do không duyệt được; null = duyệt được. Khiếu nại / phóng sự đi luồng khác nên không duyệt ở đây. */
+    /** Lý do không duyệt được; null = duyệt được. Bài của CTV / bài nghiên cứu có luồng duyệt riêng nên không duyệt ở đây. */
     private String blockedReasonOf(Submission submission) {
-        if (submission.getType() != Submission.SubmissionType.HOT_NEWS) {
-            return "Chỉ hồ sơ tin nóng mới được duyệt chuyển Phó Tổng biên tập.";
+        if (!APPROVABLE_TYPES.contains(submission.getType())) {
+            return "Chỉ hồ sơ tin nóng hoặc khiếu nại mới được duyệt chuyển Phó Tổng biên tập.";
         }
         if (!APPROVABLE_STATUSES.contains(submission.getStatus())) {
             return "Chỉ duyệt được hồ sơ đang thẩm định. Hồ sơ mới cần được tiếp nhận thẩm định trước.";
