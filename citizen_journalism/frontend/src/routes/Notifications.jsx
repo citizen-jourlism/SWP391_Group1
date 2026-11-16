@@ -1,8 +1,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import SiteHeader from '../components/layout/SiteHeader'
 import { notificationService } from '../services/notificationService'
 import '../assets/styles/notifications.css'
+
+const PAGE_SIZE = 10
 
 const STATUS_LABELS = {
   PENDING: 'Chờ xử lý',
@@ -12,6 +15,7 @@ const STATUS_LABELS = {
   APPROVED: 'Đã phê duyệt',
   PUBLISHED: 'Đã đăng',
   COMPLETED: 'Hoàn tất',
+  SUBMITTED: 'Đã nộp',
   PENDING_EDITOR: 'Chờ Biên tập viên',
   PENDING_DEPUTY: 'Chờ Phó TBT',
   WITHDRAWN: 'Đã rút đơn',
@@ -23,6 +27,21 @@ const STATUS_LABELS = {
   READY_FOR_PUBLISHING: 'Sẵn sàng đăng',
   CORRECTED: 'Đã đính chính',
   RETRACTED: 'Đã gỡ bài',
+  ACCEPTED: 'Đã đồng ý',
+}
+
+const TYPE_LABELS = {
+  SUBMISSION: 'Hồ sơ tin báo',
+  CONTRIBUTOR: 'Đơn CTV',
+  FIELD_WORK: 'Nhiệm vụ CTV',
+  RESEARCH: 'Bài nghiên cứu',
+}
+
+const TYPE_ICONS = {
+  SUBMISSION: '📄',
+  CONTRIBUTOR: '🏅',
+  FIELD_WORK: '📝',
+  RESEARCH: '📚',
 }
 
 function formatDate(value) {
@@ -43,12 +62,35 @@ function formatDate(value) {
   })
 }
 
+function getLinkLabel(item) {
+  if (item.type === 'CONTRIBUTOR') return 'Xem tiến trình CTV →'
+
+  if (item.type === 'FIELD_WORK') {
+    return 'Mở nhiệm vụ →'
+  }
+
+  if (item.type === 'RESEARCH') {
+    if (item.link?.startsWith('/editor/')) return 'Mở bài cần xử lý →'
+    if (item.link?.startsWith('/leadership/')) return 'Mở bài chờ duyệt →'
+    if (item.link?.startsWith('/research/revisions/')) {
+      return 'Xem yêu cầu chỉnh sửa →'
+    }
+    return 'Xem bài nghiên cứu →'
+  }
+
+  return 'Xem hồ sơ →'
+}
+
 export default function Notifications() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('all')
 
+  // Trang hiện tại.
+  const [currentPage, setCurrentPage] = useState(1)
+
+  // Tải danh sách thông báo.
   const reload = useCallback(async () => {
     setLoading(true)
     setError('')
@@ -72,242 +114,397 @@ export default function Notifications() {
     reload()
   }, [reload])
 
+  // Đếm số lượng thông báo theo loại.
   const counts = useMemo(() => ({
     all: items.length,
+
     submission: items.filter(
       item => item.type === 'SUBMISSION'
     ).length,
+
     contributor: items.filter(
       item => item.type === 'CONTRIBUTOR'
     ).length,
+
+    field: items.filter(
+      item => item.type === 'FIELD_WORK'
+    ).length,
+
+    research: items.filter(
+      item => item.type === 'RESEARCH'
+    ).length,
+
+    writing: items.filter(
+      item =>
+        item.type === 'FIELD_WORK'
+        || item.type === 'RESEARCH'
+    ).length,
   }), [items])
 
-  const visible = items.filter(
-    item =>
-      filter === 'all'
-      || (
-        filter === 'submission'
-        && item.type === 'SUBMISSION'
-      )
-      || (
-        filter === 'contributor'
-        && item.type === 'CONTRIBUTOR'
-      )
+  // Lọc thông báo theo nhóm.
+  const visible = useMemo(() => {
+    return items.filter(item => {
+      if (filter === 'all') return true
+      if (filter === 'submission') return item.type === 'SUBMISSION'
+      if (filter === 'contributor') return item.type === 'CONTRIBUTOR'
+      if (filter === 'field') return item.type === 'FIELD_WORK'
+      if (filter === 'research') return item.type === 'RESEARCH'
+
+      return true
+    })
+  }, [items, filter])
+
+  // Tổng số trang.
+  const totalPages = Math.max(
+    1,
+    Math.ceil(visible.length / PAGE_SIZE)
   )
 
+  // Nếu số lượng thông báo giảm khiến trang hiện tại không còn tồn tại,
+  // tự động chuyển về trang hợp lệ cuối cùng.
+  useEffect(() => {
+    setCurrentPage(page => Math.min(page, totalPages))
+  }, [totalPages])
+
+  // Tính vị trí bắt đầu và kết thúc của trang.
+  const startIndex = (currentPage - 1) * PAGE_SIZE
+
+  const endIndex = Math.min(
+    startIndex + PAGE_SIZE,
+    visible.length
+  )
+
+  // Danh sách thông báo của trang hiện tại.
+  const paginatedItems = visible.slice(
+    startIndex,
+    startIndex + PAGE_SIZE
+  )
+
+  // Danh sách số trang.
+  const pageNumbers = Array.from(
+    { length: totalPages },
+    (_, index) => index + 1
+  )
+
+  // Chuyển bộ lọc và quay về trang đầu tiên.
+  function changeFilter(nextFilter) {
+    setFilter(nextFilter)
+    setCurrentPage(1)
+  }
+
+  // Chuyển trang.
+  function changePage(page) {
+    if (page < 1 || page > totalPages) return
+
+    setCurrentPage(page)
+
+    // Đưa người dùng về đầu danh sách thông báo.
+    document.querySelector('.notifications-panel')
+      ?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+  }
+
   return (
-    <main className="notifications-page">
-      <section className="notifications-hero">
-        <div className="notifications-hero__icon">
-          🔔
+    <>
+      <SiteHeader />
+
+      <main className="notifications-page">
+
+        {/* Nút về trang chủ */}
+        <div className="notifications-topbar">
+          <Link to="/" className="notifications-home-link">
+            <span>←</span>
+            Về trang chủ
+          </Link>
         </div>
 
-        <span className="notifications-hero__eyebrow">
-          TIN NÓNG DÂN SINH / TÀI KHOẢN
-        </span>
-
-        <h1>Thông báo của tôi</h1>
-
-        <p>
-          Theo dõi tiến độ xử lý tin báo, khiếu nại
-          và đơn đăng ký cộng tác viên.
-        </p>
-      </section>
-
-      <section className="notifications-summary">
-        <article className="notifications-stat">
-          <div>
-            <span>Tổng cập nhật</span>
-            <strong>{counts.all}</strong>
-            <small>Tổng hợp từ dữ liệu hiện có</small>
-          </div>
-
-          <span className="notifications-stat__symbol">
+        {/* Tiêu đề */}
+        <section className="notifications-hero">
+          <div className="notifications-hero__icon">
             🔔
+          </div>
+
+          <span className="notifications-hero__eyebrow">
+            TIN NÓNG DÂN SINH / TÀI KHOẢN
           </span>
-        </article>
 
-        <article className="notifications-stat">
-          <div>
-            <span>Cập nhật đơn cộng tác viên</span>
-            <strong>{counts.contributor}</strong>
-            <small>Gồm các bước xét duyệt đã được lưu</small>
-          </div>
+          <h1>Thông báo của tôi</h1>
 
-          <span className="notifications-stat__symbol">
-            📋
-          </span>
-        </article>
-      </section>
+          <p>
+            Theo dõi tiến độ xử lý hồ sơ, nhiệm vụ cộng tác viên
+            và các bài nghiên cứu trong quá trình biên tập.
+          </p>
+        </section>
 
-      <section className="notifications-panel">
-        <div className="notifications-panel__header">
-          <div>
-            <h2>Danh sách thông báo</h2>
-            <p>
-              Thông tin từ hồ sơ của chính tài khoản
-              đang đăng nhập.
-            </p>
-          </div>
-
-          <button
-            className="notifications-refresh"
-            onClick={reload}
-            disabled={loading}
-            type="button"
-          >
-            ↻ {loading ? 'Đang tải...' : 'Làm mới'}
-          </button>
-        </div>
-
-        <div className="notifications-filters">
-          <button
-            type="button"
-            className={filter === 'all' ? 'is-active' : ''}
-            onClick={() => setFilter('all')}
-          >
-            Tất cả ({counts.all})
-          </button>
-
-          <button
-            type="button"
-            className={filter === 'submission' ? 'is-active' : ''}
-            onClick={() => setFilter('submission')}
-          >
-            Hồ sơ tin báo ({counts.submission})
-          </button>
-
-          <button
-            type="button"
-            className={filter === 'contributor' ? 'is-active' : ''}
-            onClick={() => setFilter('contributor')}
-          >
-            Đơn CTV ({counts.contributor})
-          </button>
-        </div>
-
-        {error && (
-          <div className="notifications-error" role="alert">
-            <strong>Không thể tải thông báo</strong>
-            <p>{error}</p>
-
-            <button type="button" onClick={reload}>
-              Thử lại
-            </button>
-          </div>
-        )}
-
-        {loading && (
-          <div className="notifications-empty">
-            <h3>Đang tải thông báo...</h3>
-          </div>
-        )}
-
-        {!loading && !error && visible.length === 0 && (
-          <div className="notifications-empty">
-            <div className="notifications-empty__icon">
-              🔔
+        {/* Thống kê */}
+        <section className="notifications-summary">
+          <article className="notifications-stat">
+            <div>
+              <span>Tổng cập nhật</span>
+              <strong>{counts.all}</strong>
+              <small>Tất cả thông báo của tài khoản</small>
             </div>
 
-            <h3>
-              {filter === 'all'
-                ? 'Bạn chưa có cập nhật nào'
-                : 'Không có cập nhật thuộc nhóm này'}
-            </h3>
+            <span className="notifications-stat__symbol">
+              🔔
+            </span>
+          </article>
 
-            <p>
-              Thông báo sẽ xuất hiện khi có các bước
-              xử lý được ghi nhận trong hệ thống.
-            </p>
+          <article className="notifications-stat">
+            <div>
+              <span>Cập nhật viết bài và xác minh</span>
+              <strong>{counts.writing}</strong>
+              <small>
+                {counts.field} nhiệm vụ CTV · {counts.research} bài nghiên cứu
+              </small>
+            </div>
 
-            <Link to="/account/profile">
-              Xem hồ sơ của tôi
-            </Link>
+            <span className="notifications-stat__symbol">
+              📝
+            </span>
+          </article>
+        </section>
+
+        {/* Danh sách thông báo */}
+        <section className="notifications-panel">
+
+          <div className="notifications-panel__header">
+            <div>
+              <h2>Danh sách thông báo</h2>
+              <p>
+                Chỉ hiển thị cập nhật thuộc tài khoản đang đăng nhập
+                và các nhiệm vụ được giao cho tài khoản đó.
+              </p>
+            </div>
+
+            <button
+              className="notifications-refresh"
+              onClick={reload}
+              disabled={loading}
+              type="button"
+            >
+              ↻ {loading ? 'Đang tải...' : 'Làm mới'}
+            </button>
           </div>
-        )}
 
-        {!loading && !error && visible.length > 0 && (
-          <div className="notifications-list">
-            {visible.map(item => (
-              <article
-                className="notification-item"
-                key={item.id}
-              >
-                <div className="notification-item__icon">
-                  {item.type === 'CONTRIBUTOR'
-                    ? '🏅'
-                    : '🔔'}
-                </div>
+          {/* Bộ lọc */}
+          <div className="notifications-filters">
+            <button
+              type="button"
+              className={filter === 'all' ? 'is-active' : ''}
+              onClick={() => changeFilter('all')}
+            >
+              Tất cả ({counts.all})
+            </button>
 
-                <div className="notification-item__body">
-                  <div className="notification-item__top">
-                    <div>
-                      <h3>
-                        {item.title || 'Hồ sơ được cập nhật'}
-                      </h3>
+            <button
+              type="button"
+              className={filter === 'submission' ? 'is-active' : ''}
+              onClick={() => changeFilter('submission')}
+            >
+              Hồ sơ tin báo ({counts.submission})
+            </button>
 
-                      <span className="notification-item__time">
-                        {formatDate(item.createdAt)}
-                        {' · '}
-                        {item.type === 'CONTRIBUTOR'
-                          ? 'Đăng ký cộng tác viên'
-                          : 'Hồ sơ tin báo'}
-                      </span>
+            <button
+              type="button"
+              className={filter === 'contributor' ? 'is-active' : ''}
+              onClick={() => changeFilter('contributor')}
+            >
+              Đơn CTV ({counts.contributor})
+            </button>
+
+            <button
+              type="button"
+              className={filter === 'field' ? 'is-active' : ''}
+              onClick={() => changeFilter('field')}
+            >
+              Nhiệm vụ CTV ({counts.field})
+            </button>
+
+            <button
+              type="button"
+              className={filter === 'research' ? 'is-active' : ''}
+              onClick={() => changeFilter('research')}
+            >
+              Bài nghiên cứu ({counts.research})
+            </button>
+          </div>
+
+          {/* Lỗi tải dữ liệu */}
+          {error && (
+            <div className="notifications-error" role="alert">
+              <strong>Không thể tải thông báo</strong>
+              <p>{error}</p>
+
+              <button type="button" onClick={reload}>
+                Thử lại
+              </button>
+            </div>
+          )}
+
+          {/* Đang tải */}
+          {loading && (
+            <div className="notifications-empty">
+              <h3>Đang tải thông báo...</h3>
+            </div>
+          )}
+
+          {/* Không có thông báo */}
+          {!loading && !error && visible.length === 0 && (
+            <div className="notifications-empty">
+              <div className="notifications-empty__icon">
+                🔔
+              </div>
+
+              <h3>
+                {filter === 'all'
+                  ? 'Bạn chưa có cập nhật nào'
+                  : 'Không có cập nhật thuộc nhóm này'}
+              </h3>
+
+              <p>
+                Thông báo sẽ xuất hiện khi có hồ sơ được xử lý,
+                nhiệm vụ được giao hoặc bài viết có cập nhật mới.
+              </p>
+
+              <Link to="/account/profile">
+                Xem hồ sơ của tôi
+              </Link>
+            </div>
+          )}
+
+          {/* Danh sách thông báo của trang hiện tại */}
+          {!loading && !error && visible.length > 0 && (
+            <>
+              <div className="notifications-list">
+                {paginatedItems.map(item => (
+                  <article
+                    className="notification-item"
+                    key={item.id}
+                  >
+                    <div className="notification-item__icon">
+                      {TYPE_ICONS[item.type] || '🔔'}
                     </div>
 
-                    <span className="notification-item__status">
-                      {STATUS_LABELS[item.status]
-                        || item.status
-                        || 'Đã cập nhật'}
-                    </span>
-                  </div>
+                    <div className="notification-item__body">
+                      <div className="notification-item__top">
+                        <div>
+                          <h3>
+                            {item.title || 'Thông tin được cập nhật'}
+                          </h3>
 
-                  <p className="notification-item__message">
-                    {item.message}
-                  </p>
+                          <span className="notification-item__time">
+                            {formatDate(item.createdAt)}
+                            {' · '}
+                            {TYPE_LABELS[item.type] || 'Thông báo hệ thống'}
+                          </span>
+                        </div>
 
-                  {item.note && (
-                    <div className="notification-item__note">
-                      <strong>Ghi chú:</strong>
-                      <p>{item.note}</p>
+                        <span className="notification-item__status">
+                          {STATUS_LABELS[item.status]
+                            || item.status
+                            || 'Đã cập nhật'}
+                        </span>
+                      </div>
+
+                      <p className="notification-item__message">
+                        {item.message}
+                      </p>
+
+                      {item.note && (
+                        <div className="notification-item__note">
+                          <strong>Ghi chú:</strong>
+                          <p>{item.note}</p>
+                        </div>
+                      )}
+
+                      <div className="notification-item__footer">
+                        <span>
+                          {item.trackingCode
+                            ? `Mã hồ sơ: ${item.trackingCode}`
+                            : TYPE_LABELS[item.type] || 'Tiến trình tài khoản'}
+                        </span>
+
+                        {item.link && (
+                          <Link
+                            className="notification-item__link"
+                            to={item.link}
+                          >
+                            {getLinkLabel(item)}
+                          </Link>
+                        )}
+                      </div>
                     </div>
-                  )}
+                  </article>
+                ))}
+              </div>
 
-                  <div className="notification-item__footer">
-                    <span>
-                      {item.trackingCode
-                        ? `Mã hồ sơ: ${item.trackingCode}`
-                        : 'Tiến trình đăng ký cộng tác viên'}
-                    </span>
+              {/* PHÂN TRANG */}
+              <div className="notifications-pagination">
 
-                    {item.link && (
-                      <Link
-                        className="notification-item__link"
-                        to={item.link}
-                      >
-                        {item.type === 'CONTRIBUTOR'
-                          ? 'Xem tiến trình CTV →'
-                          : 'Xem hồ sơ →'}
-                      </Link>
-                    )}
-                  </div>
+                <div className="notifications-pagination__info">
+                  Hiển thị <strong>{startIndex + 1}</strong>
+                  {' - '}
+                  <strong>{endIndex}</strong>
+                  {' trong '}
+                  <strong>{visible.length}</strong>
+                  {' thông báo'}
                 </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
 
-      <div className="notifications-footer">
-        <span>
-          Đây là lịch sử cập nhật, không phải
-          thông báo đẩy thời gian thực.
-        </span>
+                <div className="notifications-pagination__controls">
 
-        <Link to="/">
-          ← Về trang chủ
-        </Link>
-      </div>
-    </main>
+                  <button
+                    type="button"
+                    className="notifications-pagination__button"
+                    disabled={currentPage === 1}
+                    onClick={() => changePage(currentPage - 1)}
+                  >
+                    ← Trước
+                  </button>
+
+                  {pageNumbers.map(page => (
+                    <button
+                      key={page}
+                      type="button"
+                      className={
+                        `notifications-pagination__button ${
+                          currentPage === page ? 'is-active' : ''
+                        }`
+                      }
+                      aria-current={
+                        currentPage === page ? 'page' : undefined
+                      }
+                      onClick={() => changePage(page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    className="notifications-pagination__button"
+                    disabled={currentPage === totalPages}
+                    onClick={() => changePage(currentPage + 1)}
+                  >
+                    Sau →
+                  </button>
+
+                </div>
+              </div>
+            </>
+          )}
+        </section>
+
+        <div className="notifications-footer">
+          <span>
+            Đây là lịch sử cập nhật được tổng hợp từ dữ liệu nghiệp vụ,
+            không phải thông báo đẩy thời gian thực.
+          </span>
+        </div>
+
+      </main>
+    </>
   )
 }

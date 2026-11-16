@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { notificationService } from '../../services/notificationService'
 import '../../assets/styles/notification-dropdown.css'
 
+// Lấy danh sách ID thông báo đã đọc từ localStorage.
 function getReadIds(storageKey) {
   try {
     const data = JSON.parse(localStorage.getItem(storageKey) || '[]')
@@ -13,6 +14,7 @@ function getReadIds(storageKey) {
   }
 }
 
+// Lưu danh sách ID thông báo đã đọc.
 function saveReadIds(storageKey, ids) {
   try {
     localStorage.setItem(storageKey, JSON.stringify(ids))
@@ -21,6 +23,7 @@ function saveReadIds(storageKey, ids) {
   }
 }
 
+// Định dạng thời gian thông báo.
 function formatDate(value) {
   if (!value) return ''
 
@@ -39,13 +42,33 @@ function formatDate(value) {
   })
 }
 
+// Lấy ID của thông báo.
 function getNotificationId(item) {
   return String(item.id)
+}
+
+// Lấy biểu tượng tương ứng với từng loại thông báo.
+function getNotificationIcon(item) {
+  switch (item.type) {
+    case 'CONTRIBUTOR':
+      return '🏅'
+
+    case 'FIELD_WORK':
+      return '📝'
+
+    case 'RESEARCH':
+      return '📚'
+
+    case 'SUBMISSION':
+    default:
+      return '📄'
+  }
 }
 
 export default function NotificationDropdown({
   userId,
 }) {
+  // Mỗi tài khoản có danh sách thông báo đã đọc riêng.
   const storageKey = `citizen-notifications-read-v1-${userId || 'current'}`
 
   const [open, setOpen] = useState(false)
@@ -58,12 +81,14 @@ export default function NotificationDropdown({
 
   const dropdownRef = useRef(null)
 
+  // Tải thông báo từ backend.
   const loadNotifications = useCallback(async () => {
     setLoading(true)
     setError('')
 
     try {
       const response = await notificationService.getMine()
+
       const list = Array.isArray(response?.data)
         ? response.data
         : []
@@ -76,15 +101,18 @@ export default function NotificationDropdown({
     }
   }, [])
 
+  // Cập nhật dữ liệu đã đọc khi đổi tài khoản.
   useEffect(() => {
     setReadIds(getReadIds(storageKey))
     setItems([])
   }, [storageKey])
 
+  // Chỉ tải thông báo khi mở dropdown.
   useEffect(() => {
     if (open) loadNotifications()
   }, [open, loadNotifications])
 
+  // Đóng dropdown khi click bên ngoài hoặc nhấn Escape.
   useEffect(() => {
     if (!open) return
 
@@ -112,6 +140,7 @@ export default function NotificationDropdown({
     }
   }, [open])
 
+  // Đánh dấu một thông báo đã đọc.
   function markAsRead(id) {
     const value = String(id)
 
@@ -125,6 +154,7 @@ export default function NotificationDropdown({
     })
   }
 
+  // Đánh dấu tất cả thông báo đã đọc.
   function markAllAsRead() {
     setReadIds(previous => {
       const updated = [
@@ -140,10 +170,12 @@ export default function NotificationDropdown({
     })
   }
 
+  // Đếm số thông báo chưa đọc.
   const unreadCount = items.filter(
     item => !readIds.includes(getNotificationId(item))
   ).length
 
+  // Lấy tối đa 5 thông báo mới nhất.
   const recentItems = [...items]
     .sort((a, b) => {
       return new Date(b.createdAt || 0) -
@@ -156,6 +188,7 @@ export default function NotificationDropdown({
       className="notification-dropdown"
       ref={dropdownRef}
     >
+      {/* Nút chuông thông báo */}
       <button
         type="button"
         className="notification-dropdown__trigger"
@@ -187,11 +220,15 @@ export default function NotificationDropdown({
         )}
       </button>
 
+      {/* Nội dung dropdown */}
       {open && (
         <div className="notification-dropdown__panel">
+
+          {/* Tiêu đề */}
           <div className="notification-dropdown__header">
             <div>
               <h3>Thông báo</h3>
+
               <span>
                 {unreadCount > 0
                   ? `${unreadCount} thông báo chưa đọc`
@@ -208,6 +245,7 @@ export default function NotificationDropdown({
             </button>
           </div>
 
+          {/* Đánh dấu tất cả đã đọc */}
           {unreadCount > 0 && (
             <div className="notification-dropdown__toolbar">
               <button
@@ -219,7 +257,9 @@ export default function NotificationDropdown({
             </div>
           )}
 
+          {/* Danh sách thông báo */}
           <div className="notification-dropdown__list">
+
             {loading && (
               <div className="notification-dropdown__empty">
                 Đang tải thông báo...
@@ -232,6 +272,7 @@ export default function NotificationDropdown({
                 role="alert"
               >
                 {error}
+
                 <button
                   type="button"
                   onClick={loadNotifications}
@@ -241,19 +282,23 @@ export default function NotificationDropdown({
               </div>
             )}
 
+            {/* Không có thông báo */}
             {!loading && !error && recentItems.length === 0 && (
               <div className="notification-dropdown__empty">
                 <span className="notification-dropdown__empty-icon">
                   🔔
                 </span>
+
                 <strong>Chưa có thông báo</strong>
+
                 <p>
-                  Các cập nhật về hồ sơ và đơn CTV
+                  Cập nhật hồ sơ, nhiệm vụ CTV và bài nghiên cứu
                   sẽ xuất hiện tại đây.
                 </p>
               </div>
             )}
 
+            {/* Hiển thị thông báo */}
             {!loading && !error && recentItems.map(item => {
               const id = getNotificationId(item)
               const isRead = readIds.includes(id)
@@ -267,13 +312,13 @@ export default function NotificationDropdown({
                     }`
                   }
                 >
+                  {/* Biểu tượng theo loại thông báo */}
                   <span className="notification-dropdown__item-icon">
-                    {item.type === 'CONTRIBUTOR'
-                      ? '🏅'
-                      : '📄'}
+                    {getNotificationIcon(item)}
                   </span>
 
                   <div className="notification-dropdown__item-content">
+
                     <div className="notification-dropdown__item-heading">
                       {!isRead && (
                         <span className="notification-dropdown__unread-dot" />
@@ -308,12 +353,15 @@ export default function NotificationDropdown({
                     <time>
                       {formatDate(item.createdAt)}
                     </time>
+
                   </div>
                 </div>
               )
             })}
+
           </div>
 
+          {/* Chuyển đến trang thông báo đầy đủ */}
           <Link
             to="/account/notifications"
             className="notification-dropdown__footer"
@@ -322,6 +370,7 @@ export default function NotificationDropdown({
             Xem tất cả thông báo
             <span>→</span>
           </Link>
+
         </div>
       )}
     </div>
