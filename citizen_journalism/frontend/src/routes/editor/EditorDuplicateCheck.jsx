@@ -252,7 +252,7 @@ function EditorDuplicateCheck() {
       {!scanning && (!review || editing) && selected && (
         <div className="review-grid">
           {/* .applicant: khối dính dưới thanh tiêu đề khi cuộn (editor.css) */}
-          <aside className="admin-panel applicant">
+          <aside className="admin-panel applicant dup-aside">
             <div className="admin-panel__header">
               <h2>AI gợi ý {candidates.length} hồ sơ</h2>
             </div>
