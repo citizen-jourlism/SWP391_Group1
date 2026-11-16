@@ -17,7 +17,7 @@ import { useAsyncData } from '../hooks/useAsyncData'
 import { useAuth } from '../hooks/useAuth'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { formatDateTime } from '../lib/format'
-import { RESEARCH_STATUS, countWords, submitChecklist } from '../lib/research'
+import { RESEARCH_STATUS, countWords, invalidReferenceLines, submitChecklist } from '../lib/research'
 import { researchService } from '../services/researchService'
 import '../assets/styles/ui.css'
 import '../assets/styles/research.css'
@@ -124,6 +124,11 @@ function EditorWorkspace({ options, article, initialNotice }) {
   const words = countWords(doc.content)
   const checklist = submitChecklist(doc, figures, options)
   const readyCount = checklist.filter((item) => item.done).length
+  // Báo ngay dưới ô (trong lúc gõ) dòng tài liệu tham khảo nào chưa phải link hợp lệ
+  const badReferenceLines = invalidReferenceLines(doc.references)
+  const referenceError = badReferenceLines.length
+    ? `Mỗi dòng phải là một đường link hợp lệ (bắt đầu bằng http:// hoặc https://). Dòng chưa đúng: ${badReferenceLines.join(', ')}.`
+    : undefined
 
   /** Sửa 1 ô: cập nhật giá trị, xoá lỗi của ô đó và thông báo cũ. */
   const setField = (name) => (event) => {
@@ -375,14 +380,14 @@ function EditorWorkspace({ options, article, initialNotice }) {
             <section className="paper__section">
               <h2>Tài liệu tham khảo</h2>
               <TextField
-                label="Mỗi dòng một nguồn"
+                label="Mỗi dòng một đường link nguồn"
                 multiline
                 rows={4}
                 counter={5000}
-                placeholder={'Ví dụ:\nTổ chức Y tế Thế giới (2021). Hướng dẫn chất lượng không khí.\nNguyễn Văn A (2024). Tên bài báo. Tạp chí ..., số 12.'}
+                placeholder={'Ví dụ:\nhttps://www.who.int/publications/i/item/9789240034228\nhttps://vnexpress.net/ten-bai-bao-1234567.html'}
                 value={doc.references}
                 onChange={setField('references')}
-                error={errors.references}
+                error={errors.references ?? referenceError}
               />
             </section>
           </article>

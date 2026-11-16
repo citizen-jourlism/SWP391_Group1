@@ -22,6 +22,7 @@ import java.util.List;
 public record AdminUpdateUserRequest(
         @NotBlank(message = "Vui lòng nhập họ và tên.")
         @Size(max = 100, message = "Họ và tên tối đa 100 ký tự.")
+        @Pattern(regexp = ValidationRules.FULL_NAME_REGEX, message = ValidationRules.FULL_NAME_MESSAGE)
         String fullName,
 
         @NotBlank(message = "Vui lòng nhập số điện thoại.")

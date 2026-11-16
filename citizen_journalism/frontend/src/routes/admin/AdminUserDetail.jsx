@@ -15,7 +15,7 @@ import { useForm } from '../../hooks/useForm'
 import { formatDateTime } from '../../lib/format'
 import { toPayload } from '../../lib/payload'
 import { ASSIGNABLE_ROLES, ROLE_LABELS, ROLE_TONES, STATUS_INFO } from '../../lib/roles'
-import { CITIZEN_ID_LENGTH, createValidator, rules, todayIso } from '../../lib/validators'
+import { CITIZEN_ID_LENGTH, FULL_NAME_REGEX, createValidator, rules, todayIso } from '../../lib/validators'
 import { adminService } from '../../services/adminService'
 import { deputyFieldService } from '../../services/deputyFieldService'
 import { DeputyFieldChips } from '../../components/admin/DeputyFieldPicker'
@@ -42,7 +42,12 @@ const EXPERTISE_ROLES = ['EXPERT', 'DEPUTY_EIC']
 
 /** Giống trang Hồ sơ của người dùng (routes/Profile.jsx), thêm ô vai trò. */
 const validate = createValidator({
-  fullName: [rules.required('Vui lòng nhập họ và tên.'), rules.maxLength(100, 'Họ và tên tối đa 100 ký tự.')],
+  fullName: [
+    rules.required('Vui lòng nhập họ và tên.'),
+    rules.maxLength(100, 'Họ và tên tối đa 100 ký tự.'),
+    // Không cho số / ký tự đặc biệt trong họ tên
+    rules.pattern(FULL_NAME_REGEX, 'Họ và tên chỉ được chứa chữ cái và khoảng trắng.'),
+  ],
   phone: [rules.required('Vui lòng nhập số điện thoại.'), rules.phone()],
   citizenId: [rules.optional(rules.digits(CITIZEN_ID_LENGTH, `Số CCCD gồm đúng ${CITIZEN_ID_LENGTH} chữ số.`))],
   address: [rules.optional(rules.maxLength(255, 'Địa chỉ tối đa 255 ký tự.'))],
@@ -208,7 +213,17 @@ function UserEditForm({ user, fields, onSaved }) {
 
         <TextField label="Họ và tên" icon="user" required {...form.field('fullName')} />
         <div className="form__row">
-          <TextField label="Số điện thoại" icon="phone" type="tel" inputMode="numeric" required {...form.field('phone')} />
+          <TextField
+            label="Số điện thoại"
+            icon="phone"
+            type="tel"
+            inputMode="numeric"
+            maxLength={11}
+            required
+            {...form.field('phone')}
+            // Chỉ nhận chữ số: ký tự khác (chữ, dấu cách, dấu +...) bị bỏ ngay khi gõ / dán
+            onChange={(event) => form.setValue('phone', event.target.value.replace(/\D/g, ''))}
+          />
           <TextField
             label="Số căn cước công dân"
             icon="creditCard"
@@ -216,6 +231,8 @@ function UserEditForm({ user, fields, onSaved }) {
             maxLength={CITIZEN_ID_LENGTH}
             placeholder={`${CITIZEN_ID_LENGTH} chữ số`}
             {...form.field('citizenId')}
+            // Chỉ nhận chữ số: ký tự khác (chữ, dấu cách, dấu chấm...) bị bỏ ngay khi gõ / dán
+            onChange={(event) => form.setValue('citizenId', event.target.value.replace(/\D/g, ''))}
           />
         </div>
         <div className="form__row">
