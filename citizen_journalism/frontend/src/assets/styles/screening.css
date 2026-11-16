@@ -32,6 +32,36 @@
   height: 6px;
 }
 
+/* Cột hồ sơ gợi ý: không cho tiêu đề dài tràn ra ngoài khung; danh sách dài thì cuộn trong cột */
+.dup-aside {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: calc(100vh - 116px);
+}
+
+.dup-candidates {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  margin: 12px -4px 12px 0;
+  padding-right: 4px;
+  overflow-y: auto;
+}
+
+.dup-candidates .role-option {
+  min-width: 0;
+}
+
+.dup-candidate strong {
+  display: -webkit-box;
+  width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.4;
+}
+
 /* Đoạn AI thấy giống nhau */
 .dup-mark {
   padding: 0 2px;
@@ -77,6 +107,12 @@
 }
 
 /* ---------- Màn hình hẹp ---------- */
+@media (max-width: 1100px) {
+  .dup-aside {
+    max-height: none;
+  }
+}
+
 @media (max-width: 760px) {
   .dup-sides {
     grid-template-columns: 1fr;
