@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -55,6 +56,13 @@ public class ResearchArticleService {
     public static final int MIN_WORDS = 300;
     public static final int MAX_IMAGES = 8;
     public static final long MAX_IMAGE_BYTES = 5L * 1024 * 1024;
+
+    /**
+     * Định dạng 1 đường link tài liệu tham khảo: http(s):// + tên miền có dấu chấm (vd: who.int) + cổng / đường dẫn tuỳ ý,
+     * không chứa khoảng trắng. Frontend kiểm tra CÙNG mẫu này (lib/research.js REFERENCE_LINK).
+     */
+    private static final Pattern REFERENCE_LINK = Pattern.compile(
+            "^https?://([a-z0-9-]+\\.)+[a-z]{2,}(:\\d+)?([/?#]\\S*)?$", Pattern.CASE_INSENSITIVE);
 
     private static final String IMAGE_FOLDER = "research";
     private static final int EXCERPT_LENGTH = 180;
@@ -240,6 +248,19 @@ public class ResearchArticleService {
         }
         if (blankToNull(request.references()) == null) {
             errors.put("references", "Vui lòng ghi ít nhất 1 tài liệu tham khảo.");
+        } else {
+            // Mỗi dòng (bỏ dòng trống) phải là 1 đường link. Báo số thứ tự các dòng sai để tác giả sửa đúng chỗ.
+            List<String> lines = request.references().lines().map(String::trim).filter(line -> !line.isEmpty()).toList();
+            List<String> invalid = new ArrayList<>();
+            for (int i = 0; i < lines.size(); i++) {
+                if (!REFERENCE_LINK.matcher(lines.get(i)).matches()) {
+                    invalid.add(String.valueOf(i + 1));
+                }
+            }
+            if (!invalid.isEmpty()) {
+                errors.put("references", "Tài liệu tham khảo phải là đường link hợp lệ (bắt đầu bằng http:// hoặc https://). "
+                        + "Dòng chưa đúng: " + String.join(", ", invalid) + ".");
+            }
         }
         if (request.hasConflict() == null) {
             errors.put("hasConflict", "Vui lòng khai báo xung đột lợi ích.");

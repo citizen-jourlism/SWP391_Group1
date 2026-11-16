@@ -4,30 +4,6 @@ import SiteHeader from '../components/layout/SiteHeader'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import '../assets/styles/homepage.css'
 
-// Thang điểm tác động (Impact Score): điểm = A + B + C, từ 15 đến 100. Giữ khớp với ngưỡng ở backend.
-const scoreCards = [
-	{
-		title: 'Khu Vực Ảnh Hưởng (Location Scope)',
-		details: [['Một hộ / một điểm', '5 điểm'], ['Một phường / xã', '10 điểm'], ['Nhiều xã / quận, huyện', '20 điểm'], ['Toàn tỉnh hoặc liên tỉnh', '30 điểm']],
-	},
-	{
-		title: 'Số Người Bị Ảnh Hưởng (Affected Population)',
-		details: [['Dưới 10 người', '5 điểm'], ['10 - 100 người', '10 điểm'], ['101 - 1.000 người', '20 điểm'], ['Trên 1.000 người', '30 điểm']],
-	},
-	{
-		title: 'Tính Chất Vấn Đề (Severity & Nature)',
-		details: [['Phiền toái, dịch vụ công', '5 điểm'], ['Quyền lợi, tài sản, kinh tế', '15 điểm'], ['Sức khỏe, môi trường, an toàn', '25 điểm'], ['Đe dọa tính mạng, thảm họa', '40 điểm']],
-	},
-]
-
-// Đe dọa tính mạng hoặc nội dung nhạy cảm: tối thiểu mức HIGH. HIGH / BREAKING do Tổng biên tập duyệt.
-const impactLevels = [
-	['Mức 1: LOW (15 - 39)', 'Ảnh hưởng nhỏ, cục bộ; xử lý theo thứ tự thông thường.'],
-	['Mức 2: MEDIUM (40 - 59)', 'Ảnh hưởng một cộng đồng; cần xử lý trong ngày.'],
-	['Mức 3: HIGH (60 - 79)', 'Ảnh hưởng rộng hoặc nguy hiểm; cần Tổng biên tập duyệt.'],
-	['Mức 4: BREAKING (80 - 100)', 'Rất nghiêm trọng, quy mô lớn, đang diễn ra; ưu tiên cao nhất.'],
-]
-
 const features = [
 	['📡', 'Báo Về Nguyên Tín Tuyệt Đối', 'Máy ảnh, tin đã được xác thực và minh bạch theo quy trình chuyên môn.'],
 	['🧭', 'Mạng Lưới Tác Nghiệp Rộng Khắp', 'Đội ngũ dân sự và phóng viên cộng đồng phủ rộng cơ sở xã, huyện.'],
@@ -98,30 +74,6 @@ function Homepage() {
 					</div>
 				</section>
 
-				<section className="score-section">
-					<div className="section-head">
-						<h2>QUY CHUẨN ĐÁNH GIÁ THANG ĐIỂM TÁC ĐỘNG (IMPACT SCORE 15 - 100 ĐIỂM)</h2>
-						<a href="#">Xem tất cả</a>
-					</div>
-					<div className="score-grid">
-						{scoreCards.map((card, index) => (
-							<article className="score-card" key={card.title}>
-								<div className="score-number">{index + 1}</div>
-								<h3>{card.title}</h3>
-								<ul>{card.details.map(([label, score]) => <li key={label}><span>{label}</span><span>{score}</span></li>)}</ul>
-							</article>
-						))}
-					</div>
-					<div className="level-grid">
-						{impactLevels.map(([title, description]) => (
-							<div className="level-card" key={title}>
-								<div className="level-title">{title}</div>
-								<p>{description}</p>
-							</div>
-						))}
-					</div>
-				</section>
-
 				<section className="about-section" id="gioi-thieu">
 					<div className="about-header">
 						<div className="about-tag">Giới thiệu</div>
@@ -138,8 +90,6 @@ function Homepage() {
 									chuyện quan trọng về các vấn đề xã hội, môi trường, y tế và công quyền.
 								</p>
 								<div className="metrics-row">
-									<div className="metric-box"><strong>63</strong><span>tin nóng</span></div>
-									<div className="metric-box"><strong>500+</strong><span>người theo dõi</span></div>
 									<div className="metric-box"><strong>24/7</strong><span>tiếp nhận</span></div>
 									<div className="metric-box"><strong>30</strong><span>đội ngũ phản biện</span></div>
 								</div>

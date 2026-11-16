@@ -29,6 +29,15 @@ public final class ValidationRules {
     public static final String PERSONAL_ID_REGEX = "^(\\d{9}|\\d{12})$";
     public static final String PERSONAL_ID_MESSAGE = "CMND/CCCD gồm 9 hoặc 12 chữ số.";
 
+    /**
+     * Họ và tên: chỉ gồm chữ cái (kể cả chữ có dấu tiếng Việt) và khoảng trắng, không có số / ký tự đặc biệt.
+     * \p{L} = mọi chữ cái Unicode, \p{M} = dấu thanh rời (khi chữ có dấu được gõ dạng tổ hợp).
+     * Dùng * (không phải +) để ô trống do @NotBlank báo, tránh 2 lỗi cùng lúc trên 1 ô.
+     * Frontend có quy tắc tương ứng FULL_NAME_REGEX trong src/lib/validators.js.
+     */
+    public static final String FULL_NAME_REGEX = "^[\\p{L}\\p{M}\\s]*$";
+    public static final String FULL_NAME_MESSAGE = "Họ và tên chỉ được chứa chữ cái và khoảng trắng.";
+
     /** Mật khẩu phải có ít nhất 1 chữ cái VÀ 1 chữ số. (?=...) là "điều kiện nhìn trước" của regex. */
     public static final String PASSWORD_REGEX = "^(?=.*[A-Za-z])(?=.*\\d).+$";
     public static final String PASSWORD_MESSAGE = "Mật khẩu phải có ít nhất một chữ cái và một chữ số.";

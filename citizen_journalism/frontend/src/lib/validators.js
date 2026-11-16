@@ -73,6 +73,12 @@ export const rules = {
 export const CITIZEN_ID_LENGTH = 12
 
 /**
+ * Họ và tên: chỉ gồm chữ cái (kể cả chữ có dấu tiếng Việt) và khoảng trắng (khớp FULL_NAME_REGEX ở backend).
+ * \p{L} = mọi chữ cái Unicode, \p{M} = dấu thanh rời; cờ "u" để regex hiểu \p{...}.
+ */
+export const FULL_NAME_REGEX = /^[\p{L}\p{M}\s]+$/u
+
+/**
  * Bộ quy tắc cho một MẬT KHẨU MỚI (khớp với @StrongPassword ở backend).
  * Dùng chung ở Đăng ký, Đặt lại mật khẩu, Đổi mật khẩu, nên chỉ cần sửa 1 chỗ khi đổi quy tắc.
  */
